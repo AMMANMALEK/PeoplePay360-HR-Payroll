@@ -7,14 +7,15 @@ const {
   deleteEmployeeByCode,
   assignScheduleToEmployee,
 } = require('../controllers/employeeController');
+const validateEmployeeCode = require('../middleware/validateEmployeeCode');
 
 const router = express.Router();
 
 router.get('/', getAllEmployees);
 router.post('/', createEmployee);
-router.get('/:employeeCode', getEmployeeByCode);
-router.put('/:employeeCode', updateEmployeeByCode);
-router.delete('/:employeeCode', deleteEmployeeByCode);
-router.put('/:employeeCode/working-schedule', assignScheduleToEmployee);
+router.get('/:employeeCode', validateEmployeeCode, getEmployeeByCode);
+router.put('/:employeeCode', validateEmployeeCode, updateEmployeeByCode);
+router.delete('/:employeeCode', validateEmployeeCode, deleteEmployeeByCode);
+router.put('/:employeeCode/working-schedule', validateEmployeeCode, assignScheduleToEmployee);
 
 module.exports = router;

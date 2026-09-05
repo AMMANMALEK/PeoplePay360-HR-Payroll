@@ -114,7 +114,19 @@ export default function DataTable({
                       col.align === 'right' ? 'text-right' : ''
                     } ${col.className || ''}`}
                   >
-                    {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
+                    {col.render ? (
+                      (() => {
+                        const rendered = col.render(row[col.key], row);
+                        if (typeof rendered === 'object' && rendered !== null && !React.isValidElement(rendered)) {
+                          return rendered.name || rendered.title || rendered.scheduleCode || rendered.id || '—';
+                        }
+                        return rendered;
+                      })()
+                    ) : (
+                      typeof row[col.key] === 'object' && row[col.key] !== null && !React.isValidElement(row[col.key])
+                        ? (row[col.key].name || row[col.key].title || row[col.key].scheduleCode || '—')
+                        : (row[col.key] ?? '—')
+                    )}
                   </td>
                 ))}
               </tr>

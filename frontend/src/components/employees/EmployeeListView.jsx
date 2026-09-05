@@ -46,11 +46,17 @@ export default function EmployeeListView({
     {
       key: 'scheduleName',
       label: 'Working Schedule',
-      render: (sched) => (
-        <span className="inline-flex items-center rounded-md bg-slate-100/80 px-2 py-1 text-[11px] font-medium text-slate-700">
-          {sched}
-        </span>
-      )
+      render: (sched) => {
+        const displayText =
+          typeof sched === 'object' && sched !== null
+            ? (sched.name || sched.scheduleCode || 'Standard')
+            : String(sched || '—');
+        return (
+          <span className="inline-flex items-center rounded-md bg-slate-100/80 px-2 py-1 text-[11px] font-medium text-slate-700">
+            {displayText}
+          </span>
+        );
+      }
     },
     {
       key: 'employmentStatus',

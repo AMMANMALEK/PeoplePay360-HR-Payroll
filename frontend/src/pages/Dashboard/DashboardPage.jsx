@@ -13,7 +13,7 @@ import {
   AlertTriangle, 
   UserCheck, 
   FileText,
-  Sparkles
+  Activity
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -43,58 +43,65 @@ export default function DashboardPage() {
       {/* 1. Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Good morning, Elena 👋
-            </h1>
-          </div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Good morning, Elena 👋
+          </h1>
           <p className="mt-1 text-xs text-slate-500">
             Here's what needs your attention today.
           </p>
         </div>
 
-        {/* Primary action buttons */}
+        {/* Primary action buttons: Clear visual hierarchy */}
         <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setIsAddEmployeeOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-subtle transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm transition-colors"
           >
-            <UserPlus className="h-4 w-4 text-slate-500" />
+            <UserPlus className="h-4 w-4" />
             <span>+ Add Employee</span>
           </button>
           <button
             type="button"
             onClick={() => navigate('/time-off?status=Pending')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-subtle transition-colors"
           >
-            <CalendarCheck className="h-4 w-4" />
+            <CalendarCheck className="h-4 w-4 text-indigo-600" />
             <span>Review Time Off ({kpis.pendingTimeOff})</span>
           </button>
         </div>
       </div>
 
-      {/* 2. NEEDS YOUR ATTENTION (Action Before Information - Strongest Section) */}
-      <section aria-labelledby="attention-heading" className="space-y-3">
+      {/* 2. ATTENTION REQUIRED (Most important operational section) */}
+      <section aria-labelledby="attention-heading" className="space-y-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-            <h2 id="attention-heading" className="text-sm font-bold tracking-tight text-slate-900 uppercase tracking-wider">
-              Needs Your Attention
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+            </div>
+            <h2 id="attention-heading" className="text-xs font-bold uppercase tracking-wider text-slate-900">
+              Attention Required
             </h2>
-            <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-700">
-              {attentionItems.length} Urgent Items
+            <span className="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700 border border-rose-200/80">
+              {attentionItems.length} Actionable Items
             </span>
           </div>
-          <span className="text-xs text-slate-400">Direct 1-click resolution</span>
+          <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">Direct 1-click resolution</span>
         </div>
 
         {attentionItems.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 shadow-subtle">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-8 text-center text-xs text-slate-500 shadow-xs">
             ✓ You're all caught up. No pending operational exceptions require your intervention.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className={`grid grid-cols-1 gap-4 ${
+            attentionItems.length === 1
+              ? 'max-w-md'
+              : attentionItems.length === 2
+              ? 'md:grid-cols-2'
+              : 'md:grid-cols-2 lg:grid-cols-3'
+          }`}>
             {attentionItems.map((item) => (
               <AttentionCard key={item.id} item={item} />
             ))}
@@ -108,7 +115,7 @@ export default function DashboardPage() {
           <h2 id="snapshot-heading" className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Workforce Snapshot
           </h2>
-          <span className="text-[11px] text-indigo-600 font-medium">Click any card to inspect filtered records</span>
+          <span className="text-[11px] text-indigo-600 font-medium">Click any metric card to open filtered view</span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -116,7 +123,7 @@ export default function DashboardPage() {
             title="Total Employees"
             value={kpis.totalEmployees}
             secondaryValue="+3 this month"
-            subtext="Workforce directory"
+            subtext="Active workforce directory"
             icon="users"
             colorScheme="indigo"
             onClick={() => navigate('/employees')}
@@ -160,16 +167,16 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 4. UPCOMING & 5. TODAY'S ATTENDANCE RECENT ACTIVITY */}
+      {/* 4. OPERATIONAL RECENT ACTIVITY & UPCOMING PIPELINE */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Urgent Time Off Approvals & Exceptions Quick Glance */}
+        {/* Left 2 Cols: Urgent Time Off Approvals & Today's Attendance Overview */}
         <div className="lg:col-span-2 space-y-6">
           {/* Urgent Leave Submissions */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-subtle space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Urgent Leave Approvals</h3>
-                <p className="text-xs text-slate-500">Submissions waiting on your decision.</p>
+                <p className="text-xs text-slate-500">Employee submissions waiting on your decision.</p>
               </div>
               <button
                 type="button"
@@ -199,7 +206,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                      Pending
+                      ● Pending
                     </span>
                     <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
                   </div>
@@ -208,12 +215,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Today's Attendance Overview Quick Glance */}
+          {/* Today's Attendance Snapshot */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-subtle space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Today's Attendance Snapshot</h3>
-                <p className="text-xs text-slate-500">Live operational status across departments.</p>
+                <p className="text-xs text-slate-500">Live shift check-in health across organization.</p>
               </div>
               <button
                 type="button"
@@ -254,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Col: UPCOMING Items (Expiring Contracts & Returning Employees) */}
+        {/* Right Col: UPCOMING OPERATIONS (Contracts Expiring & On Leave) */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-subtle space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -262,7 +269,7 @@ export default function DashboardPage() {
                 <CalendarDays className="h-4 w-4 text-indigo-600" />
                 <h3 className="text-sm font-bold text-slate-900">Upcoming Operations</h3>
               </div>
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 Next 45 Days
               </span>
             </div>

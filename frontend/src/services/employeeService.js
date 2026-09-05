@@ -8,28 +8,64 @@ import { INITIAL_EMPLOYEES } from '../data/mockData';
 export function toFrontendEmployee(raw) {
   if (!raw) return null;
 
-  const firstName = raw.firstName || '';
-  const lastName = raw.lastName || '';
+  const firstName = typeof raw.firstName === 'string' ? raw.firstName : '';
+  const lastName = typeof raw.lastName === 'string' ? raw.lastName : '';
   const fullName =
     raw.fullName ||
     (firstName && lastName ? `${firstName} ${lastName}`.trim() : firstName || 'Employee');
 
   let employmentStatus = 'Active';
   if (raw.status) {
-    const s = String(raw.status).toLowerCase();
+    const s = String(typeof raw.status === 'object' ? (raw.status.name || raw.status.code || 'active') : raw.status).toLowerCase();
     if (s === 'active') employmentStatus = 'Active';
     else if (s === 'inactive') employmentStatus = 'Inactive';
     else if (s === 'on_leave') employmentStatus = 'On Leave';
     else if (s === 'terminated') employmentStatus = 'Terminated';
   } else if (raw.employmentStatus) {
-    employmentStatus = raw.employmentStatus;
+    employmentStatus = typeof raw.employmentStatus === 'object' ? (raw.employmentStatus.name || 'Active') : String(raw.employmentStatus);
   }
 
-  let managerName = raw.managerName || 'None';
-  let managerId = raw.managerId || '';
+  let managerName = 'None';
+  let managerId = '';
   if (raw.manager && typeof raw.manager === 'object') {
-    managerName = `${raw.manager.firstName || ''} ${raw.manager.lastName || ''}`.trim() || 'None';
+    managerName = `${raw.manager.firstName || ''} ${raw.manager.lastName || ''}`.trim() || raw.manager.fullName || 'None';
     managerId = raw.manager.employeeCode || raw.manager._id || '';
+  } else if (raw.managerName) {
+    managerName = typeof raw.managerName === 'object' ? (raw.managerName.name || 'None') : String(raw.managerName);
+    managerId = raw.managerId || '';
+  }
+
+  let scheduleName = 'Standard 5-Day (40 hrs)';
+  let scheduleId = raw.scheduleId || '';
+  if (raw.workingSchedule) {
+    if (typeof raw.workingSchedule === 'object' && raw.workingSchedule !== null) {
+      scheduleName = raw.workingSchedule.name || raw.workingSchedule.scheduleCode || 'Standard Schedule';
+      scheduleId = raw.workingSchedule._id || raw.workingSchedule.scheduleCode || '';
+    } else {
+      scheduleName = String(raw.workingSchedule);
+      scheduleId = String(raw.workingSchedule);
+    }
+  } else if (raw.scheduleName) {
+    if (typeof raw.scheduleName === 'object' && raw.scheduleName !== null) {
+      scheduleName = raw.scheduleName.name || raw.scheduleName.scheduleCode || 'Standard Schedule';
+      scheduleId = raw.scheduleName._id || raw.scheduleName.scheduleCode || '';
+    } else {
+      scheduleName = String(raw.scheduleName);
+    }
+  }
+
+  let department = 'General';
+  if (typeof raw.department === 'object' && raw.department !== null) {
+    department = raw.department.name || raw.department.title || 'General';
+  } else if (raw.department) {
+    department = String(raw.department);
+  }
+
+  let jobPosition = 'Specialist';
+  if (typeof raw.jobPosition === 'object' && raw.jobPosition !== null) {
+    jobPosition = raw.jobPosition.title || raw.jobPosition.name || 'Specialist';
+  } else if (raw.jobPosition) {
+    jobPosition = String(raw.jobPosition);
   }
 
   let joinedDate = raw.joinedDate;
@@ -50,14 +86,15 @@ export function toFrontendEmployee(raw) {
     fullName,
     workEmail: raw.email || raw.workEmail || '',
     phone: raw.phone || '',
-    jobPosition: raw.jobPosition || 'Specialist',
-    department: raw.department || 'General',
+    jobPosition,
+    department,
     managerId,
     managerName,
-    scheduleId: raw.scheduleId || 'sched-1',
-    scheduleName: raw.workingSchedule || raw.scheduleName || 'Standard 5-Day (40 hrs)',
+    scheduleId,
+    scheduleName,
+    schedule: typeof raw.workingSchedule === 'object' ? raw.workingSchedule : null,
     employmentStatus,
-    employmentType: raw.employmentType || 'Full-Time Permanent',
+    employmentType: typeof raw.employmentType === 'object' ? (raw.employmentType.name || 'Full-Time Permanent') : (raw.employmentType || 'Full-Time Permanent'),
     joinedDate: joinedDate || new Date().toISOString().split('T')[0],
     dob: raw.dob || '',
     avatar:
@@ -83,6 +120,19 @@ export function toBackendPayload(frontendEmp) {
   else if (rawStatus.includes('termin')) status = 'terminated';
   else status = 'active';
 
+  let workingSchedule = 'Standard 5-Day (40 hrs)';
+  if (frontendEmp.scheduleId) {
+    workingSchedule = frontendEmp.scheduleId;
+  } else if (typeof frontendEmp.scheduleName === 'object' && frontendEmp.scheduleName !== null) {
+    workingSchedule = frontendEmp.scheduleName._id || frontendEmp.scheduleName.name || 'Standard 5-Day (40 hrs)';
+  } else if (typeof frontendEmp.workingSchedule === 'object' && frontendEmp.workingSchedule !== null) {
+    workingSchedule = frontendEmp.workingSchedule._id || frontendEmp.workingSchedule.name || 'Standard 5-Day (40 hrs)';
+  } else if (frontendEmp.scheduleName) {
+    workingSchedule = frontendEmp.scheduleName;
+  } else if (frontendEmp.workingSchedule) {
+    workingSchedule = frontendEmp.workingSchedule;
+  }
+
   const payload = {
     employeeCode: frontendEmp.employeeCode || frontendEmp.id,
     firstName,
@@ -91,7 +141,7 @@ export function toBackendPayload(frontendEmp) {
     phone: frontendEmp.phone || '+1 (555) 000-0000',
     department: frontendEmp.department || 'Engineering',
     jobPosition: frontendEmp.jobPosition || 'Associate',
-    workingSchedule: frontendEmp.scheduleName || frontendEmp.workingSchedule || 'Standard 5-Day (40 hrs)',
+    workingSchedule,
     status,
     hireDate: frontendEmp.joinedDate ? new Date(frontendEmp.joinedDate).toISOString() : new Date().toISOString(),
   };

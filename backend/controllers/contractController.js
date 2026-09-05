@@ -89,7 +89,8 @@ const handleContractError = (error, res, next) => {
   if (error.message === 'CONTRACT_OVERLAP') {
     return res.status(409).json({
       success: false,
-      message: 'Contract dates overlap with an existing active or draft contract',
+      message:
+        'Contract dates overlap with an existing active or draft contract. Same-day transition is allowed (one contract may end on the day the next starts).',
       overlappingContracts: error.overlappingContracts,
     });
   }

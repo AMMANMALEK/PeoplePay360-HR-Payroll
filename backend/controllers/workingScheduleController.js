@@ -1,6 +1,7 @@
 const WorkingSchedule = require('../models/WorkingSchedule');
 const { calculateWeeklyHours } = require('../services/workingScheduleService');
 const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
+const { findEmployeeByCode } = require('../utils/employeeHelper');
 
 const applyWeeklyHours = (payload) => {
   if (payload.weeklyPattern) {
@@ -163,4 +164,5 @@ module.exports = {
   createWorkingSchedule,
   updateWorkingSchedule,
   deleteWorkingSchedule,
+  assignScheduleToEmployee,
 };

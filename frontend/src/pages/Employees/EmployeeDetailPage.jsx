@@ -62,11 +62,17 @@ export default function EmployeeDetailPage() {
   }, [contracts, id]);
 
   const activeContract = useMemo(() => {
-    return empContracts.find((c) => c.isCurrent && c.status === 'Active');
+    return empContracts.find((c) => {
+      const isPastEnd = c.endDate && new Date(c.endDate) < new Date('2026-09-05');
+      return c.isCurrent && c.status === 'Active' && !isPastEnd;
+    });
   }, [empContracts]);
 
   const historicalContracts = useMemo(() => {
-    return empContracts.filter((c) => !c.isCurrent || c.status !== 'Active');
+    return empContracts.filter((c) => {
+      const isPastEnd = c.endDate && new Date(c.endDate) < new Date('2026-09-05');
+      return !c.isCurrent || c.status !== 'Active' || isPastEnd;
+    });
   }, [empContracts]);
 
   const empAttendance = useMemo(() => {
@@ -335,7 +341,11 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <span className="text-slate-400 font-medium">Assigned Working Schedule</span>
-                  <p className="font-semibold text-slate-900 mt-0.5">{employee.scheduleName}</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">
+                    {typeof employee.scheduleName === 'object' && employee.scheduleName !== null
+                      ? (employee.scheduleName.name || employee.scheduleName.scheduleCode || 'Standard')
+                      : (employee.scheduleName || 'Standard')}
+                  </p>
                 </div>
                 <div>
                   <span className="text-slate-400 font-medium">Employment Status</span>

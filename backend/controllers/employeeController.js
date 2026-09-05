@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Employee = require('../models/Employee');
-const { findEmployeeByCode } = require('../utils/employeeHelper');
+const { findEmployeeByCode, findEmployeeByCodeOrId } = require('../utils/employeeHelper');
 const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
 
 const isValidObjectId = (value) =>
@@ -12,18 +12,14 @@ const resolveManager = async (managerValue) => {
     return null;
   }
 
-  if (isValidObjectId(managerValue)) {
-    const managerEmployee = await Employee.findById(managerValue);
-    if (!managerEmployee) throw new Error('MANAGER_NOT_FOUND');
-    return managerEmployee._id;
+  const managerEmployee = await findEmployeeByCodeOrId(managerValue);
+
+  if (!managerEmployee) {
+    const error = new Error('MANAGER_NOT_FOUND');
+    throw error;
   }
 
-  const managerEmployee = await findEmployeeByCode(managerValue);
-  if (managerEmployee) {
-    return managerEmployee._id;
-  }
-
-  throw new Error('MANAGER_NOT_FOUND');
+  return managerEmployee._id;
 };
 
 const resolveWorkingSchedule = async (value) => {
@@ -48,6 +44,47 @@ const prepareEmployeePayload = async (body) => {
   }
 
   return payload;
+};
+
+const handleEmployeeError = (error, res, next) => {
+  if (error.message === 'MANAGER_NOT_FOUND') {
+    return res.status(400).json({
+      success: false,
+      message: 'Manager not found. Use an existing employeeCode, or omit manager.',
+    });
+  }
+
+  if (error.message === 'SCHEDULE_NOT_FOUND') {
+    return res.status(400).json({
+      success: false,
+      message: 'Working schedule not found',
+    });
+  }
+
+  if (error.code === 11000) {
+    const field = Object.keys(error.keyPattern)[0];
+    return res.status(409).json({
+      success: false,
+      message: `${field} already exists`,
+    });
+  }
+
+  if (error.name === 'ValidationError') {
+    const messages = Object.values(error.errors).map((err) => err.message);
+    return res.status(400).json({
+      success: false,
+      message: messages.join(', '),
+    });
+  }
+
+  if (error.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid data format. Manager must be a valid employeeCode.',
+    });
+  }
+
+  return next(error);
 };
 
 const getAllEmployees = async (req, res, next) => {
@@ -82,15 +119,19 @@ const getEmployeeByCode = async (req, res, next) => {
     const employee = await findEmployeeByCode(req.params.employeeCode);
     
     if (!employee) {
-      return res.status(404).json({ success: false, message: 'Employee not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found with the given employee code',
+      });
     }
 
-    await employee.populate([
-      { path: 'manager', select: 'firstName lastName email employeeCode department jobPosition' },
-      { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours weeklyPattern' }
-    ]);
+    await employee.populate('manager', 'firstName lastName email employeeCode department jobPosition');
+    await employee.populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours weeklyPattern');
 
-    res.status(200).json({ success: true, data: employee });
+    res.status(200).json({
+      success: true,
+      data: employee,
+    });
   } catch (error) {
     next(error);
   }
@@ -108,21 +149,7 @@ const createEmployee = async (req, res, next) => {
 
     res.status(201).json({ success: true, message: 'Employee created successfully', data: employee });
   } catch (error) {
-    if (error.message === 'MANAGER_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'Manager not found.' });
-    }
-    if (error.message === 'SCHEDULE_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'Working schedule not found' });
-    }
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern)[0];
-      return res.status(409).json({ success: false, message: `${field} already exists` });
-    }
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({ success: false, message: messages.join(', ') });
-    }
-    next(error);
+    return handleEmployeeError(error, res, next);
   }
 };
 
@@ -130,7 +157,10 @@ const updateEmployeeByCode = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
     if (!employee) {
-      return res.status(404).json({ success: false, message: 'Employee not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found with the given employee code',
+      });
     }
 
     const payload = await prepareEmployeePayload(req.body);
@@ -142,23 +172,13 @@ const updateEmployeeByCode = async (req, res, next) => {
       { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' },
     ]);
 
-    res.status(200).json({ success: true, message: 'Employee updated successfully', data: employee });
+    res.status(200).json({
+      success: true,
+      message: 'Employee updated successfully',
+      data: employee,
+    });
   } catch (error) {
-    if (error.message === 'MANAGER_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'Manager not found.' });
-    }
-    if (error.message === 'SCHEDULE_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'Working schedule not found' });
-    }
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern)[0];
-      return res.status(409).json({ success: false, message: `${field} already exists` });
-    }
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({ success: false, message: messages.join(', ') });
-    }
-    next(error);
+    return handleEmployeeError(error, res, next);
   }
 };
 
@@ -166,7 +186,10 @@ const deleteEmployeeByCode = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
     if (!employee) {
-      return res.status(404).json({ success: false, message: 'Employee not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found with the given employee code',
+      });
     }
 
     await employee.deleteOne();
@@ -210,10 +233,7 @@ const assignScheduleToEmployee = async (req, res, next) => {
       data: employee,
     });
   } catch (error) {
-    if (error.message === 'SCHEDULE_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'Working schedule not found' });
-    }
-    next(error);
+    return handleEmployeeError(error, res, next);
   }
 };
 
