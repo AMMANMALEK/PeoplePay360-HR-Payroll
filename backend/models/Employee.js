@@ -15,8 +15,8 @@ const employeeSchema = new mongoose.Schema(
   {
     employeeCode: {
       type: String,
+      required: [true, 'Employee code is required'],
       unique: true,
-      sparse: true,
       trim: true,
       uppercase: true,
     },

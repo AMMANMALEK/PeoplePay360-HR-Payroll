@@ -77,7 +77,7 @@ const prepareContractPayload = async (body, employeeId, existingContract = null)
   return payload;
 };
 
-const handleContractError = (error, res) => {
+const handleContractError = (error, res, next) => {
   if (error.message === 'SCHEDULE_NOT_FOUND') {
     return res.status(400).json({
       success: false,
@@ -132,13 +132,10 @@ const handleContractError = (error, res) => {
     });
   }
 
-  return res.status(500).json({
-    success: false,
-    message: error.message,
-  });
+  return next(error);
 };
 
-const getEmployeeContracts = async (req, res) => {
+const getEmployeeContracts = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -170,14 +167,11 @@ const getEmployeeContracts = async (req, res) => {
       data: contracts,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createEmployeeContract = async (req, res) => {
+const createEmployeeContract = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -208,11 +202,11 @@ const createEmployeeContract = async (req, res) => {
       data: populatedContract,
     });
   } catch (error) {
-    return handleContractError(error, res);
+    return handleContractError(error, res, next);
   }
 };
 
-const getActiveEmployeeContract = async (req, res) => {
+const getActiveEmployeeContract = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -241,14 +235,11 @@ const getActiveEmployeeContract = async (req, res) => {
       data: contract,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getEmployeeContractForPeriod = async (req, res) => {
+const getEmployeeContractForPeriod = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -290,11 +281,11 @@ const getEmployeeContractForPeriod = async (req, res) => {
       data: contract,
     });
   } catch (error) {
-    return handleContractError(error, res);
+    return handleContractError(error, res, next);
   }
 };
 
-const getContractById = async (req, res) => {
+const getContractById = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.contractId)) {
       return res.status(400).json({
@@ -317,14 +308,11 @@ const getContractById = async (req, res) => {
       data: contract,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateContract = async (req, res) => {
+const updateContract = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.contractId)) {
       return res.status(400).json({
@@ -374,11 +362,11 @@ const updateContract = async (req, res) => {
       data: populatedContract,
     });
   } catch (error) {
-    return handleContractError(error, res);
+    return handleContractError(error, res, next);
   }
 };
 
-const deleteContract = async (req, res) => {
+const deleteContract = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.contractId)) {
       return res.status(400).json({
@@ -404,48 +392,7 @@ const deleteContract = async (req, res) => {
       data: contract,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-const assignScheduleToEmployee = async (req, res) => {
-  try {
-    const employee = await findEmployeeByCode(req.params.employeeCode);
-
-    if (!employee) {
-      return res.status(404).json({
-        success: false,
-        message: 'Employee not found with the given employee code',
-      });
-    }
-
-    const schedule = await resolveWorkingSchedule(req.body.workingSchedule);
-
-    if (!schedule) {
-      return res.status(400).json({
-        success: false,
-        message: 'Working schedule is required',
-      });
-    }
-
-    employee.workingSchedule = schedule;
-    await employee.save();
-
-    const populatedEmployee = await employee.populate(
-      'workingSchedule',
-      'name scheduleCode scheduleType weeklyHours weeklyPattern'
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'Working schedule assigned to employee successfully',
-      data: populatedEmployee,
-    });
-  } catch (error) {
-    return handleContractError(error, res);
+    next(error);
   }
 };
 
@@ -457,5 +404,4 @@ module.exports = {
   getContractById,
   updateContract,
   deleteContract,
-  assignScheduleToEmployee,
 };

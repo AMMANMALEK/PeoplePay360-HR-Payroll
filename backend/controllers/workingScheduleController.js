@@ -10,7 +10,7 @@ const applyWeeklyHours = (payload) => {
   return payload;
 };
 
-const getAllWorkingSchedules = async (req, res) => {
+const getAllWorkingSchedules = async (req, res, next) => {
   try {
     const { scheduleType, isActive, search } = req.query;
     const filter = {};
@@ -38,14 +38,11 @@ const getAllWorkingSchedules = async (req, res) => {
       data: schedules,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getWorkingScheduleById = async (req, res) => {
+const getWorkingScheduleById = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -61,14 +58,11 @@ const getWorkingScheduleById = async (req, res) => {
       data: schedule,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createWorkingSchedule = async (req, res) => {
+const createWorkingSchedule = async (req, res, next) => {
   try {
     const payload = applyWeeklyHours({ ...req.body });
     const schedule = await WorkingSchedule.create(payload);
@@ -95,14 +89,11 @@ const createWorkingSchedule = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateWorkingSchedule = async (req, res) => {
+const updateWorkingSchedule = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -139,14 +130,11 @@ const updateWorkingSchedule = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const deleteWorkingSchedule = async (req, res) => {
+const deleteWorkingSchedule = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -165,10 +153,7 @@ const deleteWorkingSchedule = async (req, res) => {
       data: schedule,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
