@@ -1,6 +1,7 @@
 const WorkingSchedule = require('../models/WorkingSchedule');
 const { calculateWeeklyHours } = require('../services/workingScheduleService');
 const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
+const { findEmployeeByCode } = require('../utils/employeeHelper');
 
 const applyWeeklyHours = (payload) => {
   if (payload.weeklyPattern) {
@@ -10,7 +11,7 @@ const applyWeeklyHours = (payload) => {
   return payload;
 };
 
-const getAllWorkingSchedules = async (req, res) => {
+const getAllWorkingSchedules = async (req, res, next) => {
   try {
     const { scheduleType, isActive, search } = req.query;
     const filter = {};
@@ -38,14 +39,11 @@ const getAllWorkingSchedules = async (req, res) => {
       data: schedules,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getWorkingScheduleById = async (req, res) => {
+const getWorkingScheduleById = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -61,14 +59,11 @@ const getWorkingScheduleById = async (req, res) => {
       data: schedule,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createWorkingSchedule = async (req, res) => {
+const createWorkingSchedule = async (req, res, next) => {
   try {
     const payload = applyWeeklyHours({ ...req.body });
     const schedule = await WorkingSchedule.create(payload);
@@ -95,14 +90,11 @@ const createWorkingSchedule = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateWorkingSchedule = async (req, res) => {
+const updateWorkingSchedule = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -139,14 +131,11 @@ const updateWorkingSchedule = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const deleteWorkingSchedule = async (req, res) => {
+const deleteWorkingSchedule = async (req, res, next) => {
   try {
     const schedule = await findScheduleByIdentifier(req.params.id);
 
@@ -165,10 +154,52 @@ const deleteWorkingSchedule = async (req, res) => {
       data: schedule,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+    next(error);
+  }
+};
+
+const assignScheduleToEmployee = async (req, res, next) => {
+  try {
+    const employee = await findEmployeeByCode(req.params.employeeCode);
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found with the given employee code',
+      });
+    }
+
+    if (!req.body.workingSchedule) {
+      return res.status(400).json({
+        success: false,
+        message: 'Working schedule is required',
+      });
+    }
+
+    const schedule = await findScheduleByIdentifier(req.body.workingSchedule);
+
+    if (!schedule) {
+      return res.status(400).json({
+        success: false,
+        message: 'Working schedule not found',
+      });
+    }
+
+    employee.workingSchedule = schedule._id;
+    await employee.save();
+
+    const populatedEmployee = await employee.populate(
+      'workingSchedule',
+      'name scheduleCode scheduleType weeklyHours weeklyPattern'
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Working schedule assigned to employee successfully',
+      data: populatedEmployee,
     });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -178,4 +209,5 @@ module.exports = {
   createWorkingSchedule,
   updateWorkingSchedule,
   deleteWorkingSchedule,
+  assignScheduleToEmployee,
 };

@@ -1,5 +1,5 @@
 const express = require('express');
-const { assignScheduleToEmployee } = require('../controllers/contractController');
+const { assignScheduleToEmployee } = require('../controllers/workingScheduleController');
 
 const router = express.Router({ mergeParams: true });
 

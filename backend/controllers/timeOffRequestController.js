@@ -33,7 +33,7 @@ const resolveReviewer = async (reviewerValue) => {
   return findEmployeeByCode(reviewerValue);
 };
 
-const handleRequestError = (error, res) => {
+const handleRequestError = (error, res, next) => {
   if (error.message === 'TYPE_NOT_FOUND') {
     return res.status(400).json({
       success: false,
@@ -79,13 +79,10 @@ const handleRequestError = (error, res) => {
     });
   }
 
-  return res.status(500).json({
-    success: false,
-    message: error.message,
-  });
+  return next(error);
 };
 
-const getAllTimeOffRequests = async (req, res) => {
+const getAllTimeOffRequests = async (req, res, next) => {
   try {
     const { status, employeeCode, timeOffType } = req.query;
     const filter = {};
@@ -128,14 +125,11 @@ const getAllTimeOffRequests = async (req, res) => {
       data: requests,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getEmployeeTimeOffRequests = async (req, res) => {
+const getEmployeeTimeOffRequests = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -169,14 +163,11 @@ const getEmployeeTimeOffRequests = async (req, res) => {
       data: requests,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createEmployeeTimeOffRequest = async (req, res) => {
+const createEmployeeTimeOffRequest = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -227,11 +218,11 @@ const createEmployeeTimeOffRequest = async (req, res) => {
       data: populatedRequest,
     });
   } catch (error) {
-    return handleRequestError(error, res);
+    return handleRequestError(error, res, next);
   }
 };
 
-const getTimeOffRequestById = async (req, res) => {
+const getTimeOffRequestById = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.requestId)) {
       return res.status(400).json({
@@ -254,14 +245,11 @@ const getTimeOffRequestById = async (req, res) => {
       data: request,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const approveRequest = async (req, res) => {
+const approveRequest = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.requestId)) {
       return res.status(400).json({
@@ -290,11 +278,11 @@ const approveRequest = async (req, res) => {
       data: populatedRequest,
     });
   } catch (error) {
-    return handleRequestError(error, res);
+    return handleRequestError(error, res, next);
   }
 };
 
-const refuseRequest = async (req, res) => {
+const refuseRequest = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.requestId)) {
       return res.status(400).json({
@@ -323,11 +311,11 @@ const refuseRequest = async (req, res) => {
       data: populatedRequest,
     });
   } catch (error) {
-    return handleRequestError(error, res);
+    return handleRequestError(error, res, next);
   }
 };
 
-const deleteTimeOffRequest = async (req, res) => {
+const deleteTimeOffRequest = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.requestId)) {
       return res.status(400).json({
@@ -360,10 +348,7 @@ const deleteTimeOffRequest = async (req, res) => {
       data: request,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 

@@ -1,14 +1,8 @@
-const Employee = require('../models/Employee');
 const Attendance = require('../models/Attendance');
 const { findEmployeeByCode } = require('../utils/employeeHelper');
+const { normalizeDate, endOfUtcDay } = require('../utils/dateHelper');
 
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
-const createEmployeeAttendance = async (req, res) => {
+const createEmployeeAttendance = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -70,14 +64,11 @@ const createEmployeeAttendance = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getEmployeeAttendance = async (req, res) => {
+const getEmployeeAttendance = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -103,9 +94,7 @@ const getEmployeeAttendance = async (req, res) => {
       }
 
       if (endDate) {
-        const end = normalizeDate(endDate);
-        end.setHours(23, 59, 59, 999);
-        filter.attendanceDate.$lte = end;
+        filter.attendanceDate.$lte = endOfUtcDay(endDate);
       }
     }
 
@@ -126,10 +115,7 @@ const getEmployeeAttendance = async (req, res) => {
       data: attendanceRecords,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 

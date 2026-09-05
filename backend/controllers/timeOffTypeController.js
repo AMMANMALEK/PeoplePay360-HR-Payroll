@@ -1,7 +1,7 @@
 const TimeOffType = require('../models/TimeOffType');
 const { findTimeOffTypeByIdentifier } = require('../services/timeOffService');
 
-const getAllTimeOffTypes = async (req, res) => {
+const getAllTimeOffTypes = async (req, res, next) => {
   try {
     const { isActive, unit, search } = req.query;
     const filter = {};
@@ -29,14 +29,11 @@ const getAllTimeOffTypes = async (req, res) => {
       data: types,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getTimeOffTypeById = async (req, res) => {
+const getTimeOffTypeById = async (req, res, next) => {
   try {
     const type = await findTimeOffTypeByIdentifier(req.params.id);
 
@@ -52,14 +49,11 @@ const getTimeOffTypeById = async (req, res) => {
       data: type,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createTimeOffType = async (req, res) => {
+const createTimeOffType = async (req, res, next) => {
   try {
     const type = await TimeOffType.create(req.body);
 
@@ -84,14 +78,11 @@ const createTimeOffType = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateTimeOffType = async (req, res) => {
+const updateTimeOffType = async (req, res, next) => {
   try {
     const type = await findTimeOffTypeByIdentifier(req.params.id);
 
@@ -126,14 +117,11 @@ const updateTimeOffType = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const deleteTimeOffType = async (req, res) => {
+const deleteTimeOffType = async (req, res, next) => {
   try {
     const type = await findTimeOffTypeByIdentifier(req.params.id);
 
@@ -152,10 +140,7 @@ const deleteTimeOffType = async (req, res) => {
       data: type,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 

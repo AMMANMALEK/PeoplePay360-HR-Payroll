@@ -18,7 +18,7 @@ const populateAllocation = (query) =>
     'typeCode name unit requiresAllocation requiresApproval isPaid'
   );
 
-const handleAllocationError = (error, res) => {
+const handleAllocationError = (error, res, next) => {
   if (error.message === 'TYPE_NOT_FOUND') {
     return res.status(400).json({
       success: false,
@@ -55,13 +55,10 @@ const handleAllocationError = (error, res) => {
     });
   }
 
-  return res.status(500).json({
-    success: false,
-    message: error.message,
-  });
+  return next(error);
 };
 
-const getEmployeeAllocations = async (req, res) => {
+const getEmployeeAllocations = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -97,14 +94,11 @@ const getEmployeeAllocations = async (req, res) => {
       data: allocations,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const createEmployeeAllocation = async (req, res) => {
+const createEmployeeAllocation = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
 
@@ -151,11 +145,11 @@ const createEmployeeAllocation = async (req, res) => {
       data: populatedAllocation,
     });
   } catch (error) {
-    return handleAllocationError(error, res);
+    return handleAllocationError(error, res, next);
   }
 };
 
-const getAllocationById = async (req, res) => {
+const getAllocationById = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.allocationId)) {
       return res.status(400).json({
@@ -178,14 +172,11 @@ const getAllocationById = async (req, res) => {
       data: allocation,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateAllocation = async (req, res) => {
+const updateAllocation = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.allocationId)) {
       return res.status(400).json({
@@ -247,11 +238,11 @@ const updateAllocation = async (req, res) => {
       data: populatedAllocation,
     });
   } catch (error) {
-    return handleAllocationError(error, res);
+    return handleAllocationError(error, res, next);
   }
 };
 
-const deleteAllocation = async (req, res) => {
+const deleteAllocation = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.allocationId)) {
       return res.status(400).json({
@@ -277,14 +268,11 @@ const deleteAllocation = async (req, res) => {
       data: allocation,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const approveAllocation = async (req, res) => {
+const approveAllocation = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.allocationId)) {
       return res.status(400).json({
@@ -312,7 +300,7 @@ const approveAllocation = async (req, res) => {
       data: populatedAllocation,
     });
   } catch (error) {
-    return handleAllocationError(error, res);
+    return handleAllocationError(error, res, next);
   }
 };
 

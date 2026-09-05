@@ -1,13 +1,7 @@
 const mongoose = require('mongoose');
 const TimeOffType = require('../models/TimeOffType');
 const TimeOffAllocation = require('../models/TimeOffAllocation');
-const TimeOffRequest = require('../models/TimeOffRequest');
-
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
+const { normalizeDate } = require('../utils/dateHelper');
 
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&

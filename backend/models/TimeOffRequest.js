@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { normalizeDate } = require('../utils/dateHelper');
 
 const timeOffRequestSchema = new mongoose.Schema(
   {
@@ -75,11 +76,5 @@ timeOffRequestSchema.pre('validate', function (next) {
 
   next();
 });
-
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
 
 module.exports = mongoose.model('TimeOffRequest', timeOffRequestSchema);

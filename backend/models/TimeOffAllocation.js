@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { normalizeDate } = require('../utils/dateHelper');
 
 const timeOffAllocationSchema = new mongoose.Schema(
   {
@@ -61,11 +62,5 @@ timeOffAllocationSchema.pre('validate', function (next) {
   this.remaining = Math.max((this.allocated || 0) - (this.taken || 0), 0);
   next();
 });
-
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
 
 module.exports = mongoose.model('TimeOffAllocation', timeOffAllocationSchema);

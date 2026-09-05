@@ -1,10 +1,5 @@
 const Contract = require('../models/Contract');
-
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
+const { normalizeDate } = require('../utils/dateHelper');
 
 const getFarFutureDate = () => new Date('9999-12-31T23:59:59.999Z');
 
@@ -16,7 +11,7 @@ const rangesOverlap = (firstStart, firstEnd, secondStart, secondEnd) => {
   const startB = normalizeDate(secondStart);
   const endB = getRangeEnd(secondEnd);
 
-  return startA <= endB && startB <= endA;
+  return startA < endB && startB < endA;
 };
 
 const findOverlappingContracts = async (employeeId, startDate, endDate, excludeContractId = null) => {
