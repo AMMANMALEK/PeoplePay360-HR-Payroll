@@ -94,16 +94,36 @@ export function EmployeeDataProvider({ children }) {
     if (!todayRecord?.id) {
       throw new Error('Check in before checking out');
     }
+    if (todayRecord.checkIn) {
+      const checkInMs = new Date(todayRecord.checkIn).getTime();
+      const nowMs = Date.now();
+      if (nowMs - checkInMs < 60000) {
+        const remainingSec = Math.max(1, Math.ceil((60000 - (nowMs - checkInMs)) / 1000));
+        const error = new Error(
+          `Check-out cannot be at the same time as check-in. Please wait ${remainingSec}s before checking out.`
+        );
+        showToast(error.message, 'error');
+        throw error;
+      }
+    }
     await meService.updateAttendance(todayRecord.id, { checkOut: new Date().toISOString() });
-    showToast('Checked out');
+    showToast('Checked out successfully');
     await refresh();
   };
 
   const createTimeOffRequest = async (form) => {
     const persisted = await meService.createTimeOffRequest(form);
-    showToast(persisted?.message || 'Personal Leave approved successfully.');
+    showToast(persisted?.message || 'Time off request approved successfully.');
     await refresh();
     return persisted;
+  };
+
+  const updateProfile = async ({ phone }) => {
+    const updated = await meService.updateProfile({ phone });
+    setProfile(updated);
+    showToast('Mobile phone updated successfully');
+    await refresh();
+    return updated;
   };
 
   const currentYear = new Date().getFullYear();
@@ -114,9 +134,32 @@ export function EmployeeDataProvider({ children }) {
         String(row.validity || '').startsWith(String(currentYear))
     ) ||
     allocations.find((row) => row.typeName === 'Personal Leave') ||
-    allocations[0] ||
     null;
+
+  const currentSickLeave =
+    allocations.find(
+      (row) =>
+        (row.typeName === 'Sick Leave' || row.typeCode === 'SICK') &&
+        String(row.validity || '').startsWith(String(currentYear))
+    ) ||
+    allocations.find((row) => row.typeName === 'Sick Leave') ||
+    null;
+
+  const currentFestivalLeave =
+    allocations.find(
+      (row) =>
+        (row.typeName === 'Festival Leave' || row.typeCode === 'FESTIVAL') &&
+        String(row.validity || '').startsWith(String(currentYear))
+    ) ||
+    allocations.find((row) => row.typeName === 'Festival Leave') ||
+    null;
+
   const remainingLeave = Number(currentPersonalLeave?.remaining) || 0;
+  const totalRemainingLeaves =
+    (Number(currentPersonalLeave?.remaining) || 0) +
+    (Number(currentSickLeave?.remaining) || 0) +
+    (Number(currentFestivalLeave?.remaining) || 0);
+
   const pendingCount = requests.filter((row) => row.status === 'Pending').length;
 
   return (
@@ -130,6 +173,9 @@ export function EmployeeDataProvider({ children }) {
         todayRecord,
         remainingLeave,
         currentPersonalLeave,
+        currentSickLeave,
+        currentFestivalLeave,
+        totalRemainingLeaves,
         pendingCount,
         isLoading,
         error,
@@ -140,6 +186,7 @@ export function EmployeeDataProvider({ children }) {
         checkIn,
         checkOut,
         createTimeOffRequest,
+        updateProfile,
       }}
     >
       {children}

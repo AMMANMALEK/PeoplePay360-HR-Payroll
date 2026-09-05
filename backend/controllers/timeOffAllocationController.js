@@ -10,6 +10,7 @@ const {
 const {
   ensureEmployeePersonalLeaveAllocation,
   ensurePersonalLeaveType,
+  ensureEmployeeLeaveAllocations,
 } = require('../services/personalLeavePolicy');
 
 const isValidObjectId = (value) =>
@@ -74,10 +75,11 @@ const getEmployeeAllocations = async (req, res, next) => {
     }
 
     await syncExpiredAllocations(employee._id);
-    const { type } = await ensureEmployeePersonalLeaveAllocation(employee._id);
+    const allAllocations = await ensureEmployeeLeaveAllocations(employee._id);
+    const leaveTypeIds = Object.values(allAllocations).map((item) => item.type._id);
 
     const { status } = req.query;
-    const filter = { employee: employee._id, timeOffType: type._id };
+    const filter = { employee: employee._id, timeOffType: { $in: leaveTypeIds } };
 
     if (status) {
       filter.status = status;

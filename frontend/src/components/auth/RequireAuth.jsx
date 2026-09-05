@@ -20,6 +20,9 @@ export default function RequireAuth({ children, roles }) {
   }
 
   if (roles && !roles.includes(user.role)) {
+    if (user.role === ROLES.ADMIN) {
+      return children;
+    }
     if (user.role === ROLES.EMPLOYEE) {
       return <Navigate to="/employee" replace />;
     }

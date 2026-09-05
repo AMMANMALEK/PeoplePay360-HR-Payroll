@@ -1,5 +1,5 @@
 const express = require('express');
-const { getEmployeeByCode } = require('../controllers/employeeController');
+const { getEmployeeByCode, updateEmployeeByCode } = require('../controllers/employeeController');
 const {
   getEmployeeAttendance,
   createEmployeeAttendance,
@@ -42,7 +42,25 @@ const updateOwnAttendance = (req, res, next) => {
   return updateEmployeeAttendance(req, res, next);
 };
 
+const updateOwnProfile = (req, res, next) => {
+  req.params.employeeCode = req.currentEmployee.employeeCode;
+  const rawPhone = req.body?.phone !== undefined ? String(req.body.phone).trim() : undefined;
+  if (rawPhone !== undefined && rawPhone !== '') {
+    if (!/^\d{10}$/.test(rawPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mobile phone number must be exactly 10 digits',
+      });
+    }
+  }
+  req.body = {
+    phone: rawPhone,
+  };
+  return updateEmployeeByCode(req, res, next);
+};
+
 router.get('/profile', asAuthenticatedEmployee(getEmployeeByCode));
+router.put('/profile', asAuthenticatedEmployee(updateOwnProfile));
 router.get('/attendance', asAuthenticatedEmployee(getEmployeeAttendance));
 router.post('/attendance', asAuthenticatedEmployee(createEmployeeAttendance));
 router.put('/attendance/:attendanceId', asAuthenticatedEmployee(updateOwnAttendance));

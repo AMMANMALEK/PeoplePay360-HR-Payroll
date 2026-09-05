@@ -5,12 +5,9 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const hrRoutes = require('./routes/hrRoutes');
 const authRoutes = require('./routes/authRoutes');
-<<<<<<< HEAD
 const meRoutes = require('./routes/meRoutes');
 const { requireAuth, requireRole } = require('./middleware/auth');
 const { ROLES } = require('./constants/roles');
-=======
->>>>>>> 3035e89c7acb4b8ccf2f83eb29ddd1bd13812d82
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,14 +34,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-<<<<<<< HEAD
 app.use('/api/auth', authRoutes);
 app.use('/api/me', requireAuth, requireRole(ROLES.EMPLOYEE), meRoutes);
-app.use('/api/hr', requireAuth, requireRole(ROLES.HR_MANAGER), hrRoutes);
-=======
-app.use('/api/hr', hrRoutes);
-app.use('/api/auth', authRoutes);
->>>>>>> 3035e89c7acb4b8ccf2f83eb29ddd1bd13812d82
+app.use('/api/hr', requireAuth, requireRole(ROLES.HR_MANAGER, ROLES.ADMIN), hrRoutes);
 
 app.get('/', (req, res) => {
   res.json({

@@ -92,7 +92,7 @@ const createEmployeeAttendance = async (req, res, next) => {
       });
     }
 
-    if (error.message === 'Check out time must be after check in time') {
+    if (error.message && error.message.includes('Check out time')) {
       return res.status(400).json({
         success: false,
         message: error.message,
@@ -254,7 +254,7 @@ const updateEmployeeAttendance = async (req, res, next) => {
       });
     }
 
-    if (error.message === 'Check out time must be after check in time') {
+    if (error.message && error.message.includes('Check out time')) {
       return res.status(400).json({
         success: false,
         message: error.message,

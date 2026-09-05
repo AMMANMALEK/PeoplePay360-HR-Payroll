@@ -1,17 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { CheckCircle, Info, Calendar } from 'lucide-react';
 import Modal from '../ui/Modal';
+import CustomSelect from '../ui/CustomSelect';
 import { useEmployeeData } from '../../context/EmployeeDataContext';
-import { CheckCircle } from 'lucide-react';
+
+const LEAVE_OPTIONS = [
+  { value: 'SICK', label: 'Sick Leave' },
+  { value: 'FESTIVAL', label: 'Festival Leave' },
+  { value: 'PERSONAL', label: 'Personal Leave' },
+];
 
 export default function RequestTimeOffModal({ isOpen, onClose }) {
-  const { types, allocations, createTimeOffRequest } = useEmployeeData();
-  const personalType = types.find((type) => type.name === 'Personal Leave') || types[0];
-  const personalAllocation = useMemo(
-    () => allocations.find((row) => row.typeName === 'Personal Leave') || allocations[0],
-    [allocations]
-  );
+  const { allocations, createTimeOffRequest } = useEmployeeData();
+  const currentYear = new Date().getFullYear();
 
+  // Two quarters from March: March 1st to August 31st
+  const sickMinDate = `${currentYear}-03-01`;
+  const sickMaxDate = `${currentYear}-08-31`;
+
+  const [selectedType, setSelectedType] = useState('SICK');
   const [isSaving, setIsSaving] = useState(false);
+  const [dateError, setDateError] = useState('');
   const [form, setForm] = useState({
     startDate: '',
     endDate: '',
@@ -19,39 +28,118 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
   });
   const [confirmation, setConfirmation] = useState(null);
 
+  // Find allocation for the currently selected type
+  const activeAllocation = useMemo(() => {
+    return (
+      allocations.find(
+        (row) =>
+          row.typeCode === selectedType ||
+          (selectedType === 'SICK' && row.typeName === 'Sick Leave') ||
+          (selectedType === 'FESTIVAL' && row.typeName === 'Festival Leave') ||
+          (selectedType === 'PERSONAL' && row.typeName === 'Personal Leave')
+      ) || null
+    );
+  }, [allocations, selectedType]);
+
+  const isSickLeave = selectedType === 'SICK';
+
   useEffect(() => {
     if (isOpen) {
+      setSelectedType('SICK');
       setForm({ startDate: '', endDate: '', reason: '' });
+      setDateError('');
       setConfirmation(null);
       setIsSaving(false);
     }
   }, [isOpen]);
 
+  const handleTypeChange = (newType) => {
+    setSelectedType(newType);
+    setDateError('');
+    // If switching to sick leave and dates are outside March - August, clear them
+    if (newType === 'SICK') {
+      if (
+        (form.startDate && (form.startDate < sickMinDate || form.startDate > sickMaxDate)) ||
+        (form.endDate && (form.endDate < sickMinDate || form.endDate > sickMaxDate))
+      ) {
+        setForm((prev) => ({ ...prev, startDate: '', endDate: '' }));
+      }
+    }
+  };
+
+  const handleStartDateChange = (e) => {
+    const val = e.target.value;
+    setDateError('');
+    if (isSickLeave && (val < sickMinDate || val > sickMaxDate)) {
+      setDateError('Sick leave start date must be between March 1 and August 31 (2 quarters).');
+    }
+    setForm((prev) => ({
+      ...prev,
+      startDate: val,
+      endDate: prev.endDate && prev.endDate < val ? val : prev.endDate,
+    }));
+  };
+
+  const handleEndDateChange = (e) => {
+    const val = e.target.value;
+    setDateError('');
+    if (isSickLeave && (val < sickMinDate || val > sickMaxDate)) {
+      setDateError('Sick leave end date must be between March 1 and August 31 (2 quarters).');
+    }
+    setForm((prev) => ({ ...prev, endDate: val }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setDateError('');
+
+    if (isSickLeave) {
+      if (
+        form.startDate < sickMinDate ||
+        form.startDate > sickMaxDate ||
+        form.endDate < sickMinDate ||
+        form.endDate > sickMaxDate
+      ) {
+        setDateError('Sick leave can only be requested between March 1 and August 31 (2 quarters).');
+        return;
+      }
+    }
+
+    if (form.endDate < form.startDate) {
+      setDateError('End date must be on or after start date.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const persisted = await createTimeOffRequest({
         ...form,
-        timeOffType: personalType?.typeCode || 'PERSONAL',
+        timeOffType: selectedType,
       });
-      setConfirmation(persisted);
-    } catch {
-      /* toast from context */
+      setConfirmation({
+        ...persisted,
+        leaveTypeLabel:
+          LEAVE_OPTIONS.find((opt) => opt.value === selectedType)?.label || 'Time off',
+      });
+    } catch (err) {
+      setDateError(err.message || 'Failed to submit request');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const selectedLabel =
+    LEAVE_OPTIONS.find((opt) => opt.value === selectedType)?.label || 'Time Off';
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={confirmation ? 'Personal Leave approved' : 'Request Personal Leave'}
+      title={confirmation ? `${confirmation.leaveTypeLabel} approved` : 'Request Time Off'}
       description={
         confirmation
           ? 'Your request was approved automatically.'
-          : 'Personal Leave is approved immediately when your remaining balance is sufficient.'
+          : 'Submit a leave request. Requests are processed against your remaining balance.'
       }
       maxWidth="max-w-md"
     >
@@ -61,10 +149,12 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
             <div className="flex items-start gap-2.5">
               <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-slate-800" />
               <div>
-                <p className="text-sm font-semibold text-slate-900">Personal Leave approved</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {confirmation.leaveTypeLabel} approved
+                </p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                  Your leave from {confirmation.startDate} to {confirmation.endDate} has been approved
-                  automatically.
+                  Your leave from {confirmation.startDate} to {confirmation.endDate} has been
+                  approved automatically.
                 </p>
               </div>
             </div>
@@ -84,28 +174,55 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <p className="text-[11px] font-medium text-slate-700">Time Off Type</p>
-            <p className="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900">
-              {personalType?.name || 'Personal Leave'}
-            </p>
+            <CustomSelect
+              label="Time Off Type"
+              value={selectedType}
+              onChange={handleTypeChange}
+              options={LEAVE_OPTIONS}
+              icon={Calendar}
+              required
+            />
           </div>
-          {personalAllocation && (
-            <p className="text-xs text-slate-500">
-              Remaining:{' '}
-              <span className="font-semibold text-slate-800">{personalAllocation.remaining} days</span>
-              {' · '}
-              Annual allowance: {personalAllocation.allocated} days
-            </p>
+
+          {activeAllocation && (
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3.5 py-2.5 text-xs text-slate-600">
+              <span>
+                Available:{' '}
+                <strong className="text-slate-900">{activeAllocation.remaining} days</strong>
+              </span>
+              <span>
+                Allowance:{' '}
+                <strong className="text-slate-900">{activeAllocation.allocated} days</strong>
+              </span>
+            </div>
           )}
+
+          {isSickLeave && (
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-800">
+              <div className="flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-semibold text-amber-900">Sick Leave Date Window</p>
+                  <p className="mt-0.5 leading-relaxed text-amber-700">
+                    Eligible dates for Sick Leave are strictly restricted to two quarters starting
+                    from March ({currentYear}-03-01 to {currentYear}-08-31).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block text-[11px] font-medium text-slate-700">
               Start date
               <input
                 type="date"
                 required
-                className="field-input"
+                min={isSickLeave ? sickMinDate : undefined}
+                max={isSickLeave ? sickMaxDate : undefined}
+                className="field-input mt-1"
                 value={form.startDate}
-                onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                onChange={handleStartDateChange}
               />
             </label>
             <label className="block text-[11px] font-medium text-slate-700">
@@ -113,26 +230,37 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
               <input
                 type="date"
                 required
-                className="field-input"
+                min={form.startDate || (isSickLeave ? sickMinDate : undefined)}
+                max={isSickLeave ? sickMaxDate : undefined}
+                className="field-input mt-1"
                 value={form.endDate}
-                onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                onChange={handleEndDateChange}
               />
             </label>
           </div>
+
+          {dateError && (
+            <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
+              {dateError}
+            </p>
+          )}
+
           <label className="block text-[11px] font-medium text-slate-700">
             Reason
             <textarea
-              className="field-input min-h-[80px]"
+              className="field-input mt-1 min-h-[80px]"
+              placeholder="Optional notes or reason for leave"
               value={form.reason}
               onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
             />
           </label>
-          <div className="flex justify-end gap-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={isSaving}>
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={isSaving}>
-              {isSaving ? 'Submitting…' : 'Request Personal Leave'}
+              {isSaving ? 'Submitting…' : `Request ${selectedLabel}`}
             </button>
           </div>
         </form>

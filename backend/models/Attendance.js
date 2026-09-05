@@ -56,8 +56,8 @@ attendanceSchema.set('toObject', { virtuals: true });
 const applyWorkedHours = (doc) => {
   if (doc.checkIn && doc.checkOut) {
     const diffMs = new Date(doc.checkOut) - new Date(doc.checkIn);
-    if (diffMs < 0) {
-      return 'Check out time must be after check in time';
+    if (diffMs <= 0) {
+      return 'Check out time must be after check in time and cannot be at the same time';
     }
     doc.workedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
   }

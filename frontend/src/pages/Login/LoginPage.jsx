@@ -52,7 +52,7 @@ function WorkplaceIllustration() {
 }
 
 export default function LoginPage() {
-  const { login, isAuthenticated, isHrManager, isEmployee } = useAuth();
+  const { login, isAuthenticated, isHrManager, isEmployee, isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -69,7 +69,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  if (isAuthenticated && isHrManager) {
+  if (isAuthenticated && (isHrManager || isAdmin)) {
     return <Navigate to="/" replace />;
   }
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
         window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
 
-      if (user.role === ROLES.HR_MANAGER) {
+      if (user.role === ROLES.HR_MANAGER || user.role === ROLES.ADMIN) {
         window.location.assign('/');
       } else {
         window.location.assign('/employee');

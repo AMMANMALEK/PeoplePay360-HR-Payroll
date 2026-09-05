@@ -32,13 +32,22 @@ function clockToIso(dateStr, clock) {
   return local.toISOString();
 }
 
+export function normalizeAttendanceStatus(rawStatus, workedHours = 0) {
+  const s = String(rawStatus || '').toLowerCase().replace(/[\s-_]/g, '');
+  if (s.includes('absent')) return 'Absent';
+  if (s.includes('leave')) return 'On Leave';
+  if (s.includes('half') || s.includes('incomplete') || s.includes('missing') || (workedHours > 0 && workedHours < 5)) {
+    return 'Half-day';
+  }
+  return 'Present';
+}
+
 export function toFrontendAttendance(raw) {
   if (!raw) return null;
   const employee = raw.employee && typeof raw.employee === 'object' ? raw.employee : {};
   const date = raw.attendanceDate
     ? new Date(raw.attendanceDate).toISOString().split('T')[0]
     : '';
-  const statusKey = String(raw.status || 'present').toLowerCase();
 
   return {
     id: raw._id,
@@ -56,10 +65,8 @@ export function toFrontendAttendance(raw) {
     hasCheckIn: Boolean(raw.checkIn),
     hasCheckOut: Boolean(raw.checkOut),
     workedHours: raw.workedHours ?? 0,
-    status: STATUS_TO_UI[statusKey] || raw.status,
-    isException:
-      Boolean(raw.isException) ||
-      ['late', 'absent', 'exception'].includes(statusKey),
+    status: normalizeAttendanceStatus(raw.status, raw.workedHours),
+    isException: String(raw.status || '').toLowerCase().includes('absent'),
     correction: raw.correction?.reason
       ? {
           correctedBy: raw.correction.correctedBy || '',

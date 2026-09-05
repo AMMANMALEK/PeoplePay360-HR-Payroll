@@ -38,8 +38,6 @@ export default function EmployeeDetailPage() {
     attendance, 
     timeOffRequests, 
     allocations,
-    payslips,
-    currentRole,
     deleteEmployee,
     showToast 
   } = useHRData();
@@ -100,16 +98,6 @@ export default function EmployeeDetailPage() {
   const pendingLeavesCount = useMemo(() => {
     return empTimeOff.filter((t) => t.status === 'Pending').length;
   }, [empTimeOff]);
-
-  const empPayslips = useMemo(() => {
-    return (payslips || []).filter(
-      (p) => String(p.employeeId) === String(id) || p.employeeCode === employee?.employeeCode || p.employeeCode === id
-    );
-  }, [payslips, id, employee]);
-
-  const totalNetEarned = useMemo(() => {
-    return empPayslips.reduce((acc, curr) => acc + (curr.netSalary || 0), 0);
-  }, [empPayslips]);
 
   if (!employee) {
     return (
@@ -228,8 +216,8 @@ export default function EmployeeDetailPage() {
           </div>
         </div>
 
-        {/* Smart Summary: Contextual Navigation Buttons */}
-        <div className={`mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 ${currentRole === 'HR_PAYROLL_USER' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+        {/* Smart Summary: 4 Contextual Navigation Buttons */}
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SmartNavCard
             type="contracts"
             label="Contracts"
@@ -262,16 +250,6 @@ export default function EmployeeDetailPage() {
             isActive={activeTab === 'timeoff'}
             onClick={() => setActiveTab('timeoff')}
           />
-          {currentRole === 'HR_PAYROLL_USER' && (
-            <SmartNavCard
-              type="payslips"
-              label="Payslips"
-              primaryValue={`${empPayslips.length} payslips`}
-              secondaryValue={`$${totalNetEarned.toLocaleString()} earned`}
-              isActive={activeTab === 'payslips'}
-              onClick={() => setActiveTab('payslips')}
-            />
-          )}
         </div>
       </div>
 
@@ -282,10 +260,7 @@ export default function EmployeeDetailPage() {
             { key: 'overview', label: 'Overview' },
             { key: 'employment', label: `Employment (${empContracts.length})` },
             { key: 'attendance', label: `Attendance (${empAttendance.length})` },
-            { key: 'timeoff', label: `Time Off (${empTimeOff.length})` },
-            ...(currentRole === 'HR_PAYROLL_USER'
-              ? [{ key: 'payslips', label: `Payslips (${empPayslips.length})` }]
-              : [])
+            { key: 'timeoff', label: `Time Off (${empTimeOff.length})` }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -694,78 +669,6 @@ export default function EmployeeDetailPage() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 5: PAYSLIPS */}
-      {activeTab === 'payslips' && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-subtle space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Employee Payslip History ({empPayslips.length})
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Generated payroll slips and salary calculations for {employee.fullName}
-              </p>
-            </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
-              Total Disbursed: ${totalNetEarned.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-100">
-                <tr>
-                  <th className="py-3 px-4">Payslip Ref</th>
-                  <th className="py-3 px-4">Payrun Period</th>
-                  <th className="py-3 px-4">Gross Salary</th>
-                  <th className="py-3 px-4">Deductions</th>
-                  <th className="py-3 px-4">Net Take-Home</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">View Detail</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {empPayslips.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400">
-                      No payslips computed for this employee yet.
-                    </td>
-                  </tr>
-                ) : (
-                  empPayslips.map((ps) => (
-                    <tr key={ps.id} className="hover:bg-slate-50">
-                      <td className="py-3 px-4 font-bold text-slate-900">{ps.id}</td>
-                      <td className="py-3 px-4 text-slate-600">{ps.payrunPeriod}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">
-                        ${(ps.grossSalary || 0).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-rose-700">
-                        -${(ps.totalDeductions || 0).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 font-bold text-emerald-700">
-                        ${(ps.netSalary || 0).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={ps.status} size="sm" />
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/payroll/payslips/${ps.id}`)}
-                          className="rounded px-2.5 py-1 text-xs font-semibold bg-brand-400 text-slate-900 hover:bg-brand-500 shadow-xs"
-                        >
-                          View Payslip
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
               </tbody>
             </table>
           </div>

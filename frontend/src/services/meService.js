@@ -39,6 +39,14 @@ export const meService = {
     return toFrontendEmployee(response.data);
   },
 
+  async updateProfile({ phone }) {
+    const response = await apiClient(ME_PROFILE_ENDPOINT, {
+      method: 'PUT',
+      body: JSON.stringify({ phone }),
+    });
+    return toFrontendEmployee(response.data);
+  },
+
   async getAttendance() {
     const response = await apiClient(ME_ATTENDANCE_ENDPOINT);
     return Array.isArray(response?.data) ? response.data.map(toFrontendAttendance) : [];

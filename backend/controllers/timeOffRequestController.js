@@ -12,6 +12,7 @@ const {
 const {
   yearFromDate,
   ensureEmployeePersonalLeaveAllocation,
+  ensureEmployeeLeaveAllocations,
   findOverlappingRequest,
 } = require('../services/personalLeavePolicy');
 
@@ -69,25 +70,33 @@ const handleRequestError = (error, res, next) => {
 
   if (error.message === 'INSUFFICIENT_BALANCE') {
     const remaining = Number(error.remaining || 0);
+    const typeLabel = error.leaveTypeName || 'leave';
     return res.status(400).json({
       success: false,
-      message: `You have only ${remaining} Personal Leave days remaining.`,
+      message: `You have only ${remaining} ${typeLabel} days remaining.`,
       remaining,
       requested: error.requested,
+    });
+  }
+
+  if (error.message === 'SICK_LEAVE_DATE_RESTRICTION') {
+    return res.status(400).json({
+      success: false,
+      message: 'Sick leave can only be selected from March to two quarters (March 1 to August 31).',
     });
   }
 
   if (error.message === 'OVERLAPPING_REQUEST') {
     return res.status(409).json({
       success: false,
-      message: 'This request overlaps an existing Personal Leave request.',
+      message: 'This request overlaps an existing time-off request.',
     });
   }
 
   if (error.message === 'TYPE_NOT_ALLOWED') {
     return res.status(400).json({
       success: false,
-      message: 'Only Personal Leave can be requested.',
+      message: 'The selected leave type is not supported.',
     });
   }
 
@@ -161,7 +170,7 @@ const getEmployeeTimeOffRequests = async (req, res, next) => {
     }
 
     await syncExpiredAllocations(employee._id);
-    await ensureEmployeePersonalLeaveAllocation(employee._id);
+    await ensureEmployeeLeaveAllocations(employee._id);
 
     const { status } = req.query;
     const filter = { employee: employee._id };
@@ -209,25 +218,47 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
     }
 
     const executeCreate = async (session) => {
-      const { type, allocation } = await ensureEmployeePersonalLeaveAllocation(
-        employee._id,
-        yearFromDate(startDate),
-        session
-      );
+      const year = yearFromDate(startDate);
+      const allAllocations = await ensureEmployeeLeaveAllocations(employee._id, year, session);
+
+      let selectedType = null;
+      let selectedAllocation = null;
 
       if (timeOffType) {
         const requestedType = await findTimeOffTypeByIdentifier(timeOffType);
-        if (
-          !requestedType ||
-          String(requestedType._id) !== String(type._id) ||
-          requestedType.isActive === false
-        ) {
+        if (!requestedType || requestedType.isActive === false) {
           const error = new Error('TYPE_NOT_ALLOWED');
+          throw error;
+        }
+
+        const match = Object.values(allAllocations).find(
+          (item) =>
+            String(item.type._id) === String(requestedType._id) ||
+            item.type.typeCode === requestedType.typeCode
+        );
+
+        if (!match) {
+          const error = new Error('TYPE_NOT_ALLOWED');
+          throw error;
+        }
+
+        selectedType = match.type;
+        selectedAllocation = match.allocation;
+      } else {
+        selectedType = allAllocations.PERSONAL.type;
+        selectedAllocation = allAllocations.PERSONAL.allocation;
+      }
+
+      if (selectedType.typeCode === 'SICK') {
+        const allowedStart = `${year}-03-01`;
+        const allowedEnd = `${year}-08-31`;
+        if (startDate < allowedStart || endDate > allowedEnd) {
+          const error = new Error('SICK_LEAVE_DATE_RESTRICTION');
           throw error;
         }
       }
 
-      const calculatedDuration = calculateDuration(startDate, endDate, type.unit);
+      const calculatedDuration = calculateDuration(startDate, endDate, selectedType.unit);
 
       const overlap = await findOverlappingRequest(employee._id, startDate, endDate, session);
       if (overlap) {
@@ -235,10 +266,11 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
         throw error;
       }
 
-      if (allocation.remaining < calculatedDuration) {
+      if (selectedAllocation.remaining < calculatedDuration) {
         const error = new Error('INSUFFICIENT_BALANCE');
-        error.remaining = allocation.remaining;
+        error.remaining = selectedAllocation.remaining;
         error.requested = calculatedDuration;
+        error.leaveTypeName = selectedType.name;
         throw error;
       }
 
@@ -246,11 +278,11 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
         [
           {
             employee: employee._id,
-            timeOffType: type._id,
+            timeOffType: selectedType._id,
             startDate,
             endDate,
             duration: calculatedDuration,
-            unit: type.unit,
+            unit: selectedType.unit,
             reason,
             status: 'pending',
           },
@@ -261,7 +293,7 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
       await approveTimeOffRequest(
         created,
         null,
-        'Personal Leave approved automatically.',
+        `${selectedType.name} approved automatically.`,
         session
       );
 

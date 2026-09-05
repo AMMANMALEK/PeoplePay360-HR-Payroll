@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import StatCard from '../../components/ui/StatCard';
@@ -18,13 +18,39 @@ export default function EmployeeDashboardPage() {
     profile,
     attendance,
     requests,
-    remainingLeave,
-    currentPersonalLeave,
-    pendingCount,
-    todayRecord,
+    totalRemainingLeaves,
     isLoading,
     error,
   } = useEmployeeData();
+
+  // Calculate unique, non-repetitive metrics for dashboard KPIs
+  const currentMonthPrefix = useMemo(() => {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${m}`;
+  }, []);
+
+  const presentDaysThisMonth = useMemo(() => {
+    return attendance.filter(
+      (r) =>
+        String(r.date || '').startsWith(currentMonthPrefix) &&
+        (r.status === 'present' || r.status === 'Present')
+    ).length;
+  }, [attendance, currentMonthPrefix]);
+
+  const totalWorkedHours = useMemo(() => {
+    const sum = attendance.reduce((acc, r) => acc + (Number(r.workedHours) || 0), 0);
+    return Math.round(sum * 10) / 10;
+  }, [attendance]);
+
+  const scheduleDisplay = useMemo(() => {
+    if (profile?.scheduleName) return profile.scheduleName;
+    if (profile?.workingSchedule?.name) return profile.workingSchedule.name;
+    if (profile?.workingSchedule?.weeklyHours) {
+      return `${profile.workingSchedule.weeklyHours}h / week`;
+    }
+    return 'Standard 40h/wk';
+  }, [profile]);
 
   if (isLoading) {
     return <SkeletonLoader />;
@@ -39,7 +65,7 @@ export default function EmployeeDashboardPage() {
   const recentRequests = requests.slice(0, 6);
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
           {greetingLabel()}, {firstName}
@@ -47,46 +73,40 @@ export default function EmployeeDashboardPage() {
         <p className="mt-1.5 text-sm text-slate-500">Here's your work and leave overview.</p>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* 4 Unique Read-Only KPI Cards with proper spacing */}
+      <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Attendance"
-          value={attendance.length}
-          subtext="Your recorded days"
+          title="Monthly Presence"
+          value={`${presentDaysThisMonth} ${presentDaysThisMonth === 1 ? 'Day' : 'Days'}`}
+          subtext="Current month attendance"
           icon="present"
           colorScheme="mint"
-          onClick={() => navigate('/employee/attendance')}
         />
         <StatCard
-          title="Personal Leave"
-          value={`${currentPersonalLeave?.remaining ?? remainingLeave}`}
-          subtext={
-            currentPersonalLeave
-              ? `${currentPersonalLeave.allocated} days annual allowance · ${currentPersonalLeave.remaining} remaining`
-              : 'Your Personal Leave remaining days'
-          }
-          icon="calendar"
-          colorScheme="lime"
-          onClick={() => navigate('/employee/time-off')}
-        />
-        <StatCard
-          title="Pending requests"
-          value={pendingCount}
-          subtext="Personal Leave is approved automatically"
-          icon="alert"
-          colorScheme="peach"
-          onClick={() => navigate('/employee/time-off')}
-        />
-        <StatCard
-          title="Today's status"
-          value={todayRecord?.status || '—'}
-          subtext={todayRecord ? 'From your attendance record' : 'Not recorded yet'}
+          title="Hours Logged"
+          value={`${totalWorkedHours.toFixed(1)} hrs`}
+          subtext="Tracked working hours"
           icon="health"
           colorScheme="sky"
-          onClick={() => navigate('/employee/attendance')}
+        />
+        <StatCard
+          title="Total Available Leaves"
+          value={`${totalRemainingLeaves} Days`}
+          subtext="Across Personal, Sick & Festival"
+          icon="calendar"
+          colorScheme="lime"
+        />
+        <StatCard
+          title="Working Schedule"
+          value={scheduleDisplay}
+          subtext="Assigned work shift"
+          icon="alert"
+          colorScheme="peach"
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+      {/* Today's Attendance & Leave Balance */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
         <div className="xl:col-span-3">
           <TodayAttendanceCard />
         </div>
@@ -102,7 +122,8 @@ export default function EmployeeDashboardPage() {
         </section>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+      {/* Recent Tables with proper spacing */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <section className="app-card overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
@@ -135,8 +156,8 @@ export default function EmployeeDashboardPage() {
                   {recentAttendance.map((row) => (
                     <tr key={row.id}>
                       <td className="px-5 py-3.5 font-medium text-slate-900">{row.date}</td>
-                      <td className="px-3 py-3.5 text-slate-700">{row.checkInDisplay || row.checkIn}</td>
-                      <td className="px-3 py-3.5 text-slate-700">{row.checkOutDisplay || row.checkOut}</td>
+                      <td className="px-3 py-3.5 text-slate-700">{row.checkInDisplay || row.checkIn || '--'}</td>
+                      <td className="px-3 py-3.5 text-slate-700">{row.checkOutDisplay || row.checkOut || '--'}</td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={row.status} size="sm" />
                       </td>
@@ -152,7 +173,7 @@ export default function EmployeeDashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
               <h3 className="text-base font-semibold text-slate-900">Time off requests</h3>
-              <p className="text-xs text-slate-500">Personal Leave is approved automatically.</p>
+              <p className="text-xs text-slate-500">Personal, Sick & Festival leaves.</p>
             </div>
             <button type="button" className="btn-primary" onClick={() => setIsRequestOpen(true)}>
               Request time off

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, Clock } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 import { useEmployeeData } from '../../context/EmployeeDataContext';
 import { localToday } from '../../services/meService';
@@ -6,6 +7,28 @@ import { localToday } from '../../services/meService';
 export default function TodayAttendanceCard() {
   const { todayRecord, isLoading, checkIn, checkOut } = useEmployeeData();
   const [isSaving, setIsSaving] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!todayRecord?.checkIn || todayRecord?.hasCheckOut) {
+      setCooldownSeconds(0);
+      return;
+    }
+
+    const checkInMs = new Date(todayRecord.checkIn).getTime();
+    const updateCooldown = () => {
+      const diffMs = Date.now() - checkInMs;
+      if (diffMs < 60000) {
+        setCooldownSeconds(Math.ceil((60000 - diffMs) / 1000));
+      } else {
+        setCooldownSeconds(0);
+      }
+    };
+
+    updateCooldown();
+    const interval = setInterval(updateCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [todayRecord?.checkIn, todayRecord?.hasCheckOut]);
 
   const handleAction = async (action) => {
     setIsSaving(true);
@@ -20,6 +43,7 @@ export default function TodayAttendanceCard() {
 
   const canCheckIn = !todayRecord?.hasCheckIn;
   const canCheckOut = Boolean(todayRecord?.hasCheckIn && !todayRecord?.hasCheckOut);
+  const isCheckOutDisabled = isSaving || cooldownSeconds > 0;
 
   return (
     <section className="app-card p-5">
@@ -61,17 +85,30 @@ export default function TodayAttendanceCard() {
               </button>
             )}
             {canCheckOut && (
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={isSaving}
-                onClick={() => handleAction(checkOut)}
-              >
-                {isSaving ? 'Saving…' : 'Check out'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className={`btn-primary ${
+                    isCheckOutDisabled ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
+                  disabled={isCheckOutDisabled}
+                  onClick={() => handleAction(checkOut)}
+                >
+                  {isSaving ? 'Saving…' : cooldownSeconds > 0 ? `Wait ${cooldownSeconds}s` : 'Check out'}
+                </button>
+                {cooldownSeconds > 0 && (
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    Cannot check out at the same time as check in. Available in {cooldownSeconds}s.
+                  </p>
+                )}
+              </div>
             )}
             {todayRecord?.hasCheckIn && todayRecord?.hasCheckOut && (
-              <p className="text-xs text-slate-500">Today's attendance is complete.</p>
+              <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                Today's attendance is complete ({todayRecord?.workedHours || 0} hrs logged).
+              </p>
             )}
           </div>
         </>

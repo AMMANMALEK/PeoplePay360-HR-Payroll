@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { UserCheck, Clock, UserX, AlertOctagon, Timer, FileEdit, History } from 'lucide-react';
+import { UserCheck, Clock, UserX, CalendarCheck, FileEdit, LogIn, LogOut, CheckCircle2 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import FilterBar from '../../components/ui/FilterBar';
@@ -12,27 +13,67 @@ export default function AttendancePage() {
   const [searchParams] = useSearchParams();
   const filterQuery = searchParams.get('filter');
 
-  const { attendance, departments } = useHRData();
+  const { user, isHrManager, isAdmin } = useAuth();
+  const { attendance, departments, hrCheckIn, hrCheckOut } = useHRData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isCorrectionOpen, setIsCorrectionOpen] = useState(false);
+  const [isProcessingHrAction, setIsProcessingHrAction] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
-    status: filterQuery === 'exceptions' ? 'Exceptions Only' : 'All',
+    status: 'All',
     date: ''
   });
 
-  // Calculate summary counts
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Find HR Manager's today record
+  const hrTodayRecord = useMemo(() => {
+    return (
+      attendance.find(
+        (a) =>
+          a.date === todayStr &&
+          (a.employeeCode === 'HRMGR' ||
+            a.employeeId === 'HRMGR' ||
+            a.employeeName?.toLowerCase().includes('hr manager'))
+      ) || null
+    );
+  }, [attendance, todayStr]);
+
+  const canCheckIn = !hrTodayRecord?.hasCheckIn && (!hrTodayRecord?.checkIn || hrTodayRecord?.checkIn === '--:--');
+  const canCheckOut = Boolean(
+    (hrTodayRecord?.hasCheckIn || (hrTodayRecord?.checkIn && hrTodayRecord?.checkIn !== '--:--')) &&
+      (!hrTodayRecord?.hasCheckOut && (!hrTodayRecord?.checkOut || hrTodayRecord?.checkOut === '--:--'))
+  );
+
+  const handleHrCheckIn = async () => {
+    setIsProcessingHrAction(true);
+    try {
+      await hrCheckIn('HRMGR');
+    } finally {
+      setIsProcessingHrAction(false);
+    }
+  };
+
+  const handleHrCheckOut = async () => {
+    setIsProcessingHrAction(true);
+    try {
+      await hrCheckOut('HRMGR');
+    } finally {
+      setIsProcessingHrAction(false);
+    }
+  };
+
+  // Calculate summary counts strictly for the 4 valid statuses
   const summary = useMemo(() => {
+    const norm = (s) => String(s || '').toLowerCase().replace(/[\s-_]/g, '');
     return {
-      present: attendance.filter((a) => a.status === 'Present').length,
-      late: attendance.filter((a) => a.status === 'Late').length,
-      absent: attendance.filter((a) => a.status === 'Absent').length,
-      incomplete: attendance.filter((a) => a.status === 'Incomplete').length,
-      overtime: attendance.filter((a) => a.status === 'Overtime').length,
-      corrected: attendance.filter((a) => !!a.correction).length
+      present: attendance.filter((a) => norm(a.status) === 'present').length,
+      absent: attendance.filter((a) => norm(a.status) === 'absent').length,
+      halfDay: attendance.filter((a) => norm(a.status) === 'halfday').length,
+      onLeave: attendance.filter((a) => norm(a.status) === 'onleave' || norm(a.status) === 'leave').length,
     };
   }, [attendance]);
 
@@ -46,12 +87,11 @@ export default function AttendancePage() {
       key: 'status',
       label: 'Status',
       options: [
-        { label: 'Exceptions Only', value: 'Exceptions Only' },
+        { label: 'All', value: 'All' },
         { label: 'Present', value: 'Present' },
-        { label: 'Late', value: 'Late' },
         { label: 'Absent', value: 'Absent' },
-        { label: 'Incomplete', value: 'Incomplete' },
-        { label: 'Overtime', value: 'Overtime' }
+        { label: 'Half-day', value: 'Half-day' },
+        { label: 'On Leave', value: 'On Leave' }
       ]
     }
   ];
@@ -80,14 +120,10 @@ export default function AttendancePage() {
         return false;
       }
 
-      if (activeFilters.status === 'Exceptions Only' && !a.isException) {
-        return false;
-      } else if (
-        activeFilters.status !== 'All' &&
-        activeFilters.status !== 'Exceptions Only' &&
-        a.status !== activeFilters.status
-      ) {
-        return false;
+      if (activeFilters.status !== 'All') {
+        const normFilter = activeFilters.status.toLowerCase().replace(/[\s-_]/g, '');
+        const normRow = (a.status || '').toLowerCase().replace(/[\s-_]/g, '');
+        if (normFilter !== normRow) return false;
       }
 
       if (activeFilters.date && a.date && a.date !== activeFilters.date) {
@@ -106,7 +142,7 @@ export default function AttendancePage() {
       render: (name, row) => (
         <div>
           <div className="font-semibold text-slate-900">{name}</div>
-          <div className="text-[11px] text-slate-400 font-mono">{row.employeeId}</div>
+          <div className="text-[11px] text-slate-400 font-mono">{row.employeeId || row.employeeCode}</div>
         </div>
       )
     },
@@ -147,22 +183,9 @@ export default function AttendancePage() {
     },
     {
       key: 'status',
-      label: 'Status & Exception',
+      label: 'Status',
       sortable: true,
-      render: (status, row) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <StatusBadge status={status} />
-          {status === 'Incomplete' ? (
-            <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-              ⚠ Missing checkout
-            </span>
-          ) : row.isException ? (
-            <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-              ⚠ Exception
-            </span>
-          ) : null}
-        </div>
-      )
+      render: (status) => <StatusBadge status={status} />
     },
     {
       key: 'correction',
@@ -180,19 +203,24 @@ export default function AttendancePage() {
       key: 'actions',
       label: 'Action',
       align: 'right',
-      render: (_, row) => (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedRecord(row);
-            setIsCorrectionOpen(true);
-          }}
-          className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-brand-50"
-        >
-          <FileEdit className="h-3 w-3" />
-          <span>Correct</span>
-        </button>
-      )
+      render: (_, row) => {
+        const isAbsent = String(row.status || '').toLowerCase() === 'absent';
+        if (!isAbsent) return null;
+
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedRecord(row);
+              setIsCorrectionOpen(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-brand-50 transition-colors"
+          >
+            <FileEdit className="h-3 w-3" />
+            <span>Correct</span>
+          </button>
+        );
+      }
     }
   ];
 
@@ -200,51 +228,121 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <PageHeader
         title="Attendance"
-        subtitle="Review presence, exceptions, and authorized corrections."
+        subtitle="Review presence, shift check-ins, and authorized corrections."
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded-[18px] bg-[#e4f4ea] p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800">
-            <UserCheck className="h-3.5 w-3.5" />
+      {/* HR Manager / Admin Check-In and Check-Out Bar */}
+      <div className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-card">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-900 font-bold text-sm shadow-subtle">
+              HR
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-semibold text-slate-900">
+                  {isHrManager ? 'My Attendance (HR Manager)' : 'HR Manager Daily Attendance'}
+                </h3>
+                <StatusBadge
+                  status={hrTodayRecord?.status || (hrTodayRecord?.checkIn && hrTodayRecord.checkIn !== '--:--' ? 'Present' : 'Absent')}
+                  size="sm"
+                />
+                {isAdmin && (
+                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                    Visible to Admin
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-xs">
+              <div className="rounded-xl bg-slate-50 px-3 py-1.5 border border-slate-200/70">
+                <span className="text-[10px] text-slate-400 block font-medium">Check In</span>
+                <span className="font-semibold text-slate-800 font-mono">{hrTodayRecord?.checkIn || '--:--'}</span>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-3 py-1.5 border border-slate-200/70">
+                <span className="text-[10px] text-slate-400 block font-medium">Check Out</span>
+                <span className="font-semibold text-slate-800 font-mono">{hrTodayRecord?.checkOut || '--:--'}</span>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-3 py-1.5 border border-slate-200/70">
+                <span className="text-[10px] text-slate-400 block font-medium">Worked</span>
+                <span className="font-semibold text-slate-800 font-mono">
+                  {hrTodayRecord?.workedHours ? `${hrTodayRecord.workedHours}h` : '0h'}
+                </span>
+              </div>
+            </div>
+
+            {canCheckIn && (
+              <button
+                type="button"
+                disabled={isProcessingHrAction}
+                onClick={handleHrCheckIn}
+                className="btn-primary"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span>{isProcessingHrAction ? 'Checking In…' : 'Check In'}</span>
+              </button>
+            )}
+
+            {canCheckOut && (
+              <button
+                type="button"
+                disabled={isProcessingHrAction}
+                onClick={handleHrCheckOut}
+                className="btn-primary"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{isProcessingHrAction ? 'Checking Out…' : 'Check Out'}</span>
+              </button>
+            )}
+
+            {!canCheckIn && !canCheckOut && (
+              <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 border border-emerald-200/80">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Shift Completed</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Attendance Status KPI Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
+        <div className="rounded-[18px] bg-[#e4f4ea] p-4 border border-emerald-100/60 shadow-subtle">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800">
+            <UserCheck className="h-4 w-4" />
             Present
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.present}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{summary.present}</div>
         </div>
-        <div className="rounded-[18px] bg-[#fde9d8] p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800">
-            <Clock className="h-3.5 w-3.5" />
-            Late
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.late}</div>
-        </div>
-        <div className="rounded-[18px] bg-[#fce8e8] p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-rose-800">
-            <UserX className="h-3.5 w-3.5" />
+
+        <div className="rounded-[18px] bg-[#fce8e8] p-4 border border-rose-100/60 shadow-subtle">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-800">
+            <UserX className="h-4 w-4" />
             Absent
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.absent}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{summary.absent}</div>
         </div>
-        <div className="rounded-[18px] bg-[#eee8fb] p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-violet-800">
-            <AlertOctagon className="h-3.5 w-3.5" />
-            Incomplete
+
+        <div className="rounded-[18px] bg-[#fde9d8] p-4 border border-amber-100/60 shadow-subtle">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+            <Clock className="h-4 w-4" />
+            Half-day
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.incomplete}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{summary.halfDay}</div>
         </div>
-        <div className="rounded-[18px] bg-[#e4eefc] p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-sky-800">
-            <Timer className="h-3.5 w-3.5" />
-            Overtime
+
+        <div className="rounded-[18px] bg-[#e4eefc] p-4 border border-sky-100/60 shadow-subtle">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-800">
+            <CalendarCheck className="h-4 w-4" />
+            On Leave
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.overtime}</div>
-        </div>
-        <div className="rounded-[18px] bg-slate-100 p-4">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-            <History className="h-3.5 w-3.5" />
-            Corrected
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.corrected}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">{summary.onLeave}</div>
         </div>
       </div>
 
