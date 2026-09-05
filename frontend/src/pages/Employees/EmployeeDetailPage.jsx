@@ -335,7 +335,11 @@ export default function EmployeeDetailPage() {
                 </div>
                 <div>
                   <span className="text-slate-400 font-medium">Assigned Working Schedule</span>
-                  <p className="font-semibold text-slate-900 mt-0.5">{employee.scheduleName}</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">
+                    {typeof employee.scheduleName === 'object' && employee.scheduleName !== null
+                      ? (employee.scheduleName.name || employee.scheduleName.scheduleCode || 'Standard')
+                      : (employee.scheduleName || 'Standard')}
+                  </p>
                 </div>
                 <div>
                   <span className="text-slate-400 font-medium">Employment Status</span>

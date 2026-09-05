@@ -117,7 +117,11 @@ export default function EmployeeKanbanView({ employees, departments }) {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px]">
-                        <span className="font-medium text-slate-600 truncate">{emp.scheduleName}</span>
+                        <span className="font-medium text-slate-600 truncate">
+                          {typeof emp.scheduleName === 'object' && emp.scheduleName !== null
+                            ? (emp.scheduleName.name || emp.scheduleName.scheduleCode || 'Standard')
+                            : (emp.scheduleName || 'Standard')}
+                        </span>
                         <span className="flex items-center font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
                           Profile <ArrowRight className="ml-1 h-3 w-3" />
                         </span>
