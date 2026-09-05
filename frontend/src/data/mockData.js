@@ -236,8 +236,8 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Sarah Jenkins",
     department: "Engineering",
     position: "Staff Software Engineer",
-    startDate: "2023-04-01",
-    endDate: "2025-03-31",
+    startDate: "2024-04-01",
+    endDate: "2027-03-31",
     wage: "$145,000 / yr",
     salaryStructure: "Standard Tech Band 5",
     status: "Active",
@@ -252,7 +252,7 @@ export const INITIAL_CONTRACTS = [
     department: "Engineering",
     position: "Senior Software Engineer",
     startDate: "2022-03-15",
-    endDate: "2023-03-31",
+    endDate: "2024-03-31",
     wage: "$120,000 / yr",
     salaryStructure: "Standard Tech Band 4",
     status: "Expired",
@@ -267,12 +267,12 @@ export const INITIAL_CONTRACTS = [
     department: "Product & Design",
     position: "Senior Product Designer",
     startDate: "2023-08-01",
-    endDate: "2026-07-31",
+    endDate: "2027-07-31",
     wage: "$128,000 / yr",
     salaryStructure: "Design Specialist Band 4",
     status: "Active",
     isCurrent: true,
-    notes: "Standard 3-year term"
+    notes: "Standard 4-year term"
   },
   {
     id: "CNT-2021-014",
@@ -287,7 +287,7 @@ export const INITIAL_CONTRACTS = [
     salaryStructure: "Design Specialist Band 3",
     status: "Expired",
     isCurrent: false,
-    notes: "Superseded upon promotion"
+    notes: "Superseded upon promotion to Senior Designer"
   },
   {
     id: "CNT-2023-110",
@@ -296,13 +296,13 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Elena Rostova",
     department: "People & HR",
     position: "Talent Acquisition Lead",
-    startDate: "2023-01-10",
-    endDate: "2024-10-15", // Expiring soon!
+    startDate: "2025-01-10",
+    endDate: "2026-10-15", // Expiring within 40 days of 2026-09-05!
     wage: "$96,000 / yr",
     salaryStructure: "People Ops Band 3",
     status: "Active",
     isCurrent: true,
-    notes: "Expires within 45 days. Renewal draft initiated."
+    notes: "Expires within 45 days. Renewal review initiated."
   },
   {
     id: "CNT-2020-002",
@@ -312,12 +312,12 @@ export const INITIAL_CONTRACTS = [
     department: "Engineering",
     position: "VP of Engineering & Ops",
     startDate: "2020-05-18",
-    endDate: "2026-12-31",
+    endDate: "2028-12-31",
     wage: "$210,000 / yr",
     salaryStructure: "Executive Level 1",
     status: "Active",
     isCurrent: true,
-    notes: "Executive tenure contract"
+    notes: "Executive tenure agreement"
   },
   {
     id: "CNT-2023-305",
@@ -326,13 +326,13 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Amina Diallo",
     department: "Engineering",
     position: "Junior Frontend Developer",
-    startDate: "2023-09-01",
-    endDate: "2024-09-30", // Expiring very soon!
+    startDate: "2025-09-01",
+    endDate: "2026-09-25", // Expiring in 20 days!
     wage: "$72,000 / yr",
     salaryStructure: "Graduate Band 1",
     status: "Active",
     isCurrent: true,
-    notes: "1-year junior probationary contract ending this month"
+    notes: "1-year junior probationary agreement ending this month"
   },
   {
     id: "CNT-2021-098",
@@ -341,8 +341,8 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Lucas Silva",
     department: "Sales & Marketing",
     position: "Enterprise Sales Director",
-    startDate: "2021-11-15",
-    endDate: "2025-11-14",
+    startDate: "2023-11-15",
+    endDate: "2027-11-14",
     wage: "$130,000 / yr + OTE",
     salaryStructure: "Sales Senior Band 2",
     status: "Active",
@@ -356,8 +356,8 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Chloe Bennett",
     department: "Sales & Marketing",
     position: "Marketing Specialist",
-    startDate: "2024-02-01",
-    endDate: "2024-10-01", // Expiring soon!
+    startDate: "2026-02-01",
+    endDate: "2026-10-01", // Expiring in 26 days!
     wage: "$35 / hr",
     salaryStructure: "Part-Time Hourly",
     status: "Active",
@@ -371,13 +371,28 @@ export const INITIAL_CONTRACTS = [
     employeeName: "Liam O'Connor",
     department: "Finance & Operations",
     position: "Operations Coordinator",
-    startDate: "2022-06-01",
-    endDate: "2023-12-31",
+    startDate: "2023-06-01",
+    endDate: "2025-12-31",
     wage: "$68,000 / yr",
     salaryStructure: "Operations Band 2",
     status: "Expired",
     isCurrent: false,
-    notes: "Contract ended and not renewed"
+    notes: "Contract term concluded"
+  },
+  {
+    id: "CNT-2026-088",
+    contractName: "Senior Operations Specialist Agreement",
+    employeeId: "EMP-1008",
+    employeeName: "Liam O'Connor",
+    department: "Finance & Operations",
+    position: "Operations Coordinator",
+    startDate: "2026-01-01",
+    endDate: "2027-12-31",
+    wage: "$76,000 / yr",
+    salaryStructure: "Operations Band 3",
+    status: "Active",
+    isCurrent: true,
+    notes: "Active promotion term"
   }
 ];
 

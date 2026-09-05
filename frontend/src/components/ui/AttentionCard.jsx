@@ -13,27 +13,28 @@ export default function AttentionCard({ item }) {
   const navigate = useNavigate();
   const IconComponent = ICON_COMPONENTS[item.icon] || AlertTriangle;
 
+  // Visual severity indicators according to design guidelines
   const typeStyles = {
-    urgent: {
-      border: 'border-amber-300 bg-amber-50/50 hover:bg-amber-50/90',
-      badge: 'bg-amber-100 text-amber-800 border-amber-300',
-      icon: 'bg-amber-100 text-amber-700',
-      dot: 'bg-amber-500',
-      btn: 'text-amber-900 bg-white hover:bg-amber-100 border border-amber-200 shadow-subtle'
-    },
     warning: {
-      border: 'border-rose-300 bg-rose-50/40 hover:bg-rose-50/80',
-      badge: 'bg-rose-100 text-rose-800 border-rose-300',
+      border: 'border-rose-200 bg-rose-50/40 hover:bg-rose-50/80 hover:border-rose-300',
+      badge: 'bg-rose-100 text-rose-800 border-rose-200',
       icon: 'bg-rose-100 text-rose-700',
       dot: 'bg-rose-500',
-      btn: 'text-rose-900 bg-white hover:bg-rose-100 border border-rose-200 shadow-subtle'
+      btn: 'text-rose-900 bg-white hover:bg-rose-50 border border-rose-200 shadow-2xs'
+    },
+    urgent: {
+      border: 'border-amber-200 bg-amber-50/40 hover:bg-amber-50/80 hover:border-amber-300',
+      badge: 'bg-amber-100 text-amber-800 border-amber-200',
+      icon: 'bg-amber-100 text-amber-700',
+      dot: 'bg-amber-500',
+      btn: 'text-amber-900 bg-white hover:bg-amber-50 border border-amber-200 shadow-2xs'
     },
     info: {
-      border: 'border-sky-300 bg-sky-50/40 hover:bg-sky-50/80',
-      badge: 'bg-sky-100 text-sky-800 border-sky-300',
+      border: 'border-sky-200 bg-sky-50/40 hover:bg-sky-50/80 hover:border-sky-300',
+      badge: 'bg-sky-100 text-sky-800 border-sky-200',
       icon: 'bg-sky-100 text-sky-700',
       dot: 'bg-sky-500',
-      btn: 'text-sky-900 bg-white hover:bg-sky-100 border border-sky-200 shadow-subtle'
+      btn: 'text-sky-900 bg-white hover:bg-sky-50 border border-sky-200 shadow-2xs'
     }
   };
 
@@ -42,18 +43,18 @@ export default function AttentionCard({ item }) {
   return (
     <div
       onClick={() => navigate(item.targetRoute)}
-      className={`group flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:shadow-hover hover:-translate-y-0.5 sm:flex-row sm:items-center ${style.border}`}
+      className={`group flex flex-col justify-between rounded-xl border p-4.5 cursor-pointer transition-all duration-200 hover:shadow-hover hover:-translate-y-0.5 sm:flex-row sm:items-center ${style.border}`}
     >
       <div className="flex items-start gap-3.5">
-        <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-subtle ${style.icon}`}>
+        <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-2xs ${style.icon}`}>
           <IconComponent className="h-4 w-4" />
         </div>
         <div>
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${style.dot} animate-pulse`} />
-            <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+            <h3 className="text-xs font-bold text-slate-900">{item.title}</h3>
             {item.count && (
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.2 text-[11px] font-bold ${style.badge}`}>
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.2 text-[10px] font-bold ${style.badge}`}>
                 {item.count}
               </span>
             )}

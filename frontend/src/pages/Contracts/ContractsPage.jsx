@@ -45,11 +45,19 @@ export default function ContractsPage() {
 
   // Helper to calculate computed status
   const getContractStatus = (c) => {
-    if (c.status === 'Active' && c.endDate) {
+    if (c.endDate) {
       const end = new Date(c.endDate);
       const now = new Date('2026-09-05');
+      if (end < now) {
+        return 'Expired';
+      }
       const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-      if (diff >= 0 && diff <= 45) return 'Expiring Soon';
+      if (diff >= 0 && diff <= 45 && c.status === 'Active') return 'Expiring Soon';
+    }
+    if (c.startDate) {
+      const start = new Date(c.startDate);
+      const now = new Date('2026-09-05');
+      if (start > now) return 'Scheduled';
     }
     return c.status;
   };
@@ -165,14 +173,17 @@ export default function ContractsPage() {
       sortable: true,
       render: (_, row) => {
         const computedStatus = getContractStatus(row);
+        const isPastEnd = row.endDate && new Date(row.endDate) < new Date('2026-09-05');
+        const isCurrentActive = row.isCurrent && row.status === 'Active' && !isPastEnd;
+
         return (
           <div className="flex items-center gap-1.5 flex-wrap">
             <StatusBadge status={computedStatus} />
-            {row.isCurrent && row.status === 'Active' ? (
-              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+            {isCurrentActive ? (
+              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200 shadow-2xs">
                 CURRENT ACTIVE
               </span>
-            ) : row.status === 'Expired' ? (
+            ) : computedStatus === 'Expired' || isPastEnd ? (
               <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-200">
                 HISTORICAL
               </span>

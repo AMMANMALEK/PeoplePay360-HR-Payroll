@@ -62,11 +62,17 @@ export default function EmployeeDetailPage() {
   }, [contracts, id]);
 
   const activeContract = useMemo(() => {
-    return empContracts.find((c) => c.isCurrent && c.status === 'Active');
+    return empContracts.find((c) => {
+      const isPastEnd = c.endDate && new Date(c.endDate) < new Date('2026-09-05');
+      return c.isCurrent && c.status === 'Active' && !isPastEnd;
+    });
   }, [empContracts]);
 
   const historicalContracts = useMemo(() => {
-    return empContracts.filter((c) => !c.isCurrent || c.status !== 'Active');
+    return empContracts.filter((c) => {
+      const isPastEnd = c.endDate && new Date(c.endDate) < new Date('2026-09-05');
+      return !c.isCurrent || c.status !== 'Active' || isPastEnd;
+    });
   }, [empContracts]);
 
   const empAttendance = useMemo(() => {
