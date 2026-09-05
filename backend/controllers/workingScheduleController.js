@@ -158,51 +158,6 @@ const deleteWorkingSchedule = async (req, res, next) => {
   }
 };
 
-const assignScheduleToEmployee = async (req, res, next) => {
-  try {
-    const employee = await findEmployeeByCode(req.params.employeeCode);
-
-    if (!employee) {
-      return res.status(404).json({
-        success: false,
-        message: 'Employee not found with the given employee code',
-      });
-    }
-
-    if (!req.body.workingSchedule) {
-      return res.status(400).json({
-        success: false,
-        message: 'Working schedule is required',
-      });
-    }
-
-    const schedule = await findScheduleByIdentifier(req.body.workingSchedule);
-
-    if (!schedule) {
-      return res.status(400).json({
-        success: false,
-        message: 'Working schedule not found',
-      });
-    }
-
-    employee.workingSchedule = schedule._id;
-    await employee.save();
-
-    const populatedEmployee = await employee.populate(
-      'workingSchedule',
-      'name scheduleCode scheduleType weeklyHours weeklyPattern'
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'Working schedule assigned to employee successfully',
-      data: populatedEmployee,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 module.exports = {
   getAllWorkingSchedules,
   getWorkingScheduleById,

@@ -2,7 +2,6 @@ const express = require('express');
 const employeeRoutes = require('./employeeRoutes');
 const attendanceRoutes = require('./attendanceRoutes');
 const employeeContractRoutes = require('./employeeContractRoutes');
-const employeeScheduleRoutes = require('./employeeScheduleRoutes');
 const contractRoutes = require('./contractRoutes');
 const workingScheduleRoutes = require('./workingScheduleRoutes');
 const timeOffRoutes = require('./timeOffRoutes');
@@ -19,7 +18,6 @@ router.use('/contracts', contractRoutes);
 router.use('/time-off', timeOffRoutes);
 router.use('/employees/:employeeCode/attendance', validateEmployeeCode, attendanceRoutes);
 router.use('/employees/:employeeCode/contracts', validateEmployeeCode, employeeContractRoutes);
-router.use('/employees/:employeeCode/working-schedule', validateEmployeeCode, employeeScheduleRoutes);
 router.use(
   '/employees/:employeeCode/time-off/allocations',
   validateEmployeeCode,

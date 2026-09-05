@@ -1,6 +1,11 @@
+const mongoose = require('mongoose');
 const Employee = require('../models/Employee');
-const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
 const { findEmployeeByCode, findEmployeeByCodeOrId } = require('../utils/employeeHelper');
+const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
+
+const isValidObjectId = (value) =>
+  mongoose.Types.ObjectId.isValid(value) &&
+  String(new mongoose.Types.ObjectId(value)) === String(value);
 
 const resolveManager = async (managerValue) => {
   if (managerValue === undefined || managerValue === null || managerValue === '') {
@@ -17,6 +22,16 @@ const resolveManager = async (managerValue) => {
   return managerEmployee._id;
 };
 
+const resolveWorkingSchedule = async (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+
+  const schedule = await findScheduleByIdentifier(value);
+  if (!schedule) throw new Error('SCHEDULE_NOT_FOUND');
+  
+  return schedule._id;
+};
+
 const prepareEmployeePayload = async (body) => {
   const payload = { ...body };
 
@@ -25,18 +40,7 @@ const prepareEmployeePayload = async (body) => {
   }
 
   if ('workingSchedule' in payload) {
-    if (payload.workingSchedule === null || payload.workingSchedule === '') {
-      payload.workingSchedule = null;
-    } else {
-      const schedule = await findScheduleByIdentifier(payload.workingSchedule);
-
-      if (!schedule) {
-        const error = new Error('SCHEDULE_NOT_FOUND');
-        throw error;
-      }
-
-      payload.workingSchedule = schedule._id;
-    }
+    payload.workingSchedule = await resolveWorkingSchedule(payload.workingSchedule);
   }
 
   return payload;
@@ -88,14 +92,8 @@ const getAllEmployees = async (req, res, next) => {
     const { status, department, search } = req.query;
     const filter = {};
 
-    if (status) {
-      filter.status = status;
-    }
-
-    if (department) {
-      filter.department = department;
-    }
-
+    if (status) filter.status = status;
+    if (department) filter.department = department;
     if (search) {
       filter.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -110,11 +108,7 @@ const getAllEmployees = async (req, res, next) => {
       .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours')
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      count: employees.length,
-      data: employees,
-    });
+    res.status(200).json({ success: true, count: employees.length, data: employees });
   } catch (error) {
     next(error);
   }
@@ -123,7 +117,7 @@ const getAllEmployees = async (req, res, next) => {
 const getEmployeeByCode = async (req, res, next) => {
   try {
     const employee = await findEmployeeByCode(req.params.employeeCode);
-
+    
     if (!employee) {
       return res.status(404).json({
         success: false,
@@ -147,41 +141,36 @@ const createEmployee = async (req, res, next) => {
   try {
     const payload = await prepareEmployeePayload(req.body);
     const employee = await Employee.create(payload);
-    const populatedEmployee = await Employee.findById(employee._id)
-      .populate('manager', 'firstName lastName email employeeCode')
-      .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours');
+    
+    await employee.populate([
+      { path: 'manager', select: 'firstName lastName email employeeCode' },
+      { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' }
+    ]);
 
-    res.status(201).json({
-      success: true,
-      message: 'Employee created successfully',
-      data: populatedEmployee,
-    });
+    res.status(201).json({ success: true, message: 'Employee created successfully', data: employee });
   } catch (error) {
     return handleEmployeeError(error, res, next);
   }
 };
 
-const updateEmployee = async (req, res, next) => {
+const updateEmployeeByCode = async (req, res, next) => {
   try {
-    const payload = await prepareEmployeePayload(req.body);
-    const employee = await Employee.findOneAndUpdate(
-      { employeeCode: req.params.employeeCode },
-      payload,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate([
-      { path: 'manager', select: 'firstName lastName email employeeCode' },
-      { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' },
-    ]);
-
+    const employee = await findEmployeeByCode(req.params.employeeCode);
     if (!employee) {
       return res.status(404).json({
         success: false,
         message: 'Employee not found with the given employee code',
       });
     }
+
+    const payload = await prepareEmployeePayload(req.body);
+    Object.assign(employee, payload);
+    await employee.save();
+    
+    await employee.populate([
+      { path: 'manager', select: 'firstName lastName email employeeCode' },
+      { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' },
+    ]);
 
     res.status(200).json({
       success: true,
@@ -193,11 +182,26 @@ const updateEmployee = async (req, res, next) => {
   }
 };
 
-const deleteEmployee = async (req, res, next) => {
+const deleteEmployeeByCode = async (req, res, next) => {
   try {
-    const employee = await Employee.findOneAndDelete({
-      employeeCode: req.params.employeeCode,
-    });
+    const employee = await findEmployeeByCode(req.params.employeeCode);
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found with the given employee code',
+      });
+    }
+
+    await employee.deleteOne();
+    res.status(200).json({ success: true, message: 'Employee deleted successfully', data: employee });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const assignScheduleToEmployee = async (req, res, next) => {
+  try {
+    const employee = await findEmployeeByCode(req.params.employeeCode);
 
     if (!employee) {
       return res.status(404).json({
@@ -206,13 +210,30 @@ const deleteEmployee = async (req, res, next) => {
       });
     }
 
+    const scheduleId = await resolveWorkingSchedule(req.body.workingSchedule);
+
+    if (!scheduleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Working schedule is required',
+      });
+    }
+
+    employee.workingSchedule = scheduleId;
+    await employee.save();
+
+    await employee.populate(
+      'workingSchedule',
+      'name scheduleCode scheduleType weeklyHours weeklyPattern'
+    );
+
     res.status(200).json({
       success: true,
-      message: 'Employee deleted successfully',
+      message: 'Working schedule assigned to employee successfully',
       data: employee,
     });
   } catch (error) {
-    next(error);
+    return handleEmployeeError(error, res, next);
   }
 };
 
@@ -220,6 +241,7 @@ module.exports = {
   getAllEmployees,
   getEmployeeByCode,
   createEmployee,
-  updateEmployee,
-  deleteEmployee,
+  updateEmployeeByCode,
+  deleteEmployeeByCode,
+  assignScheduleToEmployee
 };
