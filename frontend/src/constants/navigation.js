@@ -14,7 +14,7 @@ export const APP_ROLE = {
 
 export const NAV_ITEMS = [
   {
-    label: "Overview",
+    label: "Dashboard",
     path: "/",
     icon: "LayoutDashboard",
     description: "Daily HR operational summary & attention items"

@@ -304,6 +304,31 @@ const approveAllocation = async (req, res, next) => {
   }
 };
 
+const getAllAllocations = async (req, res, next) => {
+  try {
+    await syncExpiredAllocations();
+
+    const { status } = req.query;
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const allocations = await populateAllocation(
+      TimeOffAllocation.find(filter).sort({ validFrom: -1 })
+    );
+
+    res.status(200).json({
+      success: true,
+      count: allocations.length,
+      data: allocations,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getEmployeeAllocations,
   createEmployeeAllocation,
@@ -311,4 +336,5 @@ module.exports = {
   updateAllocation,
   deleteAllocation,
   approveAllocation,
+  getAllAllocations,
 };

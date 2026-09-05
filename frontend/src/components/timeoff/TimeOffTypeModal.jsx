@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../ui/Modal';
 import { useHRData } from '../../context/HRDataContext';
-import { ShieldCheck, Lock } from 'lucide-react';
 
 export default function TimeOffTypeModal({ isOpen, onClose }) {
   const { addTimeOffType } = useHRData();
@@ -18,15 +17,18 @@ export default function TimeOffTypeModal({ isOpen, onClose }) {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    addTimeOffType(formData);
-    setFormData({
-      name: '',
-      unit: 'Days',
-      allocationRequired: true,
-      approvalWorkflow: 'Manager + HR Approval',
-      payrollIntegration: 'Auto-synced to payroll leave register (Read-Only sync)'
-    });
-    onClose();
+    addTimeOffType(formData)
+      .then(() => {
+        setFormData({
+          name: '',
+          unit: 'Days',
+          allocationRequired: true,
+          approvalWorkflow: 'Manager + HR Approval',
+          payrollIntegration: 'Auto-synced to payroll leave register (Read-Only sync)'
+        });
+        onClose();
+      })
+      .catch(() => {});
   };
 
   return (
@@ -92,28 +94,17 @@ export default function TimeOffTypeModal({ isOpen, onClose }) {
           </select>
         </div>
 
-        {/* Payroll Notice */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-1">
-          <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-            <Lock className="h-3.5 w-3.5 text-slate-400" />
-            <span>Payroll Integration Mapping</span>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            Approved leaves automatically sync to the internal payroll register for salary deductions or statutory allowances. As HR Manager, payroll processing actions remain restricted.
-          </p>
-        </div>
-
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            className="btn-secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            className="btn-primary"
           >
             Save Time Off Type
           </button>

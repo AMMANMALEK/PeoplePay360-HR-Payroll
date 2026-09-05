@@ -64,10 +64,10 @@ export default function DataTable({
   }
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-subtle ${className}`}>
+    <div className={`overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-card ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-slate-600">
-          <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
+          <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             <tr>
               {columns.map((col) => (
                 <th
@@ -84,9 +84,9 @@ export default function DataTable({
                       <span className="text-slate-400">
                         {sortConfig?.key === col.key ? (
                           sortConfig.direction === 'asc' ? (
-                            <ChevronUp className="h-3.5 w-3.5 text-indigo-600" />
+                            <ChevronUp className="h-3.5 w-3.5 text-brand-600" />
                           ) : (
-                            <ChevronDown className="h-3.5 w-3.5 text-indigo-600" />
+                            <ChevronDown className="h-3.5 w-3.5 text-brand-600" />
                           )
                         ) : (
                           <ArrowUpDown className="h-3 w-3" />
@@ -103,7 +103,7 @@ export default function DataTable({
               <tr
                 key={row.id || idx}
                 onClick={() => onRowClick && onRowClick(row)}
-                className={`transition-colors hover:bg-slate-50/80 ${
+                className={`transition-colors hover:bg-slate-50/90 ${
                   onRowClick ? 'cursor-pointer' : ''
                 }`}
               >

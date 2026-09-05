@@ -1,19 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  UserCheck, 
-  Clock, 
-  UserX, 
-  AlertOctagon, 
-  Timer, 
-  FileEdit, 
-  History, 
-  Calendar 
-} from 'lucide-react';
+import { UserCheck, Clock, UserX, AlertOctagon, Timer, FileEdit, History } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import FilterBar from '../../components/ui/FilterBar';
+import PageHeader from '../../components/ui/PageHeader';
 import AttendanceCorrectionModal from '../../components/attendance/AttendanceCorrectionModal';
 
 export default function AttendancePage() {
@@ -29,7 +21,7 @@ export default function AttendancePage() {
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
     status: filterQuery === 'exceptions' ? 'Exceptions Only' : 'All',
-    date: '2026-09-05'
+    date: ''
   });
 
   // Calculate summary counts
@@ -69,7 +61,7 @@ export default function AttendancePage() {
   };
 
   const handleClearAll = () => {
-    setActiveFilters({ department: 'All', status: 'All', date: '2026-09-05' });
+    setActiveFilters({ department: 'All', status: 'All', date: '' });
     setSearchQuery('');
   };
 
@@ -78,9 +70,9 @@ export default function AttendancePage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matches =
-          a.employeeName.toLowerCase().includes(q) ||
-          a.employeeId.toLowerCase().includes(q) ||
-          a.department.toLowerCase().includes(q);
+          a.employeeName?.toLowerCase().includes(q) ||
+          a.employeeId?.toLowerCase().includes(q) ||
+          a.department?.toLowerCase().includes(q);
         if (!matches) return false;
       }
 
@@ -95,6 +87,10 @@ export default function AttendancePage() {
         activeFilters.status !== 'Exceptions Only' &&
         a.status !== activeFilters.status
       ) {
+        return false;
+      }
+
+      if (activeFilters.date && a.date && a.date !== activeFilters.date) {
         return false;
       }
 
@@ -174,7 +170,7 @@ export default function AttendancePage() {
       render: (correction) => {
         if (!correction) return <span className="text-slate-400 italic text-[11px]">Clean</span>;
         return (
-          <div className="text-[10px] text-indigo-700 bg-indigo-50/70 p-1 rounded max-w-xs truncate border border-indigo-100">
+          <div className="text-[10px] text-brand-800 bg-brand-50 p-1.5 rounded-lg max-w-xs truncate border border-brand-100">
             <span className="font-semibold">Corrected:</span> {correction.reason}
           </div>
         );
@@ -191,7 +187,7 @@ export default function AttendancePage() {
             setSelectedRecord(row);
             setIsCorrectionOpen(true);
           }}
-          className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+          className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-brand-50"
         >
           <FileEdit className="h-3 w-3" />
           <span>Correct</span>
@@ -202,68 +198,56 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          Attendance Operations
-        </h1>
-        <p className="mt-1 text-xs text-slate-500">
-          Monitor daily employee attendance, flag exceptions, and perform authorized compliance corrections.
-        </p>
-      </div>
+      <PageHeader
+        title="Attendance"
+        subtitle="Review presence, exceptions, and authorized corrections."
+      />
 
-      {/* Summary Metric Pills */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-medium">
+        <div className="rounded-[18px] bg-[#e4f4ea] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800">
             <UserCheck className="h-3.5 w-3.5" />
-            <span>Present</span>
+            Present
           </div>
-          <div className="mt-1 text-xl font-extrabold text-emerald-900">{summary.present}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.present}</div>
         </div>
-
-        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-amber-800 font-medium">
+        <div className="rounded-[18px] bg-[#fde9d8] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800">
             <Clock className="h-3.5 w-3.5" />
-            <span>Late</span>
+            Late
           </div>
-          <div className="mt-1 text-xl font-extrabold text-amber-900">{summary.late}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.late}</div>
         </div>
-
-        <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-rose-800 font-medium">
+        <div className="rounded-[18px] bg-[#fce8e8] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-rose-800">
             <UserX className="h-3.5 w-3.5" />
-            <span>Absent</span>
+            Absent
           </div>
-          <div className="mt-1 text-xl font-extrabold text-rose-900">{summary.absent}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.absent}</div>
         </div>
-
-        <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-purple-800 font-medium">
+        <div className="rounded-[18px] bg-[#eee8fb] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-violet-800">
             <AlertOctagon className="h-3.5 w-3.5" />
-            <span>Missing Out</span>
+            Incomplete
           </div>
-          <div className="mt-1 text-xl font-extrabold text-purple-900">{summary.incomplete}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.incomplete}</div>
         </div>
-
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-blue-800 font-medium">
+        <div className="rounded-[18px] bg-[#e4eefc] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-sky-800">
             <Timer className="h-3.5 w-3.5" />
-            <span>Overtime</span>
+            Overtime
           </div>
-          <div className="mt-1 text-xl font-extrabold text-blue-900">{summary.overtime}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.overtime}</div>
         </div>
-
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-subtle">
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+        <div className="rounded-[18px] bg-slate-100 p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
             <History className="h-3.5 w-3.5" />
-            <span>Corrected</span>
+            Corrected
           </div>
-          <div className="mt-1 text-xl font-extrabold text-slate-800">{summary.corrected}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{summary.corrected}</div>
         </div>
       </div>
 
-      {/* Filter Bar */}
       <FilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -272,6 +256,14 @@ export default function AttendancePage() {
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
         onClearAll={handleClearAll}
+        extraActions={
+          <input
+            type="date"
+            value={activeFilters.date}
+            onChange={(e) => handleFilterChange('date', e.target.value)}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 shadow-subtle focus:border-brand-400 focus:outline-none"
+          />
+        }
       />
 
       {/* Table */}

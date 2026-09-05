@@ -33,7 +33,7 @@ export default function EmployeeKanbanView({ employees, departments }) {
             onClick={() => setGroupBy('department')}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               groupBy === 'department'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-brand-400 text-slate-900 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -44,7 +44,7 @@ export default function EmployeeKanbanView({ employees, departments }) {
             onClick={() => setGroupBy('status')}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               groupBy === 'status'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-brand-400 text-slate-900 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -84,13 +84,13 @@ export default function EmployeeKanbanView({ employees, departments }) {
                     <div
                       key={emp.id}
                       onClick={() => navigate(`/employees/${emp.id}`)}
-                      className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-3.5 shadow-subtle hover:border-indigo-300 hover:shadow-hover transition-all"
+                      className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-3.5 shadow-subtle hover:border-brand-300 hover:shadow-hover transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
                           <EmployeeAvatar name={emp.fullName} src={emp.avatar} size="sm" />
                           <div>
-                            <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
                               {emp.fullName}
                             </div>
                             <div className="text-[11px] font-mono text-slate-400">{emp.id}</div>
@@ -122,7 +122,7 @@ export default function EmployeeKanbanView({ employees, departments }) {
                             ? (emp.scheduleName.name || emp.scheduleName.scheduleCode || 'Standard')
                             : (emp.scheduleName || 'Standard')}
                         </span>
-                        <span className="flex items-center font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="flex items-center font-semibold text-brand-700 opacity-0 group-hover:opacity-100 transition-opacity">
                           Profile <ArrowRight className="ml-1 h-3 w-3" />
                         </span>
                       </div>

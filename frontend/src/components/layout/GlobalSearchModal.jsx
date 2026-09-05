@@ -22,28 +22,28 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
       employees: employees
         .filter(
           (e) =>
-            e.fullName.toLowerCase().includes(q) ||
-            e.id.toLowerCase().includes(q) ||
-            e.department.toLowerCase().includes(q) ||
-            e.jobPosition.toLowerCase().includes(q)
+            (e.fullName || '').toLowerCase().includes(q) ||
+            String(e.id || '').toLowerCase().includes(q) ||
+            (e.department || '').toLowerCase().includes(q) ||
+            (e.jobPosition || '').toLowerCase().includes(q)
         )
         .slice(0, 4),
 
       contracts: contracts
         .filter(
           (c) =>
-            c.id.toLowerCase().includes(q) ||
-            c.employeeName.toLowerCase().includes(q) ||
-            c.contractName.toLowerCase().includes(q)
+            String(c.id || '').toLowerCase().includes(q) ||
+            (c.employeeName || '').toLowerCase().includes(q) ||
+            (c.contractName || '').toLowerCase().includes(q)
         )
         .slice(0, 3),
 
       attendance: attendance
         .filter(
           (a) =>
-            a.employeeName.toLowerCase().includes(q) ||
-            a.status.toLowerCase().includes(q) ||
-            a.id.toLowerCase().includes(q)
+            (a.employeeName || '').toLowerCase().includes(q) ||
+            String(a.status || '').toLowerCase().includes(q) ||
+            String(a.id || '').toLowerCase().includes(q)
         )
         .slice(0, 3),
 
@@ -138,22 +138,30 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
                   <Clock className="h-3.5 w-3.5 text-amber-500" />
                   <span>Attendance</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('/attendance?filter=exceptions');
-                    onClose();
-                  }}
-                  className="flex w-full items-center justify-between rounded-lg p-2 text-left hover:bg-amber-50/70 transition-colors"
-                >
-                  <div>
-                    <span className="font-bold text-slate-900">David Kim</span>
-                    <span className="text-amber-700 text-[11px] ml-2 font-semibold">· Late (09:42) · 05 Sep</span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
-                    Audit exception
-                  </span>
-                </button>
+                {attendance.filter((a) => a.isException).slice(0, 2).map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={() => {
+                      navigate('/attendance?filter=exceptions');
+                      onClose();
+                    }}
+                    className="flex w-full items-center justify-between rounded-lg p-2 text-left hover:bg-amber-50/70 transition-colors"
+                  >
+                    <div>
+                      <span className="font-bold text-slate-900">{row.employeeName}</span>
+                      <span className="text-amber-700 text-[11px] ml-2 font-semibold">
+                        · {row.status} · {row.date}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                      Exception
+                    </span>
+                  </button>
+                ))}
+                {attendance.filter((a) => a.isException).length === 0 && (
+                  <p className="text-[11px] text-slate-400 px-2">No attendance exceptions in the database.</p>
+                )}
               </div>
 
               {/* Time Off group */}

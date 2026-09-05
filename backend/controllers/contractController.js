@@ -397,11 +397,33 @@ const deleteContract = async (req, res, next) => {
   }
 };
 
+const getAllContracts = async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const contracts = await populateContract(Contract.find(filter).sort({ startDate: -1 }));
+
+    res.status(200).json({
+      success: true,
+      count: contracts.length,
+      data: contracts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getEmployeeContracts,
   createEmployeeContract,
   getActiveEmployeeContract,
   getEmployeeContractForPeriod,
+  getAllContracts,
   getContractById,
   updateContract,
   deleteContract,

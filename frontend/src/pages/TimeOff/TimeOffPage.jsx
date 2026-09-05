@@ -2,18 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Plus, 
-  CalendarCheck, 
-  PieChart, 
-  Sliders, 
   CheckCircle, 
   XCircle, 
-  Clock, 
-  Lock 
+  Clock,
+  Check,
+  X
 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import FilterBar from '../../components/ui/FilterBar';
+import PageHeader from '../../components/ui/PageHeader';
 import AllocationCard from '../../components/timeoff/AllocationCard';
 import TimeOffReviewModal from '../../components/timeoff/TimeOffReviewModal';
 import TimeOffTypeModal from '../../components/timeoff/TimeOffTypeModal';
@@ -23,7 +22,7 @@ export default function TimeOffPage() {
   const statusParam = searchParams.get('status');
   const searchParam = searchParams.get('search');
 
-  const { timeOffRequests, allocations, timeOffTypes, departments } = useHRData();
+  const { timeOffRequests, allocations, timeOffTypes, departments, approveTimeOff } = useHRData();
 
   const [activeSubTab, setActiveSubTab] = useState('requests'); // 'requests' | 'allocations' | 'types'
   const [searchQuery, setSearchQuery] = useState(searchParam || '');
@@ -63,9 +62,9 @@ export default function TimeOffPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matches =
-          r.employeeName.toLowerCase().includes(q) ||
-          r.timeOffType.toLowerCase().includes(q) ||
-          r.id.toLowerCase().includes(q);
+          (r.employeeName || '').toLowerCase().includes(q) ||
+          (r.timeOffType || '').toLowerCase().includes(q) ||
+          String(r.id || '').toLowerCase().includes(q);
         if (!matches) return false;
       }
 
@@ -116,7 +115,7 @@ export default function TimeOffPage() {
       key: 'duration',
       label: 'Duration',
       sortable: true,
-      render: (dur) => <span className="font-bold text-indigo-700">{dur} days</span>
+      render: (dur) => <span className="font-semibold text-slate-900">{dur} days</span>
     },
     {
       key: 'reason',
@@ -138,85 +137,100 @@ export default function TimeOffPage() {
       label: 'Action',
       align: 'right',
       render: (_, row) => (
-        <button
-          type="button"
-          onClick={() => setSelectedRequest(row)}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-            row.status === 'Pending'
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
-              : 'border border-slate-300 text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          {row.status === 'Pending' ? 'Review & Decision' : 'View Detail'}
-        </button>
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+          {row.status === 'Pending' && (
+            <>
+              <button type="button" className="btn-success" onClick={() => approveTimeOff(row.id)}>
+                <Check className="h-3.5 w-3.5" />
+                Approve
+              </button>
+              <button type="button" className="btn-danger" onClick={() => setSelectedRequest(row)}>
+                <X className="h-3.5 w-3.5" />
+                Reject
+              </button>
+            </>
+          )}
+          {row.status !== 'Pending' && (
+            <button type="button" className="btn-secondary" onClick={() => setSelectedRequest(row)}>
+              View
+            </button>
+          )}
+        </div>
       )
     }
   ];
 
+  const pendingCount = timeOffRequests.filter((r) => r.status === 'Pending').length;
+  const approvedCount = timeOffRequests.filter((r) => r.status === 'Approved').length;
+  const refusedCount = timeOffRequests.filter((r) => r.status === 'Refused' || r.status === 'Rejected').length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Time Off & Leave Management
-          </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Review incoming leave applications, inspect employee balances, and configure organizational leave types.
-          </p>
-        </div>
+      <PageHeader
+        title="Time Off"
+        subtitle="Review leave requests, balances, and time-off types."
+        actions={
+          activeSubTab === 'types' ? (
+            <button type="button" onClick={() => setIsTypeModalOpen(true)} className="btn-primary">
+              <Plus className="h-4 w-4" />
+              Add Time Off Type
+            </button>
+          ) : null
+        }
+      />
 
-        {activeSubTab === 'types' && (
-          <button
-            type="button"
-            onClick={() => setIsTypeModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-sm transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span>+ Add Time Off Type</span>
-          </button>
-        )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-[18px] bg-[#fde9d8] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800">
+            <Clock className="h-3.5 w-3.5" />
+            Pending
+          </div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{pendingCount}</div>
+        </div>
+        <div className="rounded-[18px] bg-[#e4f4ea] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800">
+            <CheckCircle className="h-3.5 w-3.5" />
+            Approved
+          </div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{approvedCount}</div>
+        </div>
+        <div className="rounded-[18px] bg-[#fce8e8] p-4">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-rose-800">
+            <XCircle className="h-3.5 w-3.5" />
+            Rejected
+          </div>
+          <div className="mt-2 text-2xl font-semibold text-slate-900">{refusedCount}</div>
+        </div>
       </div>
 
-      {/* Sub-Navigation */}
-      <div className="border-b border-slate-200">
-        <nav className="flex space-x-6 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('requests')}
-            className={`border-b-2 pb-3 transition-colors ${
-              activeSubTab === 'requests'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Requests ({timeOffRequests.filter((r) => r.status === 'Pending').length} Pending)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('allocations')}
-            className={`border-b-2 pb-3 transition-colors ${
-              activeSubTab === 'allocations'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Employee Allocations ({allocations.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('types')}
-            className={`border-b-2 pb-3 transition-colors ${
-              activeSubTab === 'types'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Time Off Types ({timeOffTypes.length})
-          </button>
-        </nav>
+      <div className="flex gap-2 rounded-2xl bg-slate-100 p-1 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('requests')}
+          className={`flex-1 rounded-xl px-3 py-2 ${
+            activeSubTab === 'requests' ? 'bg-white text-slate-900 shadow-subtle' : 'text-slate-500'
+          }`}
+        >
+          Requests
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('allocations')}
+          className={`flex-1 rounded-xl px-3 py-2 ${
+            activeSubTab === 'allocations' ? 'bg-white text-slate-900 shadow-subtle' : 'text-slate-500'
+          }`}
+        >
+          Allocations
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('types')}
+          className={`flex-1 rounded-xl px-3 py-2 ${
+            activeSubTab === 'types' ? 'bg-white text-slate-900 shadow-subtle' : 'text-slate-500'
+          }`}
+        >
+          Types
+        </button>
       </div>
 
       {/* SUBTAB 1: REQUESTS */}
@@ -266,7 +280,7 @@ export default function TimeOffPage() {
             {timeOffTypes.map((t) => (
               <div
                 key={t.id}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-subtle space-y-3"
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-card space-y-3"
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -287,14 +301,6 @@ export default function TimeOffPage() {
                     <span className="text-slate-400">Approval Workflow:</span>
                     <span className="font-medium text-right">{t.approvalWorkflow}</span>
                   </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[11px] text-slate-600 space-y-1">
-                  <div className="flex items-center gap-1 font-semibold text-slate-800">
-                    <Lock className="h-3 w-3 text-slate-400" />
-                    <span>Payroll Synchronization</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500">{t.payrollIntegration}</p>
                 </div>
               </div>
             ))}

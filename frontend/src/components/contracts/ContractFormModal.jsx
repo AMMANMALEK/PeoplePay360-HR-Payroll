@@ -11,8 +11,8 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
     contractName: '',
     startDate: '',
     endDate: '',
-    wage: '$110,000 / yr',
-    salaryStructure: 'Standard Band Level 3',
+    wage: '',
+    salaryStructure: '',
     status: 'Active',
     notes: ''
   });
@@ -26,11 +26,11 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
       const targetEmp = employees.find((e) => e.id === empId);
       setFormData({
         employeeId: empId,
-        contractName: targetEmp ? `${targetEmp.jobPosition} Term Agreement` : 'Employment Agreement',
+        contractName: targetEmp?.jobPosition ? `${targetEmp.jobPosition} Term Agreement` : '',
         startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        wage: '$110,000 / yr',
-        salaryStructure: 'Standard Tech Band 3',
+        endDate: '',
+        wage: '',
+        salaryStructure: '',
         status: 'Active',
         notes: ''
       });
@@ -63,6 +63,7 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
   const validate = () => {
     const newErrors = {};
     if (!formData.contractName.trim()) newErrors.contractName = 'Contract name is required.';
+    if (!formData.wage.trim()) newErrors.wage = 'Wage is required.';
     if (!formData.startDate) newErrors.startDate = 'Start date is required.';
     if (formData.endDate && formData.startDate && formData.endDate < formData.startDate) {
       newErrors.endDate = 'End date cannot be prior to start date.';
@@ -87,12 +88,12 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
 
     addContract({
       ...formData,
-      employeeName: targetEmp?.fullName || 'Employee',
-      department: targetEmp?.department || 'Operations',
-      position: targetEmp?.jobPosition || 'Specialist'
-    });
-
-    onClose();
+      employeeName: targetEmp?.fullName || '',
+      department: targetEmp?.department || '',
+      position: targetEmp?.jobPosition || '',
+    })
+      .then(() => onClose())
+      .catch(() => {});
   };
 
   return (
@@ -185,6 +186,7 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
               placeholder="$120,000 / yr or $45 / hr"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
+            {errors.wage && <p className="mt-1 text-[11px] text-rose-500">{errors.wage}</p>}
           </div>
 
           <div>
@@ -233,7 +235,7 @@ export default function ContractFormModal({ isOpen, onClose, initialEmployeeId =
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            className="btn-primary"
           >
             Save Contract
           </button>

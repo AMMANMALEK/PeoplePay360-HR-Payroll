@@ -33,6 +33,11 @@ const attendanceSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    correction: {
+      correctedBy: { type: String, trim: true, default: '' },
+      correctedAt: { type: Date, default: null },
+      reason: { type: String, trim: true, default: '' },
+    },
   },
   {
     timestamps: true,
@@ -41,17 +46,29 @@ const attendanceSchema = new mongoose.Schema(
 
 attendanceSchema.index({ employee: 1, attendanceDate: 1 }, { unique: true });
 
-attendanceSchema.pre('save', function (next) {
-  if (this.checkIn && this.checkOut) {
-    const diffMs = new Date(this.checkOut) - new Date(this.checkIn);
+attendanceSchema.virtual('isException').get(function () {
+  return ['late', 'absent', 'exception'].includes(this.status);
+});
 
+attendanceSchema.set('toJSON', { virtuals: true });
+attendanceSchema.set('toObject', { virtuals: true });
+
+const applyWorkedHours = (doc) => {
+  if (doc.checkIn && doc.checkOut) {
+    const diffMs = new Date(doc.checkOut) - new Date(doc.checkIn);
     if (diffMs < 0) {
-      return next(new Error('Check out time must be after check in time'));
+      return 'Check out time must be after check in time';
     }
-
-    this.workedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+    doc.workedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
   }
+  return null;
+};
 
+attendanceSchema.pre('save', function (next) {
+  const hoursError = applyWorkedHours(this);
+  if (hoursError) {
+    return next(new Error(hoursError));
+  }
   next();
 });
 

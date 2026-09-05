@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Calendar } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import FilterBar from '../../components/ui/FilterBar';
+import PageHeader from '../../components/ui/PageHeader';
 import ContractFormModal from '../../components/contracts/ContractFormModal';
 
 export default function ContractsPage() {
@@ -47,7 +48,7 @@ export default function ContractsPage() {
   const getContractStatus = (c) => {
     if (c.endDate) {
       const end = new Date(c.endDate);
-      const now = new Date('2026-09-05');
+      const now = new Date();
       if (end < now) {
         return 'Expired';
       }
@@ -56,7 +57,7 @@ export default function ContractsPage() {
     }
     if (c.startDate) {
       const start = new Date(c.startDate);
-      const now = new Date('2026-09-05');
+      const now = new Date();
       if (start > now) return 'Scheduled';
     }
     return c.status;
@@ -173,7 +174,7 @@ export default function ContractsPage() {
       sortable: true,
       render: (_, row) => {
         const computedStatus = getContractStatus(row);
-        const isPastEnd = row.endDate && new Date(row.endDate) < new Date('2026-09-05');
+        const isPastEnd = row.endDate && new Date(row.endDate) < new Date();
         const isCurrentActive = row.isCurrent && row.status === 'Active' && !isPastEnd;
 
         return (
@@ -197,29 +198,21 @@ export default function ContractsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Contracts
-          </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Manage employee employment terms, legal agreements, and track active vs historical contract history.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          <span>+ New Contract</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Contracts"
+        count={contracts.length}
+        subtitle="Employment terms, start and end dates, and contract status."
+        actions={
+          <button type="button" onClick={() => setIsModalOpen(true)} className="btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Contract
+          </button>
+        }
+      />
 
       {/* Global Contract Conflict Warning */}
       {conflictsDetected.length > 0 && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 space-y-1">
+        <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-rose-900 space-y-1">
           <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-rose-800">
             <AlertTriangle className="h-4 w-4 text-rose-600" />
             <span>Contract Conflict Detected</span>

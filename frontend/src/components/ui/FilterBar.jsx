@@ -27,7 +27,7 @@ export default function FilterBar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-8 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm transition-colors"
+              className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs text-slate-900 placeholder:text-slate-400 shadow-subtle transition-colors focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
             />
             {searchQuery && (
               <button
@@ -46,7 +46,7 @@ export default function FilterBar({
               <select
                 value={activeFilters[filter.key] || 'All'}
                 onChange={(e) => onFilterChange(filter.key, e.target.value)}
-                className="rounded-lg border border-slate-300 bg-white py-2 px-3 text-xs font-medium text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 shadow-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
               >
                 <option value="All">{filter.label}: All</option>
                 {filter.options.map((opt) => (
@@ -62,7 +62,7 @@ export default function FilterBar({
             <button
               type="button"
               onClick={onClearAll}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors px-1"
+              className="px-1 text-xs font-semibold text-brand-700 hover:text-brand-800"
             >
               Clear all
             </button>
@@ -88,13 +88,13 @@ export default function FilterBar({
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50/80 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-slate-700"
               >
                 <span>{label}: {val}</span>
                 <button
                   type="button"
                   onClick={() => onFilterChange(key, 'All')}
-                  className="rounded p-0.5 hover:bg-indigo-200/60 text-indigo-500 hover:text-indigo-800 transition-colors"
+                  className="rounded p-0.5 text-slate-500 hover:bg-brand-200/60 hover:text-slate-800"
                   aria-label={`Remove filter ${label}`}
                 >
                   <X className="h-3 w-3" />

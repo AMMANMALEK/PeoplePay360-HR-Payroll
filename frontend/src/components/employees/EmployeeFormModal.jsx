@@ -12,11 +12,11 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
     phone: '',
     dob: '',
     jobPosition: '',
-    department: departments[0] || 'Engineering',
+    department: departments[0] || '',
     managerId: '',
     managerName: '',
-    scheduleId: schedules[0]?.id || 'sched-1',
-    scheduleName: schedules[0]?.name || 'Standard 5-Day (40 hrs)',
+    scheduleId: schedules[0]?.id || '',
+    scheduleName: schedules[0]?.name || '',
     employmentStatus: 'Active',
     employmentType: 'Full-Time Permanent'
   });
@@ -48,11 +48,11 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
         phone: '',
         dob: '',
         jobPosition: '',
-        department: departments[0] || 'Engineering',
+        department: departments[0] || '',
         managerId: '',
         managerName: '',
-        scheduleId: schedules[0]?.id || 'sched-1',
-        scheduleName: schedules[0]?.name || 'Standard 5-Day (40 hrs)',
+        scheduleId: schedules[0]?.id || '',
+        scheduleName: schedules[0]?.name || '',
         employmentStatus: 'Active',
         employmentType: 'Full-Time Permanent'
       });
@@ -100,11 +100,10 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
     if (!validate()) return;
 
     if (initialData?.id) {
-      updateEmployee(initialData.id, formData);
+      updateEmployee(initialData.id, formData).then(() => onClose()).catch(() => {});
     } else {
-      addEmployee(formData);
+      addEmployee(formData).then(() => onClose()).catch(() => {});
     }
-    onClose();
   };
 
   return (
@@ -219,17 +218,18 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
               <label className="block text-[11px] font-medium text-slate-700">
                 Department <span className="text-rose-500">*</span>
               </label>
-              <select
+              <input
+                list="department-options"
                 value={formData.department}
                 onChange={(e) => handleChange('department', e.target.value)}
+                placeholder="Department"
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              >
+              />
+              <datalist id="department-options">
                 {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
+                  <option key={dept} value={dept} />
                 ))}
-              </select>
+              </datalist>
             </div>
 
             <div>
@@ -257,6 +257,7 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
                 onChange={(e) => handleChange('scheduleId', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
+                <option value="">No schedule assigned</option>
                 {schedules.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -305,7 +306,7 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            className="btn-primary"
           >
             {initialData ? 'Save Changes' : 'Create Employee Record'}
           </button>

@@ -43,13 +43,13 @@ export default function AttentionCard({ item }) {
       hoverText: 'group-hover:text-amber-700'
     },
     contract: {
-      topBorder: 'border-t-indigo-500',
-      iconBox: 'bg-indigo-50 text-indigo-600 border border-indigo-100/80',
-      badge: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
-      badgeDot: 'bg-indigo-500',
+      topBorder: 'border-t-brand-400',
+      iconBox: 'bg-brand-50 text-brand-700 border border-brand-100',
+      badge: 'bg-brand-50 text-slate-700 border-brand-200',
+      badgeDot: 'bg-brand-500',
       defaultBadge: 'Expiring Soon',
-      hoverBtn: 'group-hover:bg-indigo-600 group-hover:text-white',
-      hoverText: 'group-hover:text-indigo-700'
+      hoverBtn: 'group-hover:bg-brand-400 group-hover:text-slate-900',
+      hoverText: 'group-hover:text-brand-700'
     },
     info: {
       topBorder: 'border-t-sky-500',

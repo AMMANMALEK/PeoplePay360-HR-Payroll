@@ -70,6 +70,20 @@ const employeeSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    dob: {
+      type: Date,
+      default: null,
+    },
+    employmentType: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    avatar: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     address: {
       type: addressSchema,
       default: {},

@@ -7,40 +7,63 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-canvas text-slate-900 antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    scroll-behavior: smooth;
   }
 }
 
-/* Global Smooth scrolling across all scroll containers */
+@layer components {
+  .app-card {
+    @apply rounded-[18px] border border-slate-200/80 bg-white shadow-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-400 px-4 py-2 text-xs font-semibold text-slate-900 shadow-subtle transition-colors hover:bg-brand-500;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-subtle transition-colors hover:bg-slate-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100;
+  }
+
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-400 px-3 py-1.5 text-xs font-semibold text-slate-900 transition-colors hover:bg-brand-500;
+  }
+
+  .field-input {
+    @apply mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-subtle placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100;
+  }
+}
+
 * {
   scroll-behavior: smooth;
 }
 
-/* Smooth momentum scrolling for iOS/WebKit and smooth overflow areas */
 .overflow-y-auto,
 .overflow-x-auto,
 .overflow-auto,
 main {
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
 }
 
-/* Custom scrollbar for clean enterprise look */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d4d4d8;
   border-radius: 9999px;
-  transition: background-color 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a1a1aa;
 }
-

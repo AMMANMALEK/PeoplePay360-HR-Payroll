@@ -1,36 +1,59 @@
 import { API_BASE_URL } from '../constants/api';
 
-/**
- * Enterprise API Service layer.
- *
- * Designed to abstract HTTP communication.
- * When API_BASE_URL or endpoint paths are empty (""),
- * requests safely return null or throw a recognized NO_ENDPOINT error,
- * allowing services to seamlessly fall back to local/mock store without
- * breaking the UI.
- */
+let onApiError = null;
+
+export function setApiErrorHandler(handler) {
+  onApiError = handler;
+}
+
+function getAuthToken() {
+  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
 export async function apiClient(endpoint, options = {}) {
   if (!API_BASE_URL || !endpoint) {
-    // Backend API is not yet connected. Return null to signal mock store fallback.
-    return null;
+    const error = new Error('API is not configured');
+    error.code = 'NO_ENDPOINT';
+    throw error;
+  }
+
+  const token = getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || `API error: ${response.statusText}`);
-    error.status = response.status;
-    error.data = errorData;
+  if (response.status === 401) {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    if (window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
+    const error = new Error('Session expired. Please sign in again.');
+    error.status = 401;
+    if (onApiError) onApiError(error);
     throw error;
   }
 
-  return response.json();
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(payload.message || `API error: ${response.statusText}`);
+    error.status = response.status;
+    error.data = payload;
+    if (onApiError) onApiError(error);
+    throw error;
+  }
+
+  return payload;
 }

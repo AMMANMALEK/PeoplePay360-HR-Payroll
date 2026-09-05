@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit2, Trash2, FileText, ArrowRight } from 'lucide-react';
+import { Edit2, Trash2, FileText, ArrowRight } from 'lucide-react';
 import DataTable from '../ui/DataTable';
 import StatusBadge from '../ui/StatusBadge';
 import EmployeeAvatar from '../ui/EmployeeAvatar';
@@ -8,6 +8,7 @@ import EmployeeAvatar from '../ui/EmployeeAvatar';
 export default function EmployeeListView({
   employees,
   contracts,
+  isLoading = false,
   onEdit,
   onDelete
 }) {
@@ -22,7 +23,7 @@ export default function EmployeeListView({
         <div className="flex items-center gap-3">
           <EmployeeAvatar name={name} src={row.avatar} size="md" />
           <div className="min-w-0">
-            <div className="font-semibold text-slate-900 truncate hover:text-indigo-600 transition-colors">
+            <div className="font-semibold text-slate-900 truncate hover:text-brand-700 transition-colors">
               {name}
             </div>
             <div className="text-[11px] text-slate-400 font-mono">{row.id}</div>
@@ -31,32 +32,22 @@ export default function EmployeeListView({
       )
     },
     {
-      key: 'jobPosition',
-      label: 'Role & Department',
+      key: 'id',
+      label: 'Employee ID',
       sortable: true,
-      render: (pos, row) => (
-        <div>
-          <div className="font-medium text-slate-900">{pos}</div>
-          <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-            {row.department}
-          </div>
-        </div>
-      )
+      render: (id) => <span className="font-mono text-[11px] text-slate-500">{id}</span>
     },
     {
-      key: 'scheduleName',
-      label: 'Working Schedule',
-      render: (sched) => {
-        const displayText =
-          typeof sched === 'object' && sched !== null
-            ? (sched.name || sched.scheduleCode || 'Standard')
-            : String(sched || '—');
-        return (
-          <span className="inline-flex items-center rounded-md bg-slate-100/80 px-2 py-1 text-[11px] font-medium text-slate-700">
-            {displayText}
-          </span>
-        );
-      }
+      key: 'department',
+      label: 'Department',
+      sortable: true,
+      render: (dept) => <span className="text-slate-600">{dept || '—'}</span>
+    },
+    {
+      key: 'jobPosition',
+      label: 'Position',
+      sortable: true,
+      render: (pos) => <span className="font-medium text-slate-800">{pos}</span>
     },
     {
       key: 'employmentStatus',
@@ -88,7 +79,7 @@ export default function EmployeeListView({
           <button
             type="button"
             onClick={() => navigate(`/employees/${row.id}`)}
-            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-brand-50"
             title="Open Employee Command Center"
             aria-label={`View ${row.fullName}`}
           >
@@ -122,6 +113,7 @@ export default function EmployeeListView({
     <DataTable
       columns={columns}
       data={employees}
+      isLoading={isLoading}
       onRowClick={(row) => navigate(`/employees/${row.id}`)}
       pageSize={8}
       emptyTitle="No employees found"

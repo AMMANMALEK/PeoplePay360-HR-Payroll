@@ -11,7 +11,7 @@ export default function AppShell() {
   const { toast, closeToast } = useHRData();
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans text-slate-900">
+    <div className="flex h-screen w-full overflow-hidden bg-canvas font-sans text-slate-900">
       {/* Sidebar */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}
@@ -24,8 +24,8 @@ export default function AppShell() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar onOpenMobileMenu={() => setIsMobileOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto scroll-smooth px-4 py-6 sm:px-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+          <div className="mx-auto max-w-[1280px]">
             <Outlet />
           </div>
         </main>

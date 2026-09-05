@@ -4,13 +4,13 @@ export default function AllocationCard({ allocation }) {
   const percentTaken = Math.min(100, Math.round((allocation.taken / (allocation.allocated || 1)) * 100));
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-subtle hover:border-indigo-200 transition-colors">
+    <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-card">
       <div className="flex items-start justify-between">
         <div>
           <h4 className="text-xs font-bold text-slate-900">{allocation.typeName}</h4>
           <p className="text-[11px] text-slate-400">Validity until {allocation.validity}</p>
         </div>
-        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-100">
+        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700 border border-brand-100">
           {allocation.status}
         </span>
       </div>
@@ -39,7 +39,7 @@ export default function AllocationCard({ allocation }) {
         <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
-              percentTaken > 80 ? 'bg-amber-500' : 'bg-indigo-600'
+              percentTaken > 80 ? 'bg-amber-500' : 'bg-brand-400'
             }`}
             style={{ width: `${percentTaken}%` }}
           />

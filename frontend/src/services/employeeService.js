@@ -1,10 +1,8 @@
 import { apiClient } from './apiService';
 import { EMPLOYEES_ENDPOINT } from '../constants/api';
-import { INITIAL_EMPLOYEES } from '../data/mockData';
 
-/**
- * Normalizes a backend Employee document to the frontend UI model.
- */
+const OBJECT_ID_PATTERN = /^[a-fA-F0-9]{24}$/;
+
 export function toFrontendEmployee(raw) {
   if (!raw) return null;
 
@@ -12,228 +10,175 @@ export function toFrontendEmployee(raw) {
   const lastName = typeof raw.lastName === 'string' ? raw.lastName : '';
   const fullName =
     raw.fullName ||
-    (firstName && lastName ? `${firstName} ${lastName}`.trim() : firstName || 'Employee');
+    [firstName, lastName].filter(Boolean).join(' ').trim() ||
+    'Employee';
 
   let employmentStatus = 'Active';
-  if (raw.status) {
-    const s = String(typeof raw.status === 'object' ? (raw.status.name || raw.status.code || 'active') : raw.status).toLowerCase();
-    if (s === 'active') employmentStatus = 'Active';
-    else if (s === 'inactive') employmentStatus = 'Inactive';
-    else if (s === 'on_leave') employmentStatus = 'On Leave';
-    else if (s === 'terminated') employmentStatus = 'Terminated';
-  } else if (raw.employmentStatus) {
-    employmentStatus = typeof raw.employmentStatus === 'object' ? (raw.employmentStatus.name || 'Active') : String(raw.employmentStatus);
-  }
+  const rawStatus = String(raw.status || '').toLowerCase();
+  if (rawStatus === 'inactive') employmentStatus = 'Inactive';
+  else if (rawStatus === 'on_leave') employmentStatus = 'On Leave';
+  else if (rawStatus === 'terminated') employmentStatus = 'Terminated';
+  else if (rawStatus === 'active') employmentStatus = 'Active';
 
   let managerName = 'None';
   let managerId = '';
   if (raw.manager && typeof raw.manager === 'object') {
-    managerName = `${raw.manager.firstName || ''} ${raw.manager.lastName || ''}`.trim() || raw.manager.fullName || 'None';
-    managerId = raw.manager.employeeCode || raw.manager._id || '';
-  } else if (raw.managerName) {
-    managerName = typeof raw.managerName === 'object' ? (raw.managerName.name || 'None') : String(raw.managerName);
-    managerId = raw.managerId || '';
+    managerName =
+      `${raw.manager.firstName || ''} ${raw.manager.lastName || ''}`.trim() ||
+      raw.manager.fullName ||
+      'None';
+    managerId = raw.manager.employeeCode || '';
   }
 
-  let scheduleName = 'Standard 5-Day (40 hrs)';
-  let scheduleId = raw.scheduleId || '';
-  if (raw.workingSchedule) {
-    if (typeof raw.workingSchedule === 'object' && raw.workingSchedule !== null) {
-      scheduleName = raw.workingSchedule.name || raw.workingSchedule.scheduleCode || 'Standard Schedule';
-      scheduleId = raw.workingSchedule._id || raw.workingSchedule.scheduleCode || '';
-    } else {
-      scheduleName = String(raw.workingSchedule);
-      scheduleId = String(raw.workingSchedule);
-    }
-  } else if (raw.scheduleName) {
-    if (typeof raw.scheduleName === 'object' && raw.scheduleName !== null) {
-      scheduleName = raw.scheduleName.name || raw.scheduleName.scheduleCode || 'Standard Schedule';
-      scheduleId = raw.scheduleName._id || raw.scheduleName.scheduleCode || '';
-    } else {
-      scheduleName = String(raw.scheduleName);
-    }
+  let scheduleName = '';
+  let scheduleId = '';
+  if (raw.workingSchedule && typeof raw.workingSchedule === 'object') {
+    scheduleName = raw.workingSchedule.name || raw.workingSchedule.scheduleCode || '';
+    scheduleId = raw.workingSchedule.scheduleCode || raw.workingSchedule._id || '';
   }
 
-  let department = 'General';
-  if (typeof raw.department === 'object' && raw.department !== null) {
-    department = raw.department.name || raw.department.title || 'General';
-  } else if (raw.department) {
-    department = String(raw.department);
+  let joinedDate = '';
+  if (raw.hireDate) {
+    joinedDate = new Date(raw.hireDate).toISOString().split('T')[0];
   }
 
-  let jobPosition = 'Specialist';
-  if (typeof raw.jobPosition === 'object' && raw.jobPosition !== null) {
-    jobPosition = raw.jobPosition.title || raw.jobPosition.name || 'Specialist';
-  } else if (raw.jobPosition) {
-    jobPosition = String(raw.jobPosition);
-  }
-
-  let joinedDate = raw.joinedDate;
-  if (!joinedDate && raw.hireDate) {
-    try {
-      joinedDate = new Date(raw.hireDate).toISOString().split('T')[0];
-    } catch {
-      joinedDate = new Date().toISOString().split('T')[0];
-    }
-  }
+  const profileComplete = Boolean(
+    raw.employeeCode && firstName && lastName && raw.email && raw.department && raw.jobPosition
+  );
 
   return {
-    id: raw.employeeCode || raw.id || raw._id,
+    id: raw.employeeCode,
     _id: raw._id,
-    employeeCode: raw.employeeCode || raw.id,
+    employeeCode: raw.employeeCode,
     firstName,
     lastName,
     fullName,
-    workEmail: raw.email || raw.workEmail || '',
+    workEmail: raw.email || '',
     phone: raw.phone || '',
-    jobPosition,
-    department,
+    jobPosition: raw.jobPosition || '',
+    department: raw.department || '',
     managerId,
     managerName,
     scheduleId,
     scheduleName,
     schedule: typeof raw.workingSchedule === 'object' ? raw.workingSchedule : null,
     employmentStatus,
-    employmentType: typeof raw.employmentType === 'object' ? (raw.employmentType.name || 'Full-Time Permanent') : (raw.employmentType || 'Full-Time Permanent'),
-    joinedDate: joinedDate || new Date().toISOString().split('T')[0],
-    dob: raw.dob || '',
-    avatar:
-      raw.avatar ||
-      `https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80`,
-    profileComplete: raw.profileComplete ?? true,
+    joinedDate,
+    dob: raw.dob ? new Date(raw.dob).toISOString().split('T')[0] : '',
+    employmentType: raw.employmentType || '',
+    avatar: raw.avatar || '',
+    profileComplete,
     address: raw.address || {},
   };
 }
 
-/**
- * Normalizes frontend employee form data into the backend Employee schema.
- */
+function generateEmployeeCode(frontendEmp) {
+  if (frontendEmp.employeeCode) {
+    return String(frontendEmp.employeeCode).trim().toUpperCase();
+  }
+  if (frontendEmp.id && !OBJECT_ID_PATTERN.test(String(frontendEmp.id))) {
+    return String(frontendEmp.id).trim().toUpperCase();
+  }
+  const initials = `${(frontendEmp.firstName || 'E')[0]}${(frontendEmp.lastName || 'M')[0]}`.toUpperCase();
+  return `EMP-${initials}${Date.now().toString().slice(-4)}`;
+}
+
 export function toBackendPayload(frontendEmp) {
-  const parts = (frontendEmp.fullName || '').trim().split(/\s+/);
-  const firstName = frontendEmp.firstName || parts[0] || 'New';
-  const lastName = frontendEmp.lastName || parts.slice(1).join(' ') || 'Employee';
+  const firstName = frontendEmp.firstName || 'New';
+  const lastName = frontendEmp.lastName || 'Employee';
 
   let status = 'active';
-  const rawStatus = (frontendEmp.employmentStatus || frontendEmp.status || '').toLowerCase();
+  const rawStatus = (frontendEmp.employmentStatus || '').toLowerCase();
   if (rawStatus.includes('leave')) status = 'on_leave';
   else if (rawStatus.includes('inact')) status = 'inactive';
   else if (rawStatus.includes('termin')) status = 'terminated';
-  else status = 'active';
-
-  let workingSchedule = 'Standard 5-Day (40 hrs)';
-  if (frontendEmp.scheduleId) {
-    workingSchedule = frontendEmp.scheduleId;
-  } else if (typeof frontendEmp.scheduleName === 'object' && frontendEmp.scheduleName !== null) {
-    workingSchedule = frontendEmp.scheduleName._id || frontendEmp.scheduleName.name || 'Standard 5-Day (40 hrs)';
-  } else if (typeof frontendEmp.workingSchedule === 'object' && frontendEmp.workingSchedule !== null) {
-    workingSchedule = frontendEmp.workingSchedule._id || frontendEmp.workingSchedule.name || 'Standard 5-Day (40 hrs)';
-  } else if (frontendEmp.scheduleName) {
-    workingSchedule = frontendEmp.scheduleName;
-  } else if (frontendEmp.workingSchedule) {
-    workingSchedule = frontendEmp.workingSchedule;
-  }
 
   const payload = {
-    employeeCode: frontendEmp.employeeCode || frontendEmp.id,
+    employeeCode: generateEmployeeCode(frontendEmp),
     firstName,
     lastName,
-    email: (frontendEmp.workEmail || frontendEmp.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@peoplepay360.internal`).toLowerCase(),
-    phone: frontendEmp.phone || '+1 (555) 000-0000',
-    department: frontendEmp.department || 'Engineering',
-    jobPosition: frontendEmp.jobPosition || 'Associate',
-    workingSchedule,
+    email: (frontendEmp.workEmail || frontendEmp.email || '').toLowerCase(),
+    phone: frontendEmp.phone || '',
+    department: frontendEmp.department,
+    jobPosition: frontendEmp.jobPosition,
     status,
-    hireDate: frontendEmp.joinedDate ? new Date(frontendEmp.joinedDate).toISOString() : new Date().toISOString(),
   };
 
-  if (frontendEmp.manager && typeof frontendEmp.manager === 'string' && frontendEmp.manager.length === 24) {
-    payload.manager = frontendEmp.manager;
+  if (frontendEmp.joinedDate) {
+    payload.hireDate = frontendEmp.joinedDate;
+  }
+
+  if (frontendEmp.dob) {
+    payload.dob = frontendEmp.dob;
+  }
+
+  if (frontendEmp.employmentType) {
+    payload.employmentType = frontendEmp.employmentType;
+  }
+
+  if (frontendEmp.avatar) {
+    payload.avatar = frontendEmp.avatar;
+  }
+
+  if (frontendEmp.managerId) {
+    payload.manager = frontendEmp.managerId;
+  }
+
+  if (frontendEmp.scheduleId) {
+    payload.workingSchedule = frontendEmp.scheduleId;
+  }
+
+  if (frontendEmp.address && typeof frontendEmp.address === 'object') {
+    payload.address = frontendEmp.address;
   }
 
   return payload;
 }
 
-/**
- * Employee Service
- * Connects to the PeoplePay360 Express/MongoDB backend API.
- * Falls back seamlessly to mock data if the backend is offline.
- */
 export const employeeService = {
   async getEmployees() {
-    try {
-      const response = await apiClient(EMPLOYEES_ENDPOINT);
-      if (response && response.data && Array.isArray(response.data)) {
-        if (response.data.length > 0) {
-          return response.data.map(toFrontendEmployee);
-        }
-      }
-      return INITIAL_EMPLOYEES;
-    } catch (err) {
-      console.warn('Backend unavailable for employees, falling back to local dataset:', err.message);
-      return INITIAL_EMPLOYEES;
+    const response = await apiClient(EMPLOYEES_ENDPOINT);
+    const rows = response?.data;
+    if (!Array.isArray(rows)) {
+      throw new Error('Unexpected employee list response');
     }
+    return rows.map(toFrontendEmployee);
   },
 
-  async getEmployeeById(id) {
-    try {
-      const response = await apiClient(`${EMPLOYEES_ENDPOINT}/${id}`);
-      if (response && response.data) {
-        return toFrontendEmployee(response.data);
-      }
-      return INITIAL_EMPLOYEES.find((emp) => emp.id === id || emp._id === id) || null;
-    } catch (err) {
-      console.warn(`Backend error getting employee ${id}, falling back:`, err.message);
-      return INITIAL_EMPLOYEES.find((emp) => emp.id === id) || null;
+  async getEmployeeById(employeeCode) {
+    const response = await apiClient(`${EMPLOYEES_ENDPOINT}/${employeeCode}`);
+    if (!response?.data) {
+      throw new Error('Employee not found');
     }
+    return toFrontendEmployee(response.data);
   },
 
   async createEmployee(payload) {
-    try {
-      const backendPayload = toBackendPayload(payload);
-      const response = await apiClient(EMPLOYEES_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify(backendPayload),
-      });
-      if (response && response.data) {
-        return toFrontendEmployee(response.data);
-      }
-    } catch (err) {
-      console.warn('Backend error creating employee, saving locally:', err.message);
+    const response = await apiClient(EMPLOYEES_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify(toBackendPayload(payload)),
+    });
+    if (!response?.data) {
+      throw new Error('Employee was not created');
     }
-    return {
-      id: payload.id || `EMP-${Date.now().toString().slice(-4)}`,
-      ...payload,
-      fullName: payload.fullName || `${payload.firstName || ''} ${payload.lastName || ''}`.trim(),
-    };
+    return toFrontendEmployee(response.data);
   },
 
-  async updateEmployee(id, payload, mongoId) {
-    const targetId = mongoId || payload._id || id;
-    try {
-      const backendPayload = toBackendPayload({ ...payload, id });
-      const response = await apiClient(`${EMPLOYEES_ENDPOINT}/${targetId}`, {
-        method: 'PUT',
-        body: JSON.stringify(backendPayload),
-      });
-      if (response && response.data) {
-        return toFrontendEmployee(response.data);
-      }
-    } catch (err) {
-      console.warn(`Backend error updating employee ${targetId}, saving locally:`, err.message);
+  async updateEmployee(employeeCode, payload) {
+    const response = await apiClient(`${EMPLOYEES_ENDPOINT}/${employeeCode}`, {
+      method: 'PUT',
+      body: JSON.stringify(toBackendPayload({ ...payload, employeeCode })),
+    });
+    if (!response?.data) {
+      throw new Error('Employee was not updated');
     }
-    return { id, ...payload };
+    return toFrontendEmployee(response.data);
   },
 
-  async deleteEmployee(id, mongoId) {
-    const targetId = mongoId || id;
-    try {
-      await apiClient(`${EMPLOYEES_ENDPOINT}/${targetId}`, {
-        method: 'DELETE',
-      });
-      return { success: true };
-    } catch (err) {
-      console.warn(`Backend error deleting employee ${targetId}, deleting locally:`, err.message);
-      return { success: true };
-    }
+  async deleteEmployee(employeeCode) {
+    await apiClient(`${EMPLOYEES_ENDPOINT}/${employeeCode}`, {
+      method: 'DELETE',
+    });
+    return { success: true };
   },
 };

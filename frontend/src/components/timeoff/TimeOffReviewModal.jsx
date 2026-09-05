@@ -15,21 +15,28 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
 
   // Find matching allocation balance
   const employeeAlloc = allocations.find(
-    (a) => a.employeeId === request.employeeId && a.typeName.toLowerCase().includes(request.timeOffType.toLowerCase())
+    (a) =>
+      a.employeeId === request.employeeId &&
+      a.typeName &&
+      request.timeOffType &&
+      a.typeName.toLowerCase().includes(request.timeOffType.toLowerCase())
   );
 
-  const allocatedDays = employeeAlloc ? employeeAlloc.allocated : 24;
-  const takenDays = employeeAlloc ? employeeAlloc.taken : 8;
-  const remainingDays = employeeAlloc ? employeeAlloc.remaining : (request.currentBalance || 16);
+  const allocatedDays = employeeAlloc ? employeeAlloc.allocated : 0;
+  const takenDays = employeeAlloc ? employeeAlloc.taken : 0;
+  const remainingDays = employeeAlloc ? employeeAlloc.remaining : 0;
   const balanceAfterApproval = Math.max(0, remainingDays - request.duration);
 
   const handleApprove = () => {
-    approveTimeOff(request.id);
-    setMode('approved_feedback');
-    setTimeout(() => {
-      onClose();
-      setMode('view');
-    }, 1500);
+    approveTimeOff(request.id)
+      .then(() => {
+        setMode('approved_feedback');
+        setTimeout(() => {
+          onClose();
+          setMode('view');
+        }, 1500);
+      })
+      .catch(() => {});
   };
 
   const handleConfirmRefusal = (e) => {
@@ -38,10 +45,13 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
       setRefusalError('Refusal reason is mandatory to document the decision for the employee.');
       return;
     }
-    refuseTimeOff(request.id, refusalReason.trim());
-    setMode('view');
-    setRefusalReason('');
-    onClose();
+    refuseTimeOff(request.id, refusalReason.trim())
+      .then(() => {
+        setMode('view');
+        setRefusalReason('');
+        onClose();
+      })
+      .catch(() => {});
   };
 
   const footerActions = (
@@ -140,7 +150,7 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
             </div>
             <div>
               <span className="text-[11px] text-slate-400 font-medium block">Application Date</span>
-              <span className="font-medium text-slate-600 text-[11px]">{request.appliedDate || '04 Sep 2026'}</span>
+              <span className="font-medium text-slate-600 text-[11px]">{request.appliedDate || '—'}</span>
             </div>
           </div>
         </div>

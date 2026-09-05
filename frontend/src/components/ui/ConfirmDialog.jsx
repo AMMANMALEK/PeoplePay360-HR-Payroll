@@ -17,7 +17,7 @@ export default function ConfirmDialog({
       <div className="flex items-start gap-3.5 py-2">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-            isDestructive ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'
+            isDestructive ? 'bg-rose-100 text-rose-600' : 'bg-brand-100 text-brand-700'
           }`}
         >
           <AlertTriangle className="h-5 w-5" />
@@ -41,10 +41,10 @@ export default function ConfirmDialog({
             onConfirm();
             onClose();
           }}
-          className={`rounded-lg px-3.5 py-2 text-xs font-medium text-white shadow-sm transition-colors ${
+            className={`rounded-lg px-3.5 py-2 text-xs font-medium shadow-sm transition-colors ${
             isDestructive
-              ? 'bg-rose-600 hover:bg-rose-700 focus:ring-rose-500'
-              : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+              ? 'bg-rose-600 text-white hover:bg-rose-700'
+              : 'bg-brand-400 text-slate-900 hover:bg-brand-500'
           }`}
         >
           {confirmLabel}

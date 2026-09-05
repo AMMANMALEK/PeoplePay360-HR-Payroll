@@ -34,7 +34,7 @@ export default function EmployeeAvatar({ name = '', src = '', size = 'md', class
 
   return (
     <div
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 font-medium text-white ring-2 ring-white shadow-sm ${selectedSize} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-brand-200 font-medium text-slate-800 ring-2 ring-white ${selectedSize} ${className}`}
       title={name}
       aria-label={name}
     >

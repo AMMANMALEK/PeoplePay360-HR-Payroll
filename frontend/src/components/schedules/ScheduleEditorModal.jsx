@@ -118,12 +118,10 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
     };
 
     if (initialData?.id) {
-      updateSchedule(initialData.id, payload);
+      updateSchedule(initialData.id, payload).then(() => onClose()).catch(() => {});
     } else {
-      addSchedule(payload);
+      addSchedule(payload).then(() => onClose()).catch(() => {});
     }
-
-    onClose();
   };
 
   return (
@@ -280,7 +278,7 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm transition-colors"
+            className="btn-primary"
           >
             {initialData ? 'Save Schedule' : 'Create Schedule'}
           </button>
