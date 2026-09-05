@@ -1,20 +1,11 @@
 const Employee = require('../models/Employee');
 const Attendance = require('../models/Attendance');
+const { findEmployeeByCode } = require('../utils/employeeHelper');
 
 const normalizeDate = (value) => {
   const date = new Date(value);
   date.setHours(0, 0, 0, 0);
   return date;
-};
-
-const findEmployeeByCode = async (employeeCode) => {
-  if (!employeeCode || !String(employeeCode).trim()) {
-    return null;
-  }
-
-  return Employee.findOne({
-    employeeCode: String(employeeCode).trim().toUpperCase(),
-  });
 };
 
 const createEmployeeAttendance = async (req, res) => {

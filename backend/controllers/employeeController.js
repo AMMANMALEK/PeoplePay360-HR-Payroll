@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Employee = require('../models/Employee');
+const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
 
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&
@@ -57,6 +58,21 @@ const prepareEmployeePayload = async (body) => {
     payload.manager = await resolveManager(payload.manager);
   }
 
+  if ('workingSchedule' in payload) {
+    if (payload.workingSchedule === null || payload.workingSchedule === '') {
+      payload.workingSchedule = null;
+    } else {
+      const schedule = await findScheduleByIdentifier(payload.workingSchedule);
+
+      if (!schedule) {
+        const error = new Error('SCHEDULE_NOT_FOUND');
+        throw error;
+      }
+
+      payload.workingSchedule = schedule._id;
+    }
+  }
+
   return payload;
 };
 
@@ -84,6 +100,7 @@ const getAllEmployees = async (req, res) => {
 
     const employees = await Employee.find(filter)
       .populate('manager', 'firstName lastName email employeeCode')
+      .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -101,10 +118,9 @@ const getAllEmployees = async (req, res) => {
 
 const getEmployeeById = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id).populate(
-      'manager',
-      'firstName lastName email employeeCode department jobPosition'
-    );
+    const employee = await Employee.findById(req.params.id)
+      .populate('manager', 'firstName lastName email employeeCode department jobPosition')
+      .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours weeklyPattern');
 
     if (!employee) {
       return res.status(404).json({
@@ -136,10 +152,9 @@ const createEmployee = async (req, res) => {
   try {
     const payload = await prepareEmployeePayload(req.body);
     const employee = await Employee.create(payload);
-    const populatedEmployee = await Employee.findById(employee._id).populate(
-      'manager',
-      'firstName lastName email employeeCode'
-    );
+    const populatedEmployee = await Employee.findById(employee._id)
+      .populate('manager', 'firstName lastName email employeeCode')
+      .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours');
 
     res.status(201).json({
       success: true,
@@ -152,6 +167,13 @@ const createEmployee = async (req, res) => {
         success: false,
         message:
           'Manager not found. Use an existing employee ID or full name, or omit manager.',
+      });
+    }
+
+    if (error.message === 'SCHEDULE_NOT_FOUND') {
+      return res.status(400).json({
+        success: false,
+        message: 'Working schedule not found',
       });
     }
 
@@ -192,7 +214,10 @@ const updateEmployee = async (req, res) => {
     const employee = await Employee.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
-    }).populate('manager', 'firstName lastName email employeeCode');
+    }).populate([
+      { path: 'manager', select: 'firstName lastName email employeeCode' },
+      { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' },
+    ]);
 
     if (!employee) {
       return res.status(404).json({
@@ -212,6 +237,13 @@ const updateEmployee = async (req, res) => {
         success: false,
         message:
           'Manager not found. Use an existing employee ID or full name, or omit manager.',
+      });
+    }
+
+    if (error.message === 'SCHEDULE_NOT_FOUND') {
+      return res.status(400).json({
+        success: false,
+        message: 'Working schedule not found',
       });
     }
 

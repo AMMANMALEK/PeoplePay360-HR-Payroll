@@ -57,8 +57,8 @@ const employeeSchema = new mongoose.Schema(
       default: null,
     },
     workingSchedule: {
-      type: String,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'WorkingSchedule',
       default: null,
     },
     status: {
