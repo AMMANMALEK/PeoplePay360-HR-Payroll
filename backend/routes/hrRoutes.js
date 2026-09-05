@@ -9,8 +9,11 @@ const employeeTimeOffAllocationRoutes = require('./employeeTimeOffAllocationRout
 const employeeTimeOffRequestRoutes = require('./employeeTimeOffRequestRoutes');
 const attendanceListRoutes = require('./attendanceListRoutes');
 const validateEmployeeCode = require('../middleware/validateEmployeeCode');
+const payrollRoutes = require('./payrollRoutes');
 
 const router = express.Router();
+
+router.use('/', payrollRoutes);
 
 router.use('/working-schedules', workingScheduleRoutes);
 router.use('/attendance', attendanceListRoutes);
