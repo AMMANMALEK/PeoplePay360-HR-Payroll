@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -10,8 +10,13 @@ import {
   ChevronLeft,
   X,
   LogOut,
+  BadgeDollarSign,
+  Calculator,
+  Receipt,
+  Layers,
+  Sliders,
 } from 'lucide-react';
-import { NAV_ITEMS, APP_ROLE } from '../../constants/navigation';
+import { NAV_ITEMS, PAYROLL_NAV_ITEMS, APP_ROLE } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,11 +27,25 @@ const ICON_MAP = {
   FileText,
   CalendarDays,
   CalendarCheck,
+<<<<<<< HEAD
 };
 
 export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) {
   const { kpis } = useHRData();
   const { logout } = useAuth();
+=======
+  BarChart3,
+  BadgeDollarSign,
+  Calculator,
+  Receipt,
+  Layers,
+  Sliders,
+};
+
+export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) {
+  const navigate = useNavigate();
+  const { kpis, payruns, currentRole, setCurrentRole } = useHRData();
+>>>>>>> 3035e89c7acb4b8ccf2f83eb29ddd1bd13812d82
 
   const getBadgeValue = (key) => {
     if (key === 'pendingTimeOff') return kpis.pendingTimeOff;
@@ -34,6 +53,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
     if (key === 'totalEmployees') return kpis.totalEmployees;
     return null;
   };
+
+  const pendingPayrunsCount = payruns?.filter(p => p.status === 'Draft' || p.status === 'Validation Required').length || 0;
 
   const handleLogout = () => {
     logout().finally(() => {
@@ -56,7 +77,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
           className={({ isActive }) =>
             `group relative flex items-center rounded-2xl py-2.5 text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-brand-400 text-slate-900'
+                ? 'bg-brand-400 text-slate-900 font-semibold shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             } ${collapsed ? 'justify-center px-2' : 'px-3'}`
           }
@@ -83,9 +104,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
 
   const renderSidebarBody = (collapsed, isMobile = false) => (
     <div className="flex h-full flex-col bg-white text-slate-700">
-      <div className="flex h-[72px] shrink-0 items-center justify-between px-4">
+      <div className="flex h-[72px] shrink-0 items-center justify-between px-4 border-b border-slate-100">
         <div className="flex items-center overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-400 text-slate-900 font-bold">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-400 text-slate-900 font-bold shadow-sm">
             P
           </div>
           <div
@@ -93,8 +114,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
               collapsed ? 'ml-0 max-w-0 opacity-0' : 'ml-2.5 max-w-[160px] opacity-100'
             }`}
           >
-            <span className="block text-sm font-semibold tracking-tight text-slate-900">PeopleFlow</span>
-            <span className="block text-[11px] font-medium text-slate-400">HR Operations</span>
+            <span className="block text-sm font-bold tracking-tight text-slate-900">PeoplePay360</span>
+            <span className="block text-[11px] font-medium text-slate-500">HR & Payroll Workspace</span>
           </div>
         </div>
         {isMobile ? (
@@ -118,6 +139,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         )}
       </div>
 
+<<<<<<< HEAD
       <div className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
         <p
           className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
@@ -141,27 +163,76 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
             </nav>
           </>
         )}
+=======
+      <div className="flex-1 overflow-y-auto px-3 pb-4 pt-3 space-y-5">
+        <div>
+          <p
+            className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
+              collapsed ? 'sr-only' : ''
+            }`}
+          >
+            HR Management
+          </p>
+          <nav className="space-y-1">{renderNav(NAV_ITEMS.filter((item) => !item.isSecondary), collapsed, isMobile)}</nav>
+        </div>
+
+        {currentRole === 'HR_PAYROLL_USER' && (
+          <div>
+            <div className="flex items-center justify-between px-3 mb-2">
+              <p
+                className={`text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 ${
+                  collapsed ? 'sr-only' : ''
+                }`}
+              >
+                Payroll Center
+              </p>
+              {!collapsed && pendingPayrunsCount > 0 && (
+                <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
+                  {pendingPayrunsCount} Action
+                </span>
+              )}
+            </div>
+            <nav className="space-y-1">{renderNav(PAYROLL_NAV_ITEMS, collapsed, isMobile)}</nav>
+          </div>
+        )}
+
+        <div>
+          <p
+            className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
+              collapsed ? 'sr-only' : ''
+            }`}
+          >
+            Analytics
+          </p>
+          <nav className="space-y-1">{renderNav(NAV_ITEMS.filter((item) => item.isSecondary), collapsed, isMobile)}</nav>
+        </div>
+>>>>>>> 3035e89c7acb4b8ccf2f83eb29ddd1bd13812d82
       </div>
 
       <div className="shrink-0 border-t border-slate-100 p-3">
-        <div className={`flex items-center rounded-2xl bg-slate-50 p-2 ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-slate-800">
-            HR
+        <div className={`flex items-center rounded-2xl bg-slate-50 p-2.5 ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-400 text-xs font-bold text-slate-900 shadow-sm">
+            {currentRole === 'HR_MANAGER' ? 'HR' : 'PR'}
           </div>
           <div className={`min-w-0 ${collapsed ? 'hidden' : 'flex-1'}`}>
-            <p className="truncate text-xs font-semibold text-slate-900">HR Manager</p>
-            <p className="truncate text-[11px] text-slate-500">{APP_ROLE.name}</p>
+            <p className="truncate text-xs font-bold text-slate-900">Alex Morgan</p>
+            <p className="truncate text-[11px] font-bold text-brand-700">
+              {currentRole === 'HR_MANAGER' ? 'HR Manager' : 'HR Payroll User'}
+            </p>
           </div>
         </div>
+
         <button
           type="button"
-          onClick={handleLogout}
-          className={`mt-2 flex w-full items-center rounded-2xl px-2 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 ${
+          onClick={() => {
+            navigate('/login');
+          }}
+          className={`mt-2 flex w-full items-center rounded-2xl px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 ${
             collapsed ? 'justify-center' : 'gap-2'
           }`}
         >
           <LogOut className="h-4 w-4" />
-          {!collapsed && <span>Logout</span>}
+          {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
     </div>
