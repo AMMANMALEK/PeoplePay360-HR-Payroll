@@ -13,68 +13,94 @@ export default function AttentionCard({ item }) {
   const navigate = useNavigate();
   const IconComponent = ICON_COMPONENTS[item.icon] || AlertTriangle;
 
-  // Visual severity indicators according to design guidelines
-  const typeStyles = {
+  // Refined semantic tokens: crisp white card with purposeful colored accents
+  const typeConfig = {
+    danger: {
+      topBorder: 'border-t-rose-500',
+      iconBox: 'bg-rose-50 text-rose-600 border border-rose-100/80',
+      badge: 'bg-rose-50 text-rose-700 border-rose-200/80',
+      badgeDot: 'bg-rose-500',
+      defaultBadge: 'Action Required',
+      hoverBtn: 'group-hover:bg-rose-600 group-hover:text-white',
+      hoverText: 'group-hover:text-rose-700'
+    },
     warning: {
-      border: 'border-rose-200 bg-rose-50/40 hover:bg-rose-50/80 hover:border-rose-300',
-      badge: 'bg-rose-100 text-rose-800 border-rose-200',
-      icon: 'bg-rose-100 text-rose-700',
-      dot: 'bg-rose-500',
-      btn: 'text-rose-900 bg-white hover:bg-rose-50 border border-rose-200 shadow-2xs'
+      topBorder: 'border-t-rose-500',
+      iconBox: 'bg-rose-50 text-rose-600 border border-rose-100/80',
+      badge: 'bg-rose-50 text-rose-700 border-rose-200/80',
+      badgeDot: 'bg-rose-500',
+      defaultBadge: 'Action Required',
+      hoverBtn: 'group-hover:bg-rose-600 group-hover:text-white',
+      hoverText: 'group-hover:text-rose-700'
     },
     urgent: {
-      border: 'border-amber-200 bg-amber-50/40 hover:bg-amber-50/80 hover:border-amber-300',
-      badge: 'bg-amber-100 text-amber-800 border-amber-200',
-      icon: 'bg-amber-100 text-amber-700',
-      dot: 'bg-amber-500',
-      btn: 'text-amber-900 bg-white hover:bg-amber-50 border border-amber-200 shadow-2xs'
+      topBorder: 'border-t-amber-500',
+      iconBox: 'bg-amber-50 text-amber-600 border border-amber-100/80',
+      badge: 'bg-amber-50 text-amber-700 border-amber-200/80',
+      badgeDot: 'bg-amber-500',
+      defaultBadge: 'Pending Approval',
+      hoverBtn: 'group-hover:bg-amber-600 group-hover:text-white',
+      hoverText: 'group-hover:text-amber-700'
+    },
+    contract: {
+      topBorder: 'border-t-indigo-500',
+      iconBox: 'bg-indigo-50 text-indigo-600 border border-indigo-100/80',
+      badge: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+      badgeDot: 'bg-indigo-500',
+      defaultBadge: 'Expiring Soon',
+      hoverBtn: 'group-hover:bg-indigo-600 group-hover:text-white',
+      hoverText: 'group-hover:text-indigo-700'
     },
     info: {
-      border: 'border-sky-200 bg-sky-50/40 hover:bg-sky-50/80 hover:border-sky-300',
-      badge: 'bg-sky-100 text-sky-800 border-sky-200',
-      icon: 'bg-sky-100 text-sky-700',
-      dot: 'bg-sky-500',
-      btn: 'text-sky-900 bg-white hover:bg-sky-50 border border-sky-200 shadow-2xs'
+      topBorder: 'border-t-sky-500',
+      iconBox: 'bg-sky-50 text-sky-600 border border-sky-100/80',
+      badge: 'bg-sky-50 text-sky-700 border-sky-200/80',
+      badgeDot: 'bg-sky-500',
+      defaultBadge: 'Profile Data',
+      hoverBtn: 'group-hover:bg-sky-600 group-hover:text-white',
+      hoverText: 'group-hover:text-sky-700'
     }
   };
 
-  const style = typeStyles[item.type] || typeStyles.warning;
+  const config = typeConfig[item.type] || typeConfig.warning;
+  const badgeLabel = item.badgeText || config.defaultBadge;
 
   return (
     <div
       onClick={() => navigate(item.targetRoute)}
-      className={`group flex flex-col justify-between rounded-xl border p-4.5 cursor-pointer transition-all duration-200 hover:shadow-hover hover:-translate-y-0.5 sm:flex-row sm:items-center ${style.border}`}
+      className={`group relative flex h-full flex-col justify-between rounded-xl border border-slate-200/80 border-t-4 ${config.topBorder} bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all duration-200 cursor-pointer`}
     >
-      <div className="flex items-start gap-3.5">
-        <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-2xs ${style.icon}`}>
-          <IconComponent className="h-4 w-4" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${style.dot} animate-pulse`} />
-            <h3 className="text-xs font-bold text-slate-900">{item.title}</h3>
-            {item.count && (
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.2 text-[10px] font-bold ${style.badge}`}>
-                {item.count}
-              </span>
-            )}
+      <div>
+        {/* Header: Semantic Icon & Status Pill */}
+        <div className="flex items-center justify-between">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-lg shadow-2xs ${config.iconBox}`}>
+            <IconComponent className="h-4 w-4" />
           </div>
-          <p className="mt-1 text-xs text-slate-600 leading-relaxed">{item.description}</p>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${config.badge}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${config.badgeDot} ${item.type === 'danger' || item.type === 'warning' ? 'animate-pulse' : ''}`} />
+            {badgeLabel}
+          </span>
+        </div>
+
+        {/* Content: Title & Operational Context */}
+        <div className="mt-3.5">
+          <h3 className={`text-sm font-bold text-slate-900 leading-snug ${config.hoverText} transition-colors`}>
+            {item.title}
+          </h3>
+          <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+            {item.description}
+          </p>
         </div>
       </div>
 
-      <div className="mt-3 shrink-0 sm:mt-0 sm:pl-4">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(item.targetRoute);
-          }}
-          className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all duration-150 sm:w-auto ${style.btn}`}
-        >
-          <span>{item.actionLabel}</span>
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-        </button>
+      {/* Footer: Action Button */}
+      <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+        <span className={`text-xs font-semibold text-slate-700 ${config.hoverText} transition-colors`}>
+          {item.actionLabel}
+        </span>
+        <div className={`flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500 ${config.hoverBtn} transition-all transform group-hover:translate-x-0.5`}>
+          <ArrowRight className="h-3.5 w-3.5" />
+        </div>
       </div>
     </div>
   );

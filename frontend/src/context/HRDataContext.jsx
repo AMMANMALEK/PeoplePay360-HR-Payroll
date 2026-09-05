@@ -89,8 +89,9 @@ export function HRDataProvider({ children }) {
     if (kpis.attendanceExceptions > 0) {
       items.push({
         id: 'ATTN-ATTENDANCE',
-        type: 'warning',
+        type: 'danger',
         icon: 'AlertTriangle',
+        badgeText: 'Action Required',
         title: `${kpis.attendanceExceptions} attendance records need correction`,
         description: 'Missing check-out and unexcused absences recorded today.',
         targetRoute: '/attendance?filter=exceptions',
@@ -104,6 +105,7 @@ export function HRDataProvider({ children }) {
         id: 'ATTN-TIMEOFF',
         type: 'urgent',
         icon: 'Clock',
+        badgeText: 'Pending Approval',
         title: `${kpis.pendingTimeOff} time-off requests awaiting approval`,
         description: 'Employees waiting on approval for upcoming annual and sick leaves.',
         targetRoute: '/time-off?status=Pending',
@@ -115,8 +117,9 @@ export function HRDataProvider({ children }) {
     if (kpis.expiringContracts > 0) {
       items.push({
         id: 'ATTN-CONTRACTS',
-        type: 'warning',
+        type: 'contract',
         icon: 'FileWarning',
+        badgeText: 'Expiring Soon',
         title: `${kpis.expiringContracts} contracts expire within 45 days`,
         description: 'Fixed term and seasonal agreements requiring renewal or transition.',
         targetRoute: '/contracts?filter=expiring',
@@ -130,6 +133,7 @@ export function HRDataProvider({ children }) {
         id: 'ATTN-PROFILES',
         type: 'info',
         icon: 'UserX',
+        badgeText: 'Incomplete Data',
         title: `${kpis.incompleteProfiles} employees have incomplete profiles`,
         description: 'Emergency contacts or required identity documents are missing.',
         targetRoute: '/employees?filter=incomplete',

@@ -73,26 +73,35 @@ export default function DashboardPage() {
       </div>
 
       {/* 2. ATTENTION REQUIRED (Most important operational section) */}
-      <section aria-labelledby="attention-heading" className="space-y-3">
+      <section aria-labelledby="attention-heading" className="space-y-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-            <h2 id="attention-heading" className="text-xs font-bold tracking-tight text-slate-900 uppercase tracking-wider">
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+            </div>
+            <h2 id="attention-heading" className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Attention Required
             </h2>
-            <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">
+            <span className="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700 border border-rose-200/80">
               {attentionItems.length} Actionable Items
             </span>
           </div>
-          <span className="text-xs text-slate-400">Direct 1-click resolution</span>
+          <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">Direct 1-click resolution</span>
         </div>
 
         {attentionItems.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 shadow-subtle">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-8 text-center text-xs text-slate-500 shadow-xs">
             ✓ You're all caught up. No pending operational exceptions require your intervention.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className={`grid grid-cols-1 gap-4 ${
+            attentionItems.length === 1
+              ? 'max-w-md'
+              : attentionItems.length === 2
+              ? 'md:grid-cols-2'
+              : 'md:grid-cols-2 lg:grid-cols-3'
+          }`}>
             {attentionItems.map((item) => (
               <AttentionCard key={item.id} item={item} />
             ))}
