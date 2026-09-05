@@ -6,6 +6,15 @@ import { scheduleService } from '../services/scheduleService';
 import { timeOffService } from '../services/timeOffService';
 import { adminService } from '../services/adminService';
 import { setApiErrorHandler } from '../services/apiService';
+import { useAuth } from './AuthContext';
+import { ROLES } from '../constants/navigation';
+import { payrollService, evaluatePayrollWarnings } from '../services/payrollService';
+import {
+  INITIAL_PAYRUNS,
+  INITIAL_PAYSLIPS,
+  INITIAL_SALARY_RULES,
+  INITIAL_SALARY_STRUCTURES,
+} from '../data/mockData';
 
 const HRDataContext = createContext(null);
 
@@ -53,6 +62,66 @@ export function HRDataProvider({ children }) {
   const [auditLogs, setAuditLogs] = useState([]);
   const [systemStatus, setSystemStatus] = useState(null);
   const [toast, setToast] = useState(null);
+  const { user } = useAuth();
+
+  // Payroll States
+  const [payruns, setPayruns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_payruns');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return INITIAL_PAYRUNS;
+  });
+
+  const [payslips, setPayslips] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_payslips');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return INITIAL_PAYSLIPS;
+  });
+
+  const [salaryStructures, setSalaryStructures] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_salary_structures');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return INITIAL_SALARY_STRUCTURES;
+  });
+
+  const [salaryRules, setSalaryRules] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_salary_rules');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return INITIAL_SALARY_RULES;
+  });
+
+  const [activeRoleOverride, setActiveRoleOverride] = useState(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_payruns', JSON.stringify(payruns));
+    } catch {}
+  }, [payruns]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_payslips', JSON.stringify(payslips));
+    } catch {}
+  }, [payslips]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_salary_structures', JSON.stringify(salaryStructures));
+    } catch {}
+  }, [salaryStructures]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_salary_rules', JSON.stringify(salaryRules));
+    } catch {}
+  }, [salaryRules]);
 
   // Managed Departments State with Local Persistence
   const [departmentsList, setDepartmentsList] = useState(() => {
@@ -388,6 +457,21 @@ export function HRDataProvider({ children }) {
       return diffDays >= 0 && diffDays <= 45;
     }).length;
     const incompleteProfiles = employees.filter((e) => !e.profileComplete).length;
+    const payslipsGenerated = payslips.length;
+    const totalPayrollCost = payruns.reduce(
+      (acc, p) => acc + (p.totalNet || p.netSalary || p.totalNetSalary || 0),
+      0
+    );
+    const totalGrossPayroll = payruns.reduce(
+      (acc, p) => acc + (p.totalGross || p.grossSalary || 0),
+      0
+    );
+    const pendingPayruns = payruns.filter(
+      (p) => p.status === 'Draft' || p.status === 'Computed' || p.status === 'Validation Required'
+    ).length;
+    const missingBankEmployeesCount = employees.filter(
+      (e) => !e.bankDetails?.accountNumber && !e.bankDetails?.accountNo
+    ).length;
 
     return {
       totalEmployees,
@@ -397,8 +481,13 @@ export function HRDataProvider({ children }) {
       expiringContracts,
       attendanceExceptions,
       incompleteProfiles,
+      payslipsGenerated,
+      totalPayrollCost,
+      totalGrossPayroll,
+      pendingPayruns,
+      missingBankEmployeesCount,
     };
-  }, [employees, attendance, timeOffRequests, contracts]);
+  }, [employees, attendance, timeOffRequests, contracts, payruns, payslips]);
 
   const attentionItems = useMemo(() => {
     const items = [];
@@ -1082,6 +1171,174 @@ export function HRDataProvider({ children }) {
     showToast('Fixed leave allowances updated successfully!');
   };
 
+  // --- Payroll Role & Permissions ---
+  const activeRoleCode = activeRoleOverride || user?.role || ROLES.HR_MANAGER;
+  const isPayrollAuthorized =
+    activeRoleCode === ROLES.HR_PAYROLL_MANAGER ||
+    activeRoleCode === ROLES.HR_PAYROLL_USER ||
+    activeRoleCode === ROLES.ADMIN;
+
+  const currentRole = useMemo(
+    () => ({
+      name:
+        activeRoleCode === ROLES.HR_PAYROLL_MANAGER
+          ? 'HR Payroll Manager'
+          : activeRoleCode === ROLES.HR_PAYROLL_USER
+          ? 'HR Payroll User'
+          : activeRoleCode === ROLES.ADMIN
+          ? 'System Administrator'
+          : 'HR Manager',
+      code: activeRoleCode,
+      permissions: {
+        canAccessPayroll: isPayrollAuthorized,
+        canManageEmployees: activeRoleCode !== ROLES.EMPLOYEE,
+        canManageAttendance: true,
+        canManageContracts: true,
+        canManageSchedules: true,
+        canManageTimeOff: true,
+        canApproveTimeOff:
+          activeRoleCode === ROLES.HR_MANAGER || activeRoleCode === ROLES.ADMIN,
+      },
+    }),
+    [activeRoleCode, isPayrollAuthorized]
+  );
+
+  const switchRole = (newRole) => {
+    setActiveRoleOverride(newRole);
+  };
+
+  // --- Payroll Actions ---
+  const createPayrun = async (payload, selectedEmployees = []) => {
+    const id = payload.id || `PR-${Date.now().toString().slice(-6)}`;
+    const newPayrun = {
+      ...payload,
+      id,
+      status: 'Draft',
+      employeesCount: selectedEmployees.length,
+      payslipsCount: 0,
+      totalGross: 0,
+      totalDeductions: 0,
+      totalNet: 0,
+      processedDate: null,
+      paymentDate: null,
+      notes: payload.notes || 'Payrun draft created via Wizard.',
+    };
+    setPayruns((prev) => [newPayrun, ...prev]);
+    showToast('Payrun batch created successfully!');
+    return newPayrun;
+  };
+
+  const computePayrun = async (payrunId) => {
+    const payrun = payruns.find((p) => p.id === payrunId);
+    if (!payrun) return;
+
+    const result = await payrollService.computePayrun(payrunId, employees, contracts);
+    if (result?.payrun) {
+      setPayruns((prev) => prev.map((p) => (p.id === payrunId ? result.payrun : p)));
+    }
+    if (result?.payslips) {
+      setPayslips((prev) => [
+        ...prev.filter((p) => p.payrunId !== payrunId),
+        ...result.payslips,
+      ]);
+    }
+    showToast('Payrun computed successfully!');
+    return result;
+  };
+
+  const validatePayrun = async (payrunId) => {
+    const updated = await payrollService.validatePayrun(payrunId);
+    setPayruns((prev) => prev.map((p) => (p.id === payrunId ? { ...p, status: 'Validated' } : p)));
+    setPayslips((prev) =>
+      prev.map((p) => (p.payrunId === payrunId ? { ...p, status: 'Validated' } : p))
+    );
+    showToast('Payrun validated successfully!');
+    return updated;
+  };
+
+  const markPayrunPaid = async (payrunId) => {
+    const updated = await payrollService.markPayrunPaid(payrunId);
+    setPayruns((prev) =>
+      prev.map((p) =>
+        p.id === payrunId
+          ? { ...p, status: 'Paid', paymentDate: new Date().toISOString().split('T')[0] }
+          : p
+      )
+    );
+    setPayslips((prev) =>
+      prev.map((p) => (p.payrunId === payrunId ? { ...p, status: 'Paid' } : p))
+    );
+    showToast('Payrun marked as paid!');
+    return updated;
+  };
+
+  const sendPayslips = async (payrunId) => {
+    const res = await payrollService.sendPayslips(payrunId);
+    setPayslips((prev) =>
+      prev.map((p) => (p.payrunId === payrunId ? { ...p, status: 'Sent' } : p))
+    );
+    showToast('Payslips sent to employees!');
+    return res;
+  };
+
+  const deletePayrun = async (payrunId) => {
+    await payrollService.deletePayrun(payrunId);
+    setPayruns((prev) => prev.filter((p) => p.id !== payrunId));
+    setPayslips((prev) => prev.filter((p) => p.payrunId !== payrunId));
+    showToast('Payrun deleted successfully');
+  };
+
+  const getPayrunWarnings = (payrun) => {
+    return evaluatePayrollWarnings({ payrun, payslips, employees, contracts });
+  };
+
+  const addSalaryStructure = (data) => {
+    const newStruc = {
+      ...data,
+      id: `SS-${Date.now().toString().slice(-4)}`,
+      lastUpdated: new Date().toISOString().split('T')[0],
+      status: data.status || 'Active',
+    };
+    setSalaryStructures((prev) => [newStruc, ...prev]);
+    showToast('Salary structure created!');
+    return newStruc;
+  };
+
+  const updateSalaryStructure = (id, data) => {
+    setSalaryStructures((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, ...data, lastUpdated: new Date().toISOString().split('T')[0] } : s
+      )
+    );
+    showToast('Salary structure updated!');
+  };
+
+  const deleteSalaryStructure = (id) => {
+    setSalaryStructures((prev) => prev.filter((s) => s.id !== id));
+    showToast('Salary structure deleted');
+  };
+
+  const addSalaryRule = (data) => {
+    const newRule = {
+      ...data,
+      id: `RULE-${Date.now().toString().slice(-4)}`,
+      status: data.status || 'Active',
+    };
+    setSalaryRules((prev) => [...prev, newRule]);
+    showToast('Salary rule created!');
+    return newRule;
+  };
+
+  const updateSalaryRule = (id, data) => {
+    setSalaryRules((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
+    showToast('Salary rule updated!');
+  };
+
+  const deleteSalaryRule = (id) => {
+    setSalaryRules((prev) => prev.filter((r) => r.id !== id));
+    showToast('Salary rule deleted');
+  };
+
   const value = {
     employees,
     isLoadingEmployees,
@@ -1141,6 +1398,26 @@ export function HRDataProvider({ children }) {
     addHRLeaveRequest,
     adjustHRAttendance,
     addHRAttendanceRecord,
+    // Payroll values & methods
+    payruns,
+    payslips,
+    salaryStructures,
+    salaryRules,
+    currentRole,
+    switchRole,
+    createPayrun,
+    computePayrun,
+    validatePayrun,
+    markPayrunPaid,
+    sendPayslips,
+    deletePayrun,
+    getPayrunWarnings,
+    addSalaryStructure,
+    updateSalaryStructure,
+    deleteSalaryStructure,
+    addSalaryRule,
+    updateSalaryRule,
+    deleteSalaryRule,
   };
 
   return <HRDataContext.Provider value={value}>{children}</HRDataContext.Provider>;

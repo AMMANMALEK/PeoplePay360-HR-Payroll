@@ -29,10 +29,14 @@ import RolesPermissionsPage from './pages/Admin/RolesPermissionsPage';
 import SystemAdminPage from './pages/Admin/SystemAdminPage';
 import AuditLogPage from './pages/Admin/AuditLogPage';
 
+// Payroll Pages
+import PayrollPage from './pages/Payroll/PayrollPage';
+import PayrollDashboardPage from './pages/Payroll/PayrollDashboardPage';
+
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
@@ -71,11 +75,11 @@ export default function App() {
             <Route path="audit" element={<AuditLogPage />} />
           </Route>
 
-          {/* HR Manager Routes */}
+          {/* Main App Workspace Routes: HR Manager, Payroll Manager, Payroll User, Admin */}
           <Route
             path="/"
             element={
-              <RequireAuth roles={[ROLES.HR_MANAGER]}>
+              <RequireAuth roles={[ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.ADMIN]}>
                 <HRDataProvider>
                   <AppShell />
                 </HRDataProvider>
@@ -89,6 +93,8 @@ export default function App() {
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="time-off" element={<TimeOffPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="payroll/dashboard" element={<PayrollDashboardPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

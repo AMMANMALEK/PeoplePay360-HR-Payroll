@@ -53,7 +53,7 @@ const findActiveAllocation = async (employeeId, timeOffTypeId, requestStartDate,
   const query = TimeOffAllocation.findOne({
     employee: employeeId,
     timeOffType: timeOffTypeId,
-    status: 'approved',
+    status: { $in: ['approved', 'active'] },
     validFrom: { $lte: date },
     validTo: { $gte: date },
   }).sort({ validFrom: -1 });

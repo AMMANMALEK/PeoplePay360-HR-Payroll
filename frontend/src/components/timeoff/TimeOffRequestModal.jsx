@@ -57,6 +57,11 @@ export default function TimeOffRequestModal({ isOpen, onClose }) {
       setFormError('Please specify start and end dates.');
       return;
     }
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (startDate < todayStr) {
+      setFormError('Cannot select past dates. Start date must be today or in the future.');
+      return;
+    }
     if (new Date(endDate) < new Date(startDate)) {
       setFormError('End date must be on or after start date.');
       return;
@@ -177,6 +182,7 @@ export default function TimeOffRequestModal({ isOpen, onClose }) {
         </div>
 
         {/* Date Range */}
+        {/* Date Range with Calendar Past Date Restriction */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -185,6 +191,7 @@ export default function TimeOffRequestModal({ isOpen, onClose }) {
             <input
               type="date"
               required
+              min={new Date().toISOString().split('T')[0]}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-indigo-500 focus:outline-none"
@@ -197,6 +204,7 @@ export default function TimeOffRequestModal({ isOpen, onClose }) {
             <input
               type="date"
               required
+              min={startDate || new Date().toISOString().split('T')[0]}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs shadow-2xs focus:border-indigo-500 focus:outline-none"

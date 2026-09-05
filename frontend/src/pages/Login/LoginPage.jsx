@@ -52,7 +52,7 @@ function WorkplaceIllustration() {
 }
 
 export default function LoginPage() {
-  const { login, isAuthenticated, isHrManager, isEmployee, isAdmin } = useAuth();
+  const { login, isAuthenticated, isHrManager, isEmployee, isAdmin, isPayrollManager, isPayrollUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -72,6 +72,9 @@ export default function LoginPage() {
   if (isAuthenticated) {
     if (isAdmin) {
       return <Navigate to="/admin" replace />;
+    }
+    if (isPayrollManager || isPayrollUser) {
+      return <Navigate to="/payroll" replace />;
     }
     if (isHrManager) {
       return <Navigate to="/" replace />;
@@ -108,6 +111,8 @@ export default function LoginPage() {
 
       if (user.role === ROLES.ADMIN) {
         window.location.assign('/admin');
+      } else if (user.role === ROLES.HR_PAYROLL_MANAGER || user.role === ROLES.HR_PAYROLL_USER) {
+        window.location.assign('/payroll');
       } else if (user.role === ROLES.HR_MANAGER) {
         window.location.assign('/');
       } else {

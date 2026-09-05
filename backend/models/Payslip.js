@@ -1,4 +1,21 @@
+/**
+ * Payslip Model
+ *
+ * Computed salary statement for one employee in a specific payrun.
+ * Contains line-by-line earnings, deductions, bank transfer receipt details,
+ * and net take-home pay.
+ */
+
 const mongoose = require('mongoose');
+
+const payItemSchema = new mongoose.Schema(
+  {
+    code: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    amount: { type: Number, required: true, default: 0 },
+  },
+  { _id: false }
+);
 
 const payslipLineSchema = new mongoose.Schema(
   {
@@ -27,15 +44,58 @@ const payslipSchema = new mongoose.Schema(
       ref: 'Contract',
       required: [true, 'Contract reference is required'],
     },
+    periodName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    periodStart: {
+      type: Date,
+      default: null,
+    },
+    periodEnd: {
+      type: Date,
+      default: null,
+    },
     workedDays: {
       type: Number,
       default: 0,
     },
-    lines: {
-      type: [payslipLineSchema],
+    totalWorkDays: {
+      type: Number,
+      default: 0,
+    },
+    contractWage: {
+      type: Number,
+      default: 0,
+    },
+    bankDetails: {
+      accountHolder: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      bankName: { type: String, default: '' },
+      routingNumber: { type: String, default: '' },
+    },
+    earnings: {
+      type: [payItemSchema],
       default: [],
     },
+    deductions: {
+      type: [payItemSchema],
+      default: [],
+    },
+    gross: {
+      type: Number,
+      default: 0,
+    },
     grossSalary: {
+      type: Number,
+      default: 0,
+    },
+    totalDeductions: {
+      type: Number,
+      default: 0,
+    },
+    net: {
       type: Number,
       default: 0,
     },
@@ -43,14 +103,18 @@ const payslipSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lines: {
+      type: [payslipLineSchema],
+      default: [],
+    },
     warnings: {
       type: [String],
       default: [],
     },
     status: {
       type: String,
-      enum: ['Draft', 'Done'],
-      default: 'Draft',
+      enum: ['Draft', 'Computed', 'Validated', 'Paid', 'Done'],
+      default: 'Computed',
     },
   },
   {
@@ -58,6 +122,18 @@ const payslipSchema = new mongoose.Schema(
   }
 );
 
+// Prevents duplicate payslips: one employee can only have one payslip per payrun
 payslipSchema.index({ payrun: 1, employee: 1 }, { unique: true });
+
+// Synchronize gross/grossSalary and net/netSalary before validation
+payslipSchema.pre('validate', function (next) {
+  if (this.gross && !this.grossSalary) this.grossSalary = this.gross;
+  if (this.grossSalary && !this.gross) this.gross = this.grossSalary;
+
+  if (this.net && !this.netSalary) this.netSalary = this.net;
+  if (this.netSalary && !this.net) this.net = this.netSalary;
+
+  next();
+});
 
 module.exports = mongoose.model('Payslip', payslipSchema);

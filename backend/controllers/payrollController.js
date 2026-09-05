@@ -165,6 +165,10 @@ exports.computePayrun = async (req, res, next) => {
 
     const payslips = [];
 
+    let totalGross = 0;
+    let totalDeductions = 0;
+    let totalNet = 0;
+
     for (const employee of payrun.employees) {
       let contract;
       try {
@@ -187,15 +191,40 @@ exports.computePayrun = async (req, res, next) => {
         continue;
       }
 
+      const earnings = (engineResult.lines || [])
+        .filter((l) => ['Basic', 'Allowance', 'Allowances'].includes(l.category))
+        .map((l) => ({ code: l.code, name: l.ruleName, amount: l.amount }));
+
+      const deductions = (engineResult.lines || [])
+        .filter((l) => ['Deduction', 'Deductions'].includes(l.category))
+        .map((l) => ({ code: l.code, name: l.ruleName, amount: l.amount }));
+
+      const slipDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
+
+      totalGross += engineResult.grossSalary;
+      totalDeductions += slipDeductions;
+      totalNet += engineResult.netSalary;
+
       payslips.push({
         payrun: payrun._id,
         employee: employee._id,
         contract: contract._id,
-        workedDays: 30, // Mock for now, would typically be derived from Attendance
-        lines: engineResult.lines,
+        periodName: payrun.periodName || '',
+        periodStart: payrun.periodStart,
+        periodEnd: payrun.periodEnd,
+        contractWage: contract.wageAmount || 0,
+        workedDays: 22,
+        totalWorkDays: 22,
+        bankDetails: employee.bankDetails || null,
+        earnings,
+        deductions,
+        gross: engineResult.grossSalary,
         grossSalary: engineResult.grossSalary,
+        totalDeductions: slipDeductions,
+        net: engineResult.netSalary,
         netSalary: engineResult.netSalary,
-        status: 'Draft'
+        lines: engineResult.lines,
+        status: 'Computed',
       });
     }
 
@@ -204,6 +233,12 @@ exports.computePayrun = async (req, res, next) => {
     }
 
     payrun.status = 'Computed';
+    payrun.totalGross = totalGross;
+    payrun.totalDeductions = totalDeductions;
+    payrun.totalNet = totalNet;
+    payrun.employeesCount = payslips.length;
+    payrun.payslipsCount = payslips.length;
+    payrun.processedDate = new Date();
     await payrun.save();
 
     res.status(200).json({ 
@@ -222,6 +257,7 @@ exports.computePayrun = async (req, res, next) => {
 exports.validatePayrun = async (req, res, next) => {
   try {
     const payrun = await Payrun.findByIdAndUpdate(req.params.id, { status: 'Validated' }, { new: true });
+    await Payslip.updateMany({ payrun: payrun._id }, { status: 'Validated' });
     res.status(200).json({ success: true, data: payrun });
   } catch (error) {
     next(error);
@@ -230,8 +266,12 @@ exports.validatePayrun = async (req, res, next) => {
 
 exports.markPayrunPaid = async (req, res, next) => {
   try {
-    const payrun = await Payrun.findByIdAndUpdate(req.params.id, { status: 'Paid' }, { new: true });
-    await Payslip.updateMany({ payrun: payrun._id }, { status: 'Done' });
+    const payrun = await Payrun.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Paid', paymentDate: new Date() },
+      { new: true }
+    );
+    await Payslip.updateMany({ payrun: payrun._id }, { status: 'Paid' });
     res.status(200).json({ success: true, data: payrun });
   } catch (error) {
     next(error);
@@ -240,7 +280,6 @@ exports.markPayrunPaid = async (req, res, next) => {
 
 exports.sendPayslips = async (req, res, next) => {
   try {
-    // Stub email sending
     console.log(`[STUB] Sending payslip emails for Payrun ${req.params.id}`);
     res.status(200).json({ success: true, message: 'Payslips sent successfully (Stub)' });
   } catch (error) {
@@ -255,8 +294,8 @@ exports.getPayslips = async (req, res, next) => {
   try {
     const filter = req.query.payrun ? { payrun: req.query.payrun } : {};
     const payslips = await Payslip.find(filter)
-      .populate('employee', 'employeeCode firstName lastName')
-      .populate('contract', 'contractCode wageAmount');
+      .populate('employee', 'employeeCode firstName lastName department jobPosition bankDetails')
+      .populate('contract', 'contractCode wageAmount department jobPosition');
     res.status(200).json({ success: true, data: payslips });
   } catch (error) {
     next(error);
@@ -266,7 +305,7 @@ exports.getPayslips = async (req, res, next) => {
 exports.getPayslipById = async (req, res, next) => {
   try {
     const payslip = await Payslip.findById(req.params.id)
-      .populate('employee', 'employeeCode firstName lastName department')
+      .populate('employee', 'employeeCode firstName lastName department jobPosition bankDetails')
       .populate('contract');
     if (!payslip) {
       const error = new Error('Payslip not found');

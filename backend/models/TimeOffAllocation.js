@@ -1,3 +1,12 @@
+/**
+ * TimeOffAllocation Model
+ *
+ * Grants an employee a quota of leave days/hours for a specific leave category within a validity period.
+ * Example: 20 days of Annual Leave for year 2026.
+ *
+ * Automatically tracks allocated, taken, and remaining balances.
+ */
+
 const mongoose = require('mongoose');
 const { normalizeDate } = require('../utils/dateHelper');
 
@@ -38,8 +47,8 @@ const timeOffAllocationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'expired'],
-      default: 'pending',
+      enum: ['active', 'approved', 'pending', 'expired'],
+      default: 'active',
     },
     notes: {
       type: String,
@@ -52,7 +61,11 @@ const timeOffAllocationSchema = new mongoose.Schema(
   }
 );
 
+// When checking if an employee has remaining balance for a specific leave type in a given period
 timeOffAllocationSchema.index({ employee: 1, timeOffType: 1, validFrom: 1 });
+
+timeOffAllocationSchema.set('toJSON', { virtuals: true });
+timeOffAllocationSchema.set('toObject', { virtuals: true });
 
 timeOffAllocationSchema.pre('validate', function (next) {
   if (this.validTo && this.validFrom && normalizeDate(this.validTo) < normalizeDate(this.validFrom)) {

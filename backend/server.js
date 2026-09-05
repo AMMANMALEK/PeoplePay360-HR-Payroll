@@ -34,9 +34,19 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const payrollRoutes = require('./routes/payrollRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+
 app.use('/api/auth', authRoutes);
-app.use('/api/me', requireAuth, requireRole(ROLES.EMPLOYEE), meRoutes);
-app.use('/api/hr', requireAuth, requireRole(ROLES.HR_MANAGER, ROLES.ADMIN), hrRoutes);
+app.use('/api/me', requireAuth, meRoutes);
+app.use(
+  '/api/hr',
+  requireAuth,
+  requireRole(ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.ADMIN),
+  hrRoutes
+);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.json({

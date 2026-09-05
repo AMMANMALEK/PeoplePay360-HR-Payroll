@@ -14,6 +14,7 @@ import {
   Activity,
   Shield,
   Building2,
+  CreditCard,
 } from 'lucide-react';
 import { NAV_ITEMS, APP_ROLE, ADMIN_NAV_ITEMS, ADMIN_APP_ROLE, ROLES } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
@@ -30,6 +31,7 @@ const ICON_MAP = {
   Activity,
   Shield,
   Building2,
+  CreditCard,
 };
 
 export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) {
@@ -40,9 +42,10 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
   const currentNavItems = isAdministrator ? ADMIN_NAV_ITEMS : NAV_ITEMS;
 
   const getBadgeValue = (key) => {
-    if (key === 'pendingTimeOff') return kpis.pendingTimeOff;
-    if (key === 'attendanceExceptions') return kpis.attendanceExceptions;
-    if (key === 'totalEmployees') return kpis.totalEmployees;
+    if (key === 'pendingTimeOff') return kpis?.pendingTimeOff;
+    if (key === 'attendanceExceptions') return kpis?.attendanceExceptions;
+    if (key === 'totalEmployees') return kpis?.totalEmployees;
+    if (key === 'pendingPayruns') return kpis?.pendingPayruns;
     return null;
   };
 
@@ -106,7 +109,11 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
           >
             <span className="block text-sm font-semibold tracking-tight text-slate-900">PeopleFlow</span>
             <span className="block text-[11px] font-medium text-slate-400">
-              {isAdministrator ? 'Admin Console' : 'HR Operations'}
+              {isAdministrator
+                ? 'Admin Console'
+                : user?.role === ROLES.HR_PAYROLL_MANAGER || user?.role === ROLES.HR_PAYROLL_USER
+                ? 'Payroll Operations'
+                : 'HR Operations'}
             </span>
           </div>
         </div>
@@ -161,14 +168,26 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       <div className="shrink-0 border-t border-slate-100 p-3">
         <div className={`flex items-center rounded-2xl bg-slate-50 p-2 ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-slate-800">
-            {isAdministrator ? 'AD' : 'HR'}
+            {isAdministrator
+              ? 'AD'
+              : user?.role === ROLES.HR_PAYROLL_MANAGER || user?.role === ROLES.HR_PAYROLL_USER
+              ? 'PR'
+              : 'HR'}
           </div>
           <div className={`min-w-0 ${collapsed ? 'hidden' : 'flex-1'}`}>
             <p className="truncate text-xs font-semibold text-slate-900">
-              {isAdministrator ? (user?.name || user?.email?.split('@')[0] || 'Administrator') : 'HR Manager'}
+              {isAdministrator
+                ? (user?.name || user?.email?.split('@')[0] || 'Administrator')
+                : (user?.name || user?.email?.split('@')[0] || 'HR Operations')}
             </p>
             <p className="truncate text-[11px] text-slate-500">
-              {isAdministrator ? ADMIN_APP_ROLE.name : APP_ROLE.name}
+              {user?.role === ROLES.ADMIN
+                ? ADMIN_APP_ROLE.name
+                : user?.role === ROLES.HR_PAYROLL_MANAGER
+                ? 'HR Payroll Manager'
+                : user?.role === ROLES.HR_PAYROLL_USER
+                ? 'HR Payroll User'
+                : APP_ROLE.name}
             </p>
           </div>
         </div>

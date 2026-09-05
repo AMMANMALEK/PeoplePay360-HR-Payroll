@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const TimeOffRequest = require('../models/TimeOffRequest');
 const Employee = require('../models/Employee');
 const { findEmployeeByCode } = require('../utils/employeeHelper');
+const { normalizeDate } = require('../utils/dateHelper');
 const {
   findTimeOffTypeByIdentifier,
   calculateDuration,
@@ -214,6 +215,14 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'startDate and endDate are required',
+      });
+    }
+
+    const todayUtc = normalizeDate(new Date());
+    if (normalizeDate(startDate) < todayUtc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot select past dates. Start date must be today or in the future.',
       });
     }
 

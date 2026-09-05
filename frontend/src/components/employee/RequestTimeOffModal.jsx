@@ -67,10 +67,14 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
     }
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const handleStartDateChange = (e) => {
     const val = e.target.value;
     setDateError('');
-    if (isSickLeave && (val < sickMinDate || val > sickMaxDate)) {
+    if (val && val < todayStr) {
+      setDateError('Cannot select past dates. Start date must be today or in the future.');
+    } else if (isSickLeave && (val < sickMinDate || val > sickMaxDate)) {
       setDateError('Sick leave start date must be between March 1 and August 31 (2 quarters).');
     }
     setForm((prev) => ({
@@ -92,6 +96,11 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setDateError('');
+
+    if (form.startDate && form.startDate < todayStr) {
+      setDateError('Cannot select past dates. Start date must be today or in the future.');
+      return;
+    }
 
     if (isSickLeave) {
       if (
@@ -218,7 +227,7 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
               <input
                 type="date"
                 required
-                min={isSickLeave ? sickMinDate : undefined}
+                min={isSickLeave ? (sickMinDate > todayStr ? sickMinDate : todayStr) : todayStr}
                 max={isSickLeave ? sickMaxDate : undefined}
                 className="field-input mt-1"
                 value={form.startDate}
@@ -230,7 +239,7 @@ export default function RequestTimeOffModal({ isOpen, onClose }) {
               <input
                 type="date"
                 required
-                min={form.startDate || (isSickLeave ? sickMinDate : undefined)}
+                min={form.startDate || todayStr}
                 max={isSickLeave ? sickMaxDate : undefined}
                 className="field-input mt-1"
                 value={form.endDate}

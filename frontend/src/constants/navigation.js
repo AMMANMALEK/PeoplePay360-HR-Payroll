@@ -1,8 +1,17 @@
 export const ROLES = {
   ADMIN: 'ADMIN',
   HR_MANAGER: 'HR_MANAGER',
+  HR_PAYROLL_MANAGER: 'HR_PAYROLL_MANAGER',
+  HR_PAYROLL_USER: 'HR_PAYROLL_USER',
   EMPLOYEE: 'EMPLOYEE',
 };
+
+export const PAYROLL_TABS = [
+  { id: 'payruns', label: 'Payruns', countKey: 'pendingPayruns' },
+  { id: 'payslips', label: 'Payslips', countKey: 'payslipsGenerated' },
+  { id: 'structures', label: 'Salary Structures' },
+  { id: 'rules', label: 'Salary Rules' },
+];
 
 export const APP_ROLE = {
   name: "HR Manager",
@@ -57,6 +66,13 @@ export const NAV_ITEMS = [
     icon: "CalendarCheck",
     description: "Leave requests, approval workflows & balances",
     badgeKey: "pendingTimeOff"
+  },
+  {
+    label: "Payroll",
+    path: "/payroll",
+    icon: "CreditCard",
+    description: "Payruns, payslips & compensation management",
+    badgeKey: "pendingPayruns"
   }
 ];
 

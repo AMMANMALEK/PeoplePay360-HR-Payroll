@@ -1,3 +1,17 @@
+/**
+ * User Model
+ *
+ * Handles authentication, RBAC platform role assignments, and account status.
+ * An optional link exists to an Employee record for self-service portal users.
+ *
+ * Roles supported:
+ *   - ADMIN: Complete platform access across HR, Payroll, and System modules.
+ *   - HR_PAYROLL_MANAGER: Full HR operations and payroll execution/validation.
+ *   - HR_MANAGER: Workforce management, contracts, attendance, and leave approval.
+ *   - HR_PAYROLL_USER: Operational payrun computation and payslip drafting.
+ *   - EMPLOYEE: Self-service profile, shift tracking, clocking in/out, and leave requests.
+ */
+
 const mongoose = require('mongoose');
 const { ROLES } = require('../constants/roles');
 
@@ -5,7 +19,7 @@ const userSchema = new mongoose.Schema(
   {
     email: {
       type: String,
-      required: true,
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
       trim: true,
@@ -18,7 +32,13 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: Object.values(ROLES),
-      required: true,
+      required: [true, 'Role is required'],
+      default: ROLES.EMPLOYEE,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
     employee: {
       type: mongoose.Schema.Types.ObjectId,

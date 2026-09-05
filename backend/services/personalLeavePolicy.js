@@ -9,6 +9,16 @@ const PERSONAL_LEAVE_ANNUAL_DAYS = 15;
 
 const LEAVE_TYPES_CONFIG = [
   {
+    typeCode: 'ANNUAL',
+    name: 'Annual Leave',
+    unit: 'days',
+    annualDays: 20,
+    requiresAllocation: true,
+    requiresApproval: true,
+    isPaid: true,
+    description: 'Annual vacation leave. 20 days per calendar year.',
+  },
+  {
     typeCode: 'PERSONAL',
     name: 'Personal Leave',
     unit: 'days',

@@ -127,8 +127,8 @@ export default function TimeOffCalendarView({
     return map;
   }, [requests, selectedDepartment]);
 
-  // Today reference check (Demo date: 2026-09-15)
-  const todayStr = '2026-09-15';
+  // Today reference check
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
     <div className="space-y-4">
@@ -201,6 +201,7 @@ export default function TimeOffCalendarView({
           {calendarDays.map((dayItem, index) => {
             const dayRequests = dayItem.fullDateStr ? requestsByDate[dayItem.fullDateStr] || [] : [];
             const isToday = dayItem.fullDateStr === todayStr;
+            const isPast = dayItem.fullDateStr && dayItem.fullDateStr < todayStr;
 
             return (
               <div
@@ -210,6 +211,8 @@ export default function TimeOffCalendarView({
                     ? 'bg-slate-50/40 text-slate-300'
                     : isToday
                     ? 'bg-indigo-50/30'
+                    : isPast
+                    ? 'bg-slate-50/40 text-slate-400 select-none cursor-not-allowed'
                     : 'bg-white hover:bg-slate-50/60'
                 }`}
               >

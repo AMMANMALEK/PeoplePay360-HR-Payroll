@@ -12,6 +12,8 @@ const {
   normalizeDate,
 } = require('../services/contractService');
 
+const SalaryStructure = require('../models/SalaryStructure');
+
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&
   String(new mongoose.Types.ObjectId(value)) === String(value);
@@ -19,7 +21,21 @@ const isValidObjectId = (value) =>
 const populateContract = (query) =>
   query
     .populate('employee', 'firstName lastName email employeeCode department jobPosition')
-    .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours weeklyPattern');
+    .populate('workingSchedule', 'name scheduleCode scheduleType weeklyHours weeklyPattern')
+    .populate('salaryStructure', 'name code description');
+
+const resolveSalaryStructure = async (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (isValidObjectId(value)) {
+    const found = await SalaryStructure.findById(value);
+    if (found) return found._id;
+  }
+  const byCode = await SalaryStructure.findOne({
+    $or: [{ code: String(value).trim().toUpperCase() }, { name: String(value).trim() }],
+  });
+  return byCode ? byCode._id : null;
+};
 
 const resolveWorkingSchedule = async (value) => {
   if (value === undefined) {
@@ -42,6 +58,10 @@ const resolveWorkingSchedule = async (value) => {
 
 const prepareContractPayload = async (body, employeeId, existingContract = null) => {
   const payload = { ...body, employee: employeeId };
+
+  if ('salaryStructure' in payload) {
+    payload.salaryStructure = await resolveSalaryStructure(payload.salaryStructure);
+  }
 
   if ('workingSchedule' in payload) {
     payload.workingSchedule = await resolveWorkingSchedule(payload.workingSchedule);

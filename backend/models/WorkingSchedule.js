@@ -1,3 +1,10 @@
+/**
+ * WorkingSchedule Model
+ *
+ * Defines the planned work shifts and weekly working hours for an employee or department.
+ * Used during attendance auditing and payroll calculations to determine expected vs worked hours.
+ */
+
 const mongoose = require('mongoose');
 const { calculateWeeklyHours } = require('../services/workingScheduleService');
 

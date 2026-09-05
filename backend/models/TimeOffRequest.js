@@ -1,3 +1,11 @@
+/**
+ * TimeOffRequest Model
+ *
+ * Represents an employee leave application.
+ * Manages the approval lifecycle: pending ──> approved | refused | cancelled.
+ * Deducts from TimeOffAllocation upon approval.
+ */
+
 const mongoose = require('mongoose');
 const { normalizeDate } = require('../utils/dateHelper');
 
@@ -66,12 +74,23 @@ const timeOffRequestSchema = new mongoose.Schema(
   }
 );
 
+// When fetching an employee's full leave history, ordered newest request first
 timeOffRequestSchema.index({ employee: 1, startDate: -1 });
-timeOffRequestSchema.index({ status: 1, createdAt: -1 });
+// When HR opens the approval queue — fetch all pending requests
+timeOffRequestSchema.index({ status: 1, createdAt: 1 });
 
 timeOffRequestSchema.pre('validate', function (next) {
   if (this.endDate && this.startDate && normalizeDate(this.endDate) < normalizeDate(this.startDate)) {
     return next(new Error('End date must be on or after start date'));
+  }
+
+  // Calendar validation: Any role user cannot select past dates for new requests
+  if (this.isNew && this.startDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (normalizeDate(this.startDate) < normalizeDate(today)) {
+      return next(new Error('Cannot select past dates for time off requests'));
+    }
   }
 
   next();

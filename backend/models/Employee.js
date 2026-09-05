@@ -1,12 +1,36 @@
+/**
+ * Employee Model
+ *
+ * Stores the core workforce profile for an employee.
+ * Acts as the operational anchor across PeoplePay360:
+ *   Employee ──< Contract (active & historical terms)
+ *   Employee ──< Attendance (daily check-in/out logs)
+ *   Employee ──< WorkingSchedule (shift pattern)
+ *   Employee ──< TimeOffAllocation (leave quotas)
+ *   Employee ──< TimeOffRequest (leave workflow)
+ *   Employee ──< Payslip (monthly compensation records)
+ */
+
 const mongoose = require('mongoose');
 
 const addressSchema = new mongoose.Schema(
   {
-    street: { type: String, trim: true },
-    city: { type: String, trim: true },
-    state: { type: String, trim: true },
-    country: { type: String, trim: true },
-    zipCode: { type: String, trim: true },
+    street: { type: String, trim: true, default: '' },
+    city: { type: String, trim: true, default: '' },
+    state: { type: String, trim: true, default: '' },
+    country: { type: String, trim: true, default: '' },
+    zipCode: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
+const bankDetailsSchema = new mongoose.Schema(
+  {
+    accountHolder: { type: String, trim: true, default: '' },
+    accountNumber: { type: String, trim: true, default: '' },
+    bankName: { type: String, trim: true, default: '' },
+    routingNumber: { type: String, trim: true, default: '' },
+    accountType: { type: String, trim: true, default: 'Checking' },
   },
   { _id: false }
 );
@@ -40,6 +64,7 @@ const employeeSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+      default: '',
     },
     department: {
       type: String,
@@ -77,7 +102,7 @@ const employeeSchema = new mongoose.Schema(
     employmentType: {
       type: String,
       trim: true,
-      default: '',
+      default: 'Full-time',
     },
     avatar: {
       type: String,
@@ -86,7 +111,11 @@ const employeeSchema = new mongoose.Schema(
     },
     address: {
       type: addressSchema,
-      default: {},
+      default: () => ({}),
+    },
+    bankDetails: {
+      type: bankDetailsSchema,
+      default: null,
     },
   },
   {
@@ -95,10 +124,26 @@ const employeeSchema = new mongoose.Schema(
 );
 
 employeeSchema.virtual('fullName').get(function () {
-  return `${this.firstName} ${this.lastName}`;
+  return `${this.firstName || ''} ${this.lastName || ''}`.trim() || 'Employee';
+});
+
+// Virtual indicator for profile completeness (essential for payroll validation checklist)
+employeeSchema.virtual('profileComplete').get(function () {
+  return Boolean(
+    this.employeeCode &&
+      this.firstName &&
+      this.lastName &&
+      this.email &&
+      this.department &&
+      this.jobPosition &&
+      this.bankDetails?.accountNumber
+  );
 });
 
 employeeSchema.set('toJSON', { virtuals: true });
 employeeSchema.set('toObject', { virtuals: true });
+
+// Speeds up directory searches by department and active status
+employeeSchema.index({ department: 1, status: 1 });
 
 module.exports = mongoose.model('Employee', employeeSchema);

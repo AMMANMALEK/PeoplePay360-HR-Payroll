@@ -1,6 +1,6 @@
 const parseCookies = require('../utils/parseCookies');
 const { getSession } = require('../services/sessionStore');
-const { getPermissionsForRole } = require('../constants/roles');
+const { getPermissionsForRole, ROLES } = require('../constants/roles');
 
 const SESSION_COOKIE = 'peoplepay.sid';
 
@@ -41,14 +41,15 @@ const requireRole = (...allowedRoles) => (req, res, next) => {
     });
   }
 
-  if (!allowedRoles.includes(req.auth.role)) {
-    return res.status(403).json({
-      success: false,
-      message: 'You do not have permission to access this resource',
-    });
+  // Admin has full functionality across HR Manager, Payroll Manager, Payroll User, and Employee
+  if (req.auth.role === ROLES.ADMIN || allowedRoles.includes(req.auth.role)) {
+    return next();
   }
 
-  return next();
+  return res.status(403).json({
+    success: false,
+    message: 'You do not have permission to access this resource',
+  });
 };
 
 const getAuthenticatedEmployeeId = (req) => req.auth?.employeeId || null;

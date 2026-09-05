@@ -1,3 +1,11 @@
+/**
+ * Payrun Model
+ *
+ * Represents one payroll execution batch for a specific monthly cycle.
+ * Contains aggregate financial figures (total gross, deductions, net)
+ * and tracks the batch lifecycle: Draft ──> Computed ──> Validated ──> Paid.
+ */
+
 const mongoose = require('mongoose');
 
 const payrunSchema = new mongoose.Schema(
@@ -6,6 +14,11 @@ const payrunSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Payrun name is required'],
       trim: true,
+    },
+    periodName: {
+      type: String,
+      trim: true,
+      default: '',
     },
     periodStart: {
       type: Date,
@@ -31,11 +44,48 @@ const payrunSchema = new mongoose.Schema(
         ref: 'Employee',
       },
     ],
+    employeesCount: {
+      type: Number,
+      default: 0,
+    },
+    payslipsCount: {
+      type: Number,
+      default: 0,
+    },
+    totalGross: {
+      type: Number,
+      default: 0,
+    },
+    totalDeductions: {
+      type: Number,
+      default: 0,
+    },
+    totalNet: {
+      type: Number,
+      default: 0,
+    },
+    processedDate: {
+      type: Date,
+      default: null,
+    },
+    paymentDate: {
+      type: Date,
+      default: null,
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Prevent overlapping payruns for the same period structure? Left out to keep it simple, but could be added.
+// When filtering payruns by period date range
+payrunSchema.index({ periodStart: 1, periodEnd: 1 });
+// When loading dashboard — fetch latest payruns sorted by recency
+payrunSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Payrun', payrunSchema);

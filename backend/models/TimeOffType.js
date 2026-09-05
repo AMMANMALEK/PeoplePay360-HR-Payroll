@@ -1,3 +1,10 @@
+/**
+ * TimeOffType Model
+ *
+ * Defines categories of leave (Annual Leave, Sick Leave, Parental Leave, etc.).
+ * Configures allocation enforcement, approval workflow requirements, and UI theme color.
+ */
+
 const mongoose = require('mongoose');
 
 const timeOffTypeSchema = new mongoose.Schema(
@@ -18,6 +25,11 @@ const timeOffTypeSchema = new mongoose.Schema(
       type: String,
       enum: ['days', 'hours'],
       default: 'days',
+    },
+    color: {
+      type: String,
+      trim: true,
+      default: '#10b981',
     },
     requiresAllocation: {
       type: Boolean,
