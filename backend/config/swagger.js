@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'PeoplePay360 HR & Payroll API',
       version: '1.0.0',
-      description: 'HR Manager Employee CRUD APIs',
+      description: 'HR Manager APIs for employees and attendance',
     },
     servers: [
       {
@@ -17,7 +17,11 @@ const options = {
     tags: [
       {
         name: 'Employees',
-        description: 'HR Manager employee management',
+        description: 'HR Manager employee CRUD',
+      },
+      {
+        name: 'Attendance',
+        description: 'HR Manager employee attendance create and read',
       },
     ],
     components: {
@@ -118,6 +122,69 @@ const options = {
             data: {
               type: 'array',
               items: { $ref: '#/components/schemas/Employee' },
+            },
+          },
+        },
+        Attendance: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66b1a2c3d4e5f6789012345c' },
+            employee: { $ref: '#/components/schemas/Employee' },
+            attendanceDate: { type: 'string', format: 'date', example: '2024-09-05' },
+            checkIn: { type: 'string', format: 'date-time', example: '2024-09-05T09:00:00.000Z' },
+            checkOut: { type: 'string', format: 'date-time', example: '2024-09-05T18:00:00.000Z' },
+            workedHours: { type: 'number', example: 9 },
+            status: {
+              type: 'string',
+              enum: ['present', 'late', 'absent', 'half_day', 'on_leave', 'overtime', 'exception'],
+              example: 'present',
+            },
+            notes: { type: 'string', example: 'Manual correction by HR' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        AttendanceInput: {
+          type: 'object',
+          required: ['attendanceDate'],
+          properties: {
+            attendanceDate: { type: 'string', format: 'date', example: '2024-09-05' },
+            checkIn: { type: 'string', format: 'date-time', example: '2024-09-05T09:00:00.000Z' },
+            checkOut: { type: 'string', format: 'date-time', example: '2024-09-05T18:00:00.000Z' },
+            status: {
+              type: 'string',
+              enum: ['present', 'late', 'absent', 'half_day', 'on_leave', 'overtime', 'exception'],
+              example: 'present',
+            },
+            notes: { type: 'string', example: 'Checked in from office' },
+          },
+        },
+        AttendanceSuccessResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Attendance created successfully' },
+            data: { $ref: '#/components/schemas/Attendance' },
+          },
+        },
+        AttendanceListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            count: { type: 'integer', example: 5 },
+            employee: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                email: { type: 'string' },
+                employeeCode: { type: 'string' },
+              },
+            },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Attendance' },
             },
           },
         },
