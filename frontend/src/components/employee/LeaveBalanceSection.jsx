@@ -23,7 +23,7 @@ export default function LeaveBalanceSection() {
     return { 'Personal Leave': 15, 'Sick Leave': 10, 'Festival Leave': 5 };
   })();
 
-  const personalAlloc = currentPersonalLeave?.allocated ?? (configuredAllowances['Personal Leave'] || 15);
+  const personalAlloc = currentPersonalLeave?.allocated ?? (configuredAllowances['Personal Leave'] || 0);
   const personalTaken = currentPersonalLeave?.taken || 0;
   const personal = {
     allocated: personalAlloc,
@@ -32,7 +32,7 @@ export default function LeaveBalanceSection() {
     validity: currentPersonalLeave?.validity || `${new Date().getFullYear()}-12-31`,
   };
 
-  const sickAlloc = currentSickLeave?.allocated ?? (configuredAllowances['Sick Leave'] || 10);
+  const sickAlloc = currentSickLeave?.allocated ?? (configuredAllowances['Sick Leave'] || 0);
   const sickTaken = currentSickLeave?.taken || 0;
   const sick = {
     allocated: sickAlloc,
@@ -41,7 +41,7 @@ export default function LeaveBalanceSection() {
     validity: currentSickLeave?.validity || `${new Date().getFullYear()}-08-31`,
   };
 
-  const festivalAlloc = currentFestivalLeave?.allocated ?? (configuredAllowances['Festival Leave'] || 5);
+  const festivalAlloc = currentFestivalLeave?.allocated ?? (configuredAllowances['Festival Leave'] || 0);
   const festivalTaken = currentFestivalLeave?.taken || 0;
   const festival = {
     allocated: festivalAlloc,

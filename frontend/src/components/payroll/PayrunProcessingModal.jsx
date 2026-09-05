@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import {
   Calculator,
   CheckCircle2,
@@ -224,19 +225,19 @@ export default function PayrunProcessingModal({
             <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-subtle">
               <span className="text-[11px] font-medium text-slate-500">Total Gross Salary</span>
               <p className="mt-0.5 text-base font-bold text-slate-900">
-                ${Number(payrun.totalGross || 0).toLocaleString()}
+                {formatINR(payrun.totalGross || 0)}
               </p>
             </div>
             <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-subtle">
               <span className="text-[11px] font-medium text-slate-500">Total Deductions</span>
               <p className="mt-0.5 text-base font-bold text-rose-700">
-                -${Number(payrun.totalDeductions || 0).toLocaleString()}
+                -{formatINR(payrun.totalDeductions || 0)}
               </p>
             </div>
             <div className="rounded-xl bg-white p-2.5 border border-emerald-200 bg-emerald-50/40 shadow-subtle">
               <span className="text-[11px] font-medium text-emerald-800">Total Net Salary</span>
               <p className="mt-0.5 text-base font-bold text-emerald-900">
-                ${Number(payrun.totalNet || 0).toLocaleString()}
+                {formatINR(payrun.totalNet || 0)}
               </p>
             </div>
           </div>
@@ -392,13 +393,13 @@ export default function PayrunProcessingModal({
                         {p.workedDays} / {p.totalWorkDays} days
                       </td>
                       <td className="px-3 py-3 text-right font-medium text-slate-900">
-                        ${Number(p.gross || 0).toLocaleString()}
+                        {formatINR(p.gross || 0)}
                       </td>
                       <td className="px-3 py-3 text-right text-rose-600 font-medium">
-                        -${Number(p.totalDeductions || 0).toLocaleString()}
+                        -{formatINR(p.totalDeductions || 0)}
                       </td>
                       <td className="px-3 py-3 text-right font-bold text-slate-900">
-                        ${Number(p.net || 0).toLocaleString()}
+                        {formatINR(p.net || 0)}
                       </td>
                       <td className="px-3 py-3">
                         {p.bankDetails ? (

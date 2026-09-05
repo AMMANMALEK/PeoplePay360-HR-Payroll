@@ -4,6 +4,7 @@ import StatusBadge from '../ui/StatusBadge';
 import EmptyState from '../ui/EmptyState';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import { Plus, Edit, Trash2, Layers, Calculator, HelpCircle } from 'lucide-react';
 
 const CATEGORIES = ['Basic', 'Allowances', 'Gross', 'Deductions', 'Net'];
@@ -103,7 +104,7 @@ export default function SalaryRulesView() {
         </div>
         <button type="button" onClick={openCreateModal} className="btn-primary">
           <Plus className="h-4 w-4" />
-          <span>+ Add Rule</span>
+          <span>Add Rule</span>
         </button>
       </div>
 
@@ -162,7 +163,7 @@ export default function SalaryRulesView() {
                       {rule.computationType}
                     </td>
                     <td className="px-3 py-3.5 font-mono text-[11px] text-slate-800">
-                      {rule.computationType === 'Fixed Amount' && `$${Number(rule.amount || 0).toLocaleString()}`}
+                      {rule.computationType === 'Fixed Amount' && formatINR(rule.amount || 0)}
                       {rule.computationType === 'Percentage' && `${rule.amount}% of Base`}
                       {rule.computationType === 'Formula' && (
                         <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-700">
@@ -320,7 +321,7 @@ export default function SalaryRulesView() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                {computationType === 'Percentage' ? 'Percentage (%)' : 'Fixed Amount ($)'}
+                {computationType === 'Percentage' ? 'Percentage (%)' : 'Fixed Amount (INR ₹)'}
               </label>
               <input
                 type="number"
@@ -329,6 +330,13 @@ export default function SalaryRulesView() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 disabled={computationType === 'Formula'}
+                placeholder={
+                  computationType === 'Percentage'
+                    ? 'e.g. 40'
+                    : computationType === 'Formula'
+                    ? ''
+                    : 'e.g. 15,000'
+                }
               />
             </div>
           </div>

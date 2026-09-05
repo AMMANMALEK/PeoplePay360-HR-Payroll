@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, AlertTriangle, Trash2, Eye, Edit3, FileText, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -199,7 +200,7 @@ export default function ContractsPage() {
       label: 'Agreed Wage / Rate',
       render: (wage, row) => {
         const num = typeof wage === 'number' ? wage : Number(String(wage || '').replace(/[^0-9.]/g, ''));
-        const displayWage = Number.isFinite(num) && num > 0 ? `$${num.toLocaleString()}` : (wage || '—');
+        const displayWage = Number.isFinite(num) && num > 0 ? formatINR(num) : (wage || '—');
         const structure = row.salaryStructure || 'annually';
         return (
           <div>

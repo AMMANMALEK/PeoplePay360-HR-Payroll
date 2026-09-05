@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Download, CheckCircle, AlertTriangle, Building, Calendar, User, FileText } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -118,7 +119,7 @@ export default function PayslipDetailPage() {
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Contract Monthly Wage</span>
-              <p className="text-xs font-bold text-slate-900">${(payslip.wageAmount || 0).toLocaleString()}</p>
+              <p className="text-xs font-bold text-slate-900">{formatINR(payslip.wageAmount || 0)}</p>
             </div>
           </div>
         </div>
@@ -154,7 +155,7 @@ export default function PayslipDetailPage() {
           <div className="rounded-2xl border border-slate-200 overflow-hidden">
             <div className="bg-emerald-50/70 border-b border-emerald-100 px-4 py-2.5 flex justify-between items-center">
               <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">Earnings</h4>
-              <span className="text-xs font-bold text-emerald-900">${(payslip.grossSalary || 0).toLocaleString()}</span>
+              <span className="text-xs font-bold text-emerald-900">{formatINR(payslip.grossSalary || 0)}</span>
             </div>
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-100">
@@ -171,7 +172,7 @@ export default function PayslipDetailPage() {
                       <p className="text-[10px] text-slate-400 mt-0.5">{item.calculationSummary}</p>
                     </td>
                     <td className="px-3.5 py-2.5 text-right font-bold text-slate-900">
-                      ${(item.amount || 0).toLocaleString()}
+                      {formatINR(item.amount || 0)}
                     </td>
                   </tr>
                 ))}
@@ -183,7 +184,7 @@ export default function PayslipDetailPage() {
           <div className="rounded-2xl border border-slate-200 overflow-hidden">
             <div className="bg-rose-50/70 border-b border-rose-100 px-4 py-2.5 flex justify-between items-center">
               <h4 className="text-xs font-bold uppercase tracking-wider text-rose-900">Deductions</h4>
-              <span className="text-xs font-bold text-rose-900">-${(payslip.totalDeductions || 0).toLocaleString()}</span>
+              <span className="text-xs font-bold text-rose-900">-{formatINR(payslip.totalDeductions || 0)}</span>
             </div>
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-100">
@@ -200,7 +201,7 @@ export default function PayslipDetailPage() {
                       <p className="text-[10px] text-slate-400 mt-0.5">{item.calculationSummary}</p>
                     </td>
                     <td className="px-3.5 py-2.5 text-right font-bold text-rose-700">
-                      -${(item.amount || 0).toLocaleString()}
+                      -{formatINR(item.amount || 0)}
                     </td>
                   </tr>
                 ))}
@@ -214,10 +215,10 @@ export default function PayslipDetailPage() {
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Take-Home Pay</span>
             <h3 className="text-3xl font-black text-emerald-400 mt-1">
-              ${(payslip.netSalary || 0).toLocaleString()}
+              {formatINR(payslip.netSalary || 0)}
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Gross Earnings (${(payslip.grossSalary || 0).toLocaleString()}) - Deductions (${(payslip.totalDeductions || 0).toLocaleString()})
+              Gross Earnings ({formatINR(payslip.grossSalary || 0)}) - Deductions ({formatINR(payslip.totalDeductions || 0)})
             </p>
           </div>
 

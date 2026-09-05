@@ -1,11 +1,10 @@
 // src/services/payrunService.js
 // Service for Payrun lifecycle management and status state transitions.
 
-import { INITIAL_PAYRUNS } from '../data/payrollMockData';
 import { computeEmployeePayslip, evaluateEmployeeEligibility } from './payrollComputeEngine';
 import { setPayslipsForPayrun } from './payslipService';
 
-let payrunsStore = [...INITIAL_PAYRUNS];
+let payrunsStore = [];
 
 export async function getPayruns() {
   return new Promise((resolve) => {

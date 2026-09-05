@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import { Layers, Calendar, Users, Check, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export default function NewPayrunWizardModal({ isOpen, onClose, onCreated }) {
@@ -336,7 +337,7 @@ export default function NewPayrunWizardModal({ isOpen, onClose, onCreated }) {
                           {emp.activeContract ? (
                             <div>
                               <span className="font-medium text-slate-800">
-                                ${Number(emp.activeContract.wageAmount || 0).toLocaleString()}
+                                {formatINR(emp.activeContract.wageAmount || 0)}
                               </span>
                               <span className="block text-[10px] text-slate-400">
                                 {emp.activeContract.salaryStructureName || 'Structure match'}

@@ -8,6 +8,7 @@ import NewPayrunWizardModal from '../../components/payroll/NewPayrunWizardModal'
 import PayrunProcessingModal from '../../components/payroll/PayrunProcessingModal';
 import PayslipDetailDrawer from '../../components/payroll/PayslipDetailDrawer';
 import StatCard from '../../components/ui/StatCard';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import { PAYROLL_TABS } from '../../constants/navigation';
 import { CreditCard, FileText, Layers, Sliders, AlertTriangle, Plus, ShieldAlert, Zap } from 'lucide-react';
@@ -87,8 +88,8 @@ export default function PayrollPage() {
         />
         <StatCard
           title="Payroll Cost (Current)"
-          value={`$${Number(kpis.totalPayrollCost || 0).toLocaleString()}`}
-          subtext={`Gross: $${Number(kpis.totalGrossPayroll || 0).toLocaleString()}`}
+          value={formatINR(kpis.totalPayrollCost || 0)}
+          subtext={`Gross: ${formatINR(kpis.totalGrossPayroll || 0)}`}
           icon="users"
           colorScheme="lime"
         />

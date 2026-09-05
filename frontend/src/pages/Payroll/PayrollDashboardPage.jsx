@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  DollarSign,
+  IndianRupee,
   Receipt,
   Calculator,
   AlertTriangle,
@@ -11,14 +11,40 @@ import {
   Building,
   CheckCircle2,
 } from 'lucide-react';
+import { formatINR, formatINRCompact } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
-import { MONTHLY_PAYROLL_TRENDS, DEPARTMENT_SALARY_DISTRIBUTION } from '../../data/payrollMockData';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PayrunWizard from './PayrunWizard';
 
 export default function PayrollDashboardPage() {
   const navigate = useNavigate();
   const { payruns, payslips } = useHRData();
+
+  const monthlyTrends = useMemo(() => {
+    const byMonth = {};
+    payruns.forEach((p) => {
+      const month = p.periodMonth || p.periodName || 'Unknown';
+      if (!byMonth[month]) {
+        byMonth[month] = { month, netDisbursement: 0 };
+      }
+      byMonth[month].netDisbursement += Number(p.totalNetSalary || p.totalNet || 0);
+    });
+    return Object.values(byMonth);
+  }, [payruns]);
+
+  const departmentSalaryDistribution = useMemo(() => {
+    const byDept = {};
+    payslips.forEach((s) => {
+      const dept = s.department || 'Unassigned';
+      byDept[dept] = (byDept[dept] || 0) + Number(s.gross || s.grossSalary || 0);
+    });
+    const total = Object.values(byDept).reduce((sum, value) => sum + value, 0) || 1;
+    return Object.entries(byDept).map(([department, totalGross]) => ({
+      department,
+      totalGross,
+      percentage: Math.round((totalGross / total) * 100),
+    }));
+  }, [payslips]);
 
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedKpiFilter, setSelectedKpiFilter] = useState('ALL');
@@ -78,11 +104,11 @@ export default function PayrollDashboardPage() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Total Net Disbursed</span>
             <div className="rounded-xl bg-emerald-50 p-2 text-emerald-600">
-              <DollarSign className="h-4 w-4" />
+              <IndianRupee className="h-4 w-4" />
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900 mt-2">
-            ${totalNetDisbursed.toLocaleString()}
+            {formatINR(totalNetDisbursed)}
           </p>
           <p className="text-[11px] text-slate-400 mt-0.5">Validated & Paid disbursements</p>
         </div>
@@ -158,21 +184,21 @@ export default function PayrollDashboardPage() {
           </div>
 
           <div className="pt-4 flex items-end justify-between gap-4 h-52">
-            {MONTHLY_PAYROLL_TRENDS.map((item) => {
+            {monthlyTrends.map((item) => {
               const maxVal = 180000;
               const heightPercent = Math.round((item.netDisbursement / maxVal) * 100);
 
               return (
                 <div key={item.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                   <span className="text-[10px] font-bold text-slate-600">
-                    ${(item.netDisbursement / 1000).toFixed(0)}k
+                    {formatINRCompact(item.netDisbursement)}
                   </span>
                   <div
                     style={{ height: `${heightPercent}%` }}
                     className="w-full max-w-[36px] rounded-t-xl bg-brand-400 hover:bg-brand-500 transition-all group relative"
                   >
                     <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded whitespace-nowrap transition-opacity">
-                      ${item.netDisbursement.toLocaleString()}
+                      {formatINR(item.netDisbursement)}
                     </div>
                   </div>
                   <span className="text-[11px] font-semibold text-slate-500">{item.month}</span>
@@ -193,11 +219,11 @@ export default function PayrollDashboardPage() {
           </div>
 
           <div className="space-y-3.5 pt-2">
-            {DEPARTMENT_SALARY_DISTRIBUTION.map((dept) => (
+            {departmentSalaryDistribution.map((dept) => (
               <div key={dept.department} className="space-y-1">
                 <div className="flex justify-between text-xs font-semibold">
                   <span className="text-slate-800">{dept.department}</span>
-                  <span className="text-slate-900 font-bold">${dept.totalGross.toLocaleString()}</span>
+                  <span className="text-slate-900 font-bold">{formatINR(dept.totalGross)}</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                   <div
@@ -264,10 +290,10 @@ export default function PayrollDashboardPage() {
                   <td className="px-6 py-4 text-slate-600">{run.periodMonth}</td>
                   <td className="px-6 py-4 font-bold text-slate-800">{run.employeeCount}</td>
                   <td className="px-6 py-4 font-semibold text-slate-900">
-                    ${(run.totalGross || 0).toLocaleString()}
+                    {formatINR(run.totalGross || 0)}
                   </td>
                   <td className="px-6 py-4 font-bold text-emerald-700">
-                    ${(run.totalNetSalary || 0).toLocaleString()}
+                    {formatINR(run.totalNetSalary || 0)}
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={run.status} />

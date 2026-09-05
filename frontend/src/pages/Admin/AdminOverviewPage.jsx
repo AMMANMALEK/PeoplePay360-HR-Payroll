@@ -4,6 +4,7 @@ import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Modal from '../../components/ui/Modal';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   Users,
   KeyRound,
@@ -15,6 +16,7 @@ import {
 
 export default function AdminOverviewPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     users,
     auditLogs,
@@ -22,8 +24,8 @@ export default function AdminOverviewPage() {
     updateFixedLeaveAllowances
   } = useHRData();
 
-  const totalUsers = users.length || 24;
-  const activeUsers = users.filter((u) => u.status === 'Active').length || 22;
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.status === 'Active').length;
 
   // Recent 6 admin actions
   const recentActivity = auditLogs.slice(0, 6);
@@ -49,7 +51,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Good morning, Marcus Vance
+            Good morning, {user?.name || user?.fullName || 'Admin'}
           </h1>
           <p className="text-xs text-slate-500">
             Platform administration overview and access governance command.

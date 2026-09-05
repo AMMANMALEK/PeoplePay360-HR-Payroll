@@ -91,7 +91,7 @@ export default function SalaryStructuresView() {
         </div>
         <button type="button" onClick={openCreateModal} className="btn-primary">
           <Plus className="h-4 w-4" />
-          <span>+ Add Structure</span>
+          <span>Add Structure</span>
         </button>
       </div>
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
-import { Calendar, DollarSign, Briefcase, Building, User, Clock, Edit3, X } from 'lucide-react';
+import { Calendar, IndianRupee, Briefcase, Building, User, Clock, Edit3, X } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 
 export default function ContractViewModal({ isOpen, onClose, contract, computedStatus, onEdit }) {
   if (!contract) return null;
@@ -11,7 +12,7 @@ export default function ContractViewModal({ isOpen, onClose, contract, computedS
   const formatWage = (wage, structure) => {
     if (!wage && wage !== 0) return '—';
     const num = typeof wage === 'number' ? wage : Number(String(wage).replace(/[^0-9.]/g, ''));
-    const formatted = Number.isFinite(num) && num > 0 ? `$${num.toLocaleString()}` : wage;
+    const formatted = Number.isFinite(num) && num > 0 ? formatINR(num) : wage;
     return `${formatted} / ${structure || 'annually'}`;
   };
 
@@ -97,7 +98,7 @@ export default function ContractViewModal({ isOpen, onClose, contract, computedS
           {/* Compensation */}
           <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 space-y-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <DollarSign className="h-3.5 w-3.5 text-amber-500" />
+              <IndianRupee className="h-3.5 w-3.5 text-amber-500" />
               <span>Compensation</span>
             </div>
             <div>

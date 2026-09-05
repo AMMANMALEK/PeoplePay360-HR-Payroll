@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react';
 import SkeletonLoader from './SkeletonLoader';
 import EmptyState from './EmptyState';
 
@@ -89,7 +89,7 @@ export default function DataTable({
                             <ChevronDown className="h-3.5 w-3.5 text-brand-600" />
                           )
                         ) : (
-                          <ArrowUpDown className="h-3 w-3" />
+                          <ArrowDown className="h-3 w-3" />
                         )}
                       </span>
                     )}

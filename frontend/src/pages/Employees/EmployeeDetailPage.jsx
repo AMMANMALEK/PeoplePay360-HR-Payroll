@@ -389,7 +389,7 @@ export default function EmployeeDetailPage() {
                     onClick={() => setActiveTab('employment')}
                     className="w-full mt-2 rounded-lg bg-emerald-600/10 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-600/20 transition-colors"
                   >
-                    View Contract Terms →
+                    View Contract Terms
                   </button>
                 </div>
               ) : (
@@ -442,7 +442,7 @@ export default function EmployeeDetailPage() {
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand-400 px-3.5 py-2 text-xs font-medium text-slate-900 hover:bg-brand-500 shadow-sm transition-colors"
             >
               <Plus className="h-4 w-4" />
-              <span>+ New Contract</span>
+              <span>New Contract</span>
             </button>
           </div>
 

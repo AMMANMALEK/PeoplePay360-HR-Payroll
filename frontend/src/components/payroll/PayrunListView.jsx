@@ -4,6 +4,7 @@ import FilterBar from '../ui/FilterBar';
 import EmptyState from '../ui/EmptyState';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import {
   Plus,
   Play,
@@ -108,7 +109,7 @@ export default function PayrunListView({ onOpenWizard, onOpenProcess }) {
           className="btn-primary shrink-0"
         >
           <Plus className="h-4 w-4" />
-          <span>+ New Payrun</span>
+          <span>New Payrun</span>
         </button>
       </div>
 
@@ -118,7 +119,7 @@ export default function PayrunListView({ onOpenWizard, onOpenProcess }) {
           <EmptyState
             title="No payruns found"
             description="No payrun batches match your current search or filter criteria."
-            actionLabel="+ Create Payrun"
+            actionLabel="Create Payrun"
             onAction={onOpenWizard}
           />
         ) : (
@@ -171,7 +172,7 @@ export default function PayrunListView({ onOpenWizard, onOpenProcess }) {
                       {payrun.payslipsCount}
                     </td>
                     <td className="px-3 py-3.5 text-right font-bold text-slate-900">
-                      ${Number(payrun.totalNet || 0).toLocaleString()}
+                      {formatINR(payrun.totalNet || 0)}
                     </td>
                     <td className="px-3 py-3.5">
                       <StatusBadge status={payrun.status} />

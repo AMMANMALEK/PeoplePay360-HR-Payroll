@@ -4,25 +4,6 @@ import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Calendar, ShieldAlert, Clock, Info, CheckCircle2, UserCheck } from 'lucide-react';
 
-const HR_LEADERS = [
-  {
-    id: 'HRMGR',
-    name: 'David Kim',
-    role: 'HR_MANAGER',
-    roleName: 'HR Manager',
-    department: 'Human Resources',
-    jobPosition: 'HR Manager',
-  },
-  {
-    id: 'HRPAYMGR',
-    name: 'Sarah Jenkins',
-    role: 'HR_PAYROLL_MANAGER',
-    roleName: 'HR Payroll Manager',
-    department: 'Human Resources',
-    jobPosition: 'HR Payroll Manager',
-  },
-];
-
 const LEAVE_TYPES = [
   { value: 'Personal Leave', label: 'Personal Leave' },
   { value: 'Sick Leave', label: 'Sick Leave' },
@@ -30,20 +11,64 @@ const LEAVE_TYPES = [
 ];
 
 export default function HRLeaveRequestModal({ isOpen, onClose }) {
-  const { addHRLeaveRequest, fixedLeaveAllowances } = useHRData();
+  const { addHRLeaveRequest, fixedLeaveAllowances, employees } = useHRData();
   const { user } = useAuth();
 
   const currentYear = new Date().getFullYear();
   const sickMinDate = `${currentYear}-03-01`;
   const sickMaxDate = `${currentYear}-08-31`;
 
-  // Determine initial leader based on logged in user
-  const initialLeaderId = useMemo(() => {
-    if (user?.role === 'HR_PAYROLL_MANAGER' || user?.email?.includes('payroll') || user?.name?.includes('Sarah')) {
-      return 'HRPAYMGR';
+  const HR_LEADERS = useMemo(() => {
+    const fromEmployees = (employees || [])
+      .filter((e) => {
+        const role = String(e.role || '');
+        const position = String(e.jobPosition || '');
+        return (
+          role === 'HR_MANAGER' ||
+          role === 'HR_PAYROLL_MANAGER' ||
+          position === 'HR Manager' ||
+          position === 'HR Payroll Manager'
+        );
+      })
+      .map((e) => ({
+        id: e.employeeId || e.id || e.employeeCode,
+        name: e.fullName || e.name || `${e.firstName || ''} ${e.lastName || ''}`.trim(),
+        role: e.role || (e.jobPosition === 'HR Payroll Manager' ? 'HR_PAYROLL_MANAGER' : 'HR_MANAGER'),
+        roleName: e.roleName || e.jobPosition || 'HR Manager',
+        department: e.department || 'Human Resources',
+        jobPosition: e.jobPosition || 'HR Manager',
+      }));
+
+    if (fromEmployees.length > 0) {
+      return fromEmployees;
     }
-    return 'HRMGR';
-  }, [user]);
+
+    if (user) {
+      return [
+        {
+          id: user.employeeCode || user.id || 'current-user',
+          name: user.name || user.fullName || 'HR User',
+          role: user.role || 'HR_MANAGER',
+          roleName: user.roleName || 'HR Manager',
+          department: user.department || 'Human Resources',
+          jobPosition: user.jobPosition || 'HR Manager',
+        },
+      ];
+    }
+
+    return [];
+  }, [employees, user]);
+
+  const initialLeaderId = useMemo(() => {
+    if (!HR_LEADERS.length) return '';
+    const payrollLeader = HR_LEADERS.find(
+      (l) => l.role === 'HR_PAYROLL_MANAGER' || l.jobPosition === 'HR Payroll Manager'
+    );
+    if (user?.role === 'HR_PAYROLL_MANAGER' && payrollLeader) {
+      return payrollLeader.id;
+    }
+    return HR_LEADERS[0].id;
+  }, [HR_LEADERS, user]);
 
   const [selectedLeaderId, setSelectedLeaderId] = useState(initialLeaderId);
   const [timeOffType, setTimeOffType] = useState('Personal Leave');
@@ -117,6 +142,7 @@ export default function HRLeaveRequestModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    if (!selectedLeader) return;
 
     setIsSubmitting(true);
     try {

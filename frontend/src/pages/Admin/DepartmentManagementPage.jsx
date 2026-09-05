@@ -253,7 +253,7 @@ export default function DepartmentManagementPage() {
             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
           >
             <Building2 className="h-3.5 w-3.5 text-slate-500" />
-            <span>+ New Department</span>
+            <span>New Department</span>
           </button>
 
           <button
@@ -262,7 +262,7 @@ export default function DepartmentManagementPage() {
             className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold"
           >
             <Briefcase className="h-3.5 w-3.5" />
-            <span>+ New Job Position</span>
+            <span>New Job Position</span>
           </button>
         </div>
       </div>

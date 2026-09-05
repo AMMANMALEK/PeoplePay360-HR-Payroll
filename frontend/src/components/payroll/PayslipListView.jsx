@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import StatusBadge from '../ui/StatusBadge';
 import EmptyState from '../ui/EmptyState';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import { Search, Eye, Filter, Download, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function PayslipListView({ onSelectPayslip }) {
@@ -124,13 +125,13 @@ export default function PayslipListView({ onSelectPayslip }) {
                       {payslip.workedDays} / {payslip.totalWorkDays}d
                     </td>
                     <td className="px-3 py-3.5 text-right font-medium text-slate-900">
-                      ${Number(payslip.gross || 0).toLocaleString()}
+                      {formatINR(payslip.gross || 0)}
                     </td>
                     <td className="px-3 py-3.5 text-right text-rose-600 font-medium">
-                      -${Number(payslip.totalDeductions || 0).toLocaleString()}
+                      -{formatINR(payslip.totalDeductions || 0)}
                     </td>
                     <td className="px-3 py-3.5 text-right font-bold text-slate-900">
-                      ${Number(payslip.net || 0).toLocaleString()}
+                      {formatINR(payslip.net || 0)}
                     </td>
                     <td className="px-3 py-3.5">
                       {payslip.bankDetails ? (

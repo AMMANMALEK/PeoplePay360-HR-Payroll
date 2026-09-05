@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Layers, Sliders, ShieldAlert, ArrowDown } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -84,7 +85,7 @@ export default function SalaryStructureDetailPage() {
                   </span>
                   <p className="text-[11px] font-semibold text-brand-700 mt-1">
                     {rule.calculationType === 'fixed'
-                      ? `$${rule.amount}`
+                      ? formatINR(rule.amount)
                       : rule.calculationType === 'percentage'
                       ? `${rule.percentage}% of Base`
                       : rule.formula}

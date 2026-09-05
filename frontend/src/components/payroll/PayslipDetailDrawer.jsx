@@ -1,6 +1,7 @@
 import React from 'react';
 import Drawer from '../ui/Drawer';
 import StatusBadge from '../ui/StatusBadge';
+import { formatINR } from '../../utils/formatCurrency';
 import {
   FileText,
   Calendar,
@@ -61,7 +62,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
             <div>
               <span className="text-[10px] font-medium text-slate-400">Base Contract Wage</span>
               <p className="font-medium text-slate-800">
-                ${Number(payslip.contractWage || 0).toLocaleString()} / mo
+                {formatINR(payslip.contractWage || 0)} / mo
               </p>
             </div>
           </div>
@@ -119,7 +120,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
               Earnings & Allowances
             </span>
             <span className="text-xs font-semibold text-slate-900">
-              Gross: ${Number(payslip.gross || 0).toLocaleString()}
+              Gross: {formatINR(payslip.gross || 0)}
             </span>
           </div>
 
@@ -133,7 +134,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
                   <span>{item.name}</span>
                 </span>
                 <span className="font-medium text-slate-900">
-                  ${Number(item.amount || 0).toLocaleString()}
+                  {formatINR(item.amount || 0)}
                 </span>
               </div>
             ))}
@@ -141,7 +142,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
 
           <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-xs font-bold text-slate-900">
             <span>Total Gross Earnings</span>
-            <span>${Number(payslip.gross || 0).toLocaleString()}</span>
+            <span>{formatINR(payslip.gross || 0)}</span>
           </div>
         </div>
 
@@ -152,7 +153,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
               Statutory & Tax Deductions
             </span>
             <span className="text-xs font-semibold text-rose-700">
-              -${Number(payslip.totalDeductions || 0).toLocaleString()}
+              -{formatINR(payslip.totalDeductions || 0)}
             </span>
           </div>
 
@@ -166,7 +167,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
                   <span>{item.name}</span>
                 </span>
                 <span className="font-medium text-rose-700">
-                  -${Number(item.amount || 0).toLocaleString()}
+                  -{formatINR(item.amount || 0)}
                 </span>
               </div>
             ))}
@@ -174,7 +175,7 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
 
           <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-xs font-bold text-rose-700">
             <span>Total Deductions</span>
-            <span>-${Number(payslip.totalDeductions || 0).toLocaleString()}</span>
+            <span>-{formatINR(payslip.totalDeductions || 0)}</span>
           </div>
         </div>
 
@@ -186,10 +187,10 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
                 Net Take-Home Pay
               </span>
               <p className="text-2xl font-black text-slate-900 mt-0.5">
-                ${Number(payslip.net || 0).toLocaleString()}
+                {formatINR(payslip.net || 0)}
               </p>
               <p className="text-[11px] text-emerald-800 mt-1">
-                Gross (${Number(payslip.gross || 0).toLocaleString()}) − Deductions (${Number(payslip.totalDeductions || 0).toLocaleString()})
+                Gross ({formatINR(payslip.gross || 0)}) − Deductions ({formatINR(payslip.totalDeductions || 0)})
               </p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sliders, Search, Filter, ShieldAlert, ArrowRight, X } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -122,7 +123,7 @@ export default function SalaryRuleListPage() {
                     </td>
                     <td className="px-5 py-4 font-mono text-xs font-semibold text-brand-800">
                       {rule.calculationType === 'fixed'
-                        ? `$${(rule.amount || 0).toLocaleString()}`
+                        ? formatINR(rule.amount || 0)
                         : rule.calculationType === 'percentage'
                         ? `${rule.percentage}%`
                         : rule.formula}
@@ -191,7 +192,7 @@ export default function SalaryRuleListPage() {
                 <div className="pt-2 border-t border-slate-800">
                   <span className="font-bold text-slate-400 uppercase text-[10px] block">Formula / Expression</span>
                   <p className="font-mono text-emerald-400 font-bold mt-1 text-sm">
-                    {selectedRule.formula || (selectedRule.percentage ? `${selectedRule.percentage}%` : `$${selectedRule.amount}`)}
+                    {selectedRule.formula || (selectedRule.percentage ? `${selectedRule.percentage}%` : formatINR(selectedRule.amount))}
                   </p>
                 </div>
               </div>

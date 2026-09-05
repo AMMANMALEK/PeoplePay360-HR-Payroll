@@ -1,9 +1,7 @@
 // src/services/salaryStructureService.js
 // Mock service for viewing Salary Structures. Read-only for HR Payroll User.
 
-import { INITIAL_SALARY_STRUCTURES } from '../data/payrollMockData';
-
-let salaryStructuresStore = [...INITIAL_SALARY_STRUCTURES];
+let salaryStructuresStore = [];
 
 export async function getSalaryStructures() {
   return new Promise((resolve) => {

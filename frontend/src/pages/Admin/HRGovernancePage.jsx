@@ -45,9 +45,9 @@ export default function HRGovernancePage() {
   // Submit Leave on Behalf Modal State
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({
-    employeeName: 'David Kim',
+    employeeName: '',
     role: 'HR_MANAGER',
-    employeeId: 'HRMGR',
+    employeeId: '',
     timeOffType: 'Personal Leave',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -68,9 +68,9 @@ export default function HRGovernancePage() {
   // Record Missing Punch Modal State
   const [isPunchModalOpen, setIsPunchModalOpen] = useState(false);
   const [punchForm, setPunchForm] = useState({
-    employeeName: 'David Kim',
+    employeeName: '',
     role: 'HR_MANAGER',
-    employeeCode: 'HRMGR',
+    employeeCode: '',
     date: new Date().toISOString().split('T')[0],
     checkIn: '09:00',
     checkOut: '18:00',
@@ -205,7 +205,7 @@ export default function HRGovernancePage() {
               className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold"
             >
               <Clock className="h-3.5 w-3.5" />
-              <span>+ Record Missing Punch</span>
+              <span>Record Missing Punch</span>
             </button>
           )}
         </div>

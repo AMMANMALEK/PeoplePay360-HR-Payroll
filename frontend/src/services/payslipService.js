@@ -1,9 +1,7 @@
 // src/services/payslipService.js
 // Mock service for managing Payslips.
 
-import { INITIAL_PAYSLIPS } from '../data/payrollMockData';
-
-let payslipsStore = [...INITIAL_PAYSLIPS];
+let payslipsStore = [];
 
 export async function getPayslips() {
   return new Promise((resolve) => {

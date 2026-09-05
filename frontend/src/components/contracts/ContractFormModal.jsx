@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import ContractConflictAlert from './ContractConflictAlert';
 import { useHRData } from '../../context/HRDataContext';
-import { AlertCircle, Lock, DollarSign, Calendar, FileText, User } from 'lucide-react';
+import { AlertCircle, Lock, Calendar, FileText, User } from 'lucide-react';
 
 export default function ContractFormModal({
   isOpen,
@@ -327,7 +327,7 @@ export default function ContractFormModal({
             </label>
             <div className="relative mt-1">
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs font-semibold">
-                $
+                ₹
               </span>
               <input
                 type="number"
@@ -336,7 +336,7 @@ export default function ContractFormModal({
                 required
                 value={formData.wage}
                 onChange={(e) => setFormData({ ...formData, wage: e.target.value })}
-                placeholder="e.g. 85000 or 45"
+                placeholder="e.g. 8,50,000 or 450"
                 className={`w-full rounded-lg border bg-white pl-7 pr-3 py-2 text-xs font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
                   errors.wage ? 'border-rose-400' : 'border-slate-300'
                 }`}

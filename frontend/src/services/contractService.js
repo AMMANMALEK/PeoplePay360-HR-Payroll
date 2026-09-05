@@ -1,4 +1,5 @@
 import { apiClient } from './apiService';
+import { formatINR } from '../utils/formatCurrency';
 import { CONTRACTS_ENDPOINT, employeeContractsPath } from '../constants/api';
 
 function titleStatus(status) {
@@ -35,7 +36,7 @@ export function toFrontendContract(raw) {
     endDate,
     wage:
       raw.wageAmount != null
-        ? `$${Number(raw.wageAmount).toLocaleString()} / ${raw.wageType === 'hourly' ? 'hr' : 'yr'}`
+        ? `${formatINR(raw.wageAmount)} / ${raw.wageType === 'hourly' ? 'hr' : 'yr'}`
         : '',
     wageAmount: raw.wageAmount,
     wageType: raw.wageType || 'monthly',

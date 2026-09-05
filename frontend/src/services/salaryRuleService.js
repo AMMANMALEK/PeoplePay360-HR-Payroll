@@ -1,9 +1,7 @@
 // src/services/salaryRuleService.js
 // Mock service for viewing Salary Rules. Read-only for HR Payroll User.
 
-import { INITIAL_SALARY_RULES } from '../data/payrollMockData';
-
-let salaryRulesStore = [...INITIAL_SALARY_RULES];
+let salaryRulesStore = [];
 
 export async function getSalaryRules() {
   // Simulate network delay

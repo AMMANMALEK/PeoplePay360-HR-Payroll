@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Receipt, Eye, Printer, Download, Users, DollarSign } from 'lucide-react';
+import { Search, Filter, Receipt, Eye, Printer, Download, Users } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -55,7 +56,7 @@ export default function PayslipListPage() {
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
           <span className="text-xs font-semibold text-slate-500">Filtered Net Payroll Value</span>
-          <p className="text-2xl font-bold text-emerald-700 mt-2">${totalNetSalarySum.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-emerald-700 mt-2">{formatINR(totalNetSalarySum)}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">Combined net pay of current filter</p>
         </div>
 
@@ -156,13 +157,13 @@ export default function PayslipListPage() {
                     <td className="px-5 py-4 text-slate-600">{ps.department}</td>
                     <td className="px-5 py-4 text-slate-600">{ps.payrunPeriod}</td>
                     <td className="px-5 py-4 font-semibold text-slate-900">
-                      ${(ps.grossSalary || 0).toLocaleString()}
+                      {formatINR(ps.grossSalary || 0)}
                     </td>
                     <td className="px-5 py-4 font-semibold text-rose-700">
-                      -${(ps.totalDeductions || 0).toLocaleString()}
+                      -{formatINR(ps.totalDeductions || 0)}
                     </td>
                     <td className="px-5 py-4 font-bold text-emerald-700">
-                      ${(ps.netSalary || 0).toLocaleString()}
+                      {formatINR(ps.netSalary || 0)}
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge status={ps.status} />

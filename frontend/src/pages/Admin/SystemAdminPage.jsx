@@ -33,7 +33,7 @@ export default function SystemAdminPage() {
     setTimeout(() => {
       setIsVerifying(false);
       logAdminAction({
-        administrator: 'Marcus Vance',
+        administrator: 'Administrator',
         action: 'System diagnostics executed',
         module: 'System Administration',
         target: 'All 5 core modules verified operational',
@@ -46,7 +46,7 @@ export default function SystemAdminPage() {
   const handleToggleValidation = (checked) => {
     setStrictValidation(checked);
     logAdminAction({
-      administrator: 'Marcus Vance',
+      administrator: 'Administrator',
       action: 'Security policy updated',
       module: 'System Administration',
       target: `Strict validation ${checked ? 'enabled' : 'disabled'}`,
@@ -58,7 +58,7 @@ export default function SystemAdminPage() {
   const handleTimeoutChange = (val) => {
     setSessionTimeout(val);
     logAdminAction({
-      administrator: 'Marcus Vance',
+      administrator: 'Administrator',
       action: 'Configuration updated',
       module: 'System Administration',
       target: `Session timeout adjusted to ${val} minutes`,

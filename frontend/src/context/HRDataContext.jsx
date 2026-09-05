@@ -9,45 +9,39 @@ import { setApiErrorHandler } from '../services/apiService';
 import { useAuth } from './AuthContext';
 import { ROLES } from '../constants/navigation';
 import { payrollService, evaluatePayrollWarnings } from '../services/payrollService';
-import {
-  INITIAL_PAYRUNS,
-  INITIAL_PAYSLIPS,
-  INITIAL_SALARY_RULES,
-  INITIAL_SALARY_STRUCTURES,
-} from '../data/mockData';
 
 const HRDataContext = createContext(null);
 
-export const DEFAULT_DEPARTMENTS = [
-  { id: 'dept-1', name: 'Engineering', code: 'ENG', manager: 'David Kim', description: 'Software engineering, DevOps, infrastructure, and QA', floor: 'Floor 4' },
-  { id: 'dept-2', name: 'Human Resources', code: 'HR', manager: 'Sarah Jenkins', description: 'People operations, talent acquisition, culture & payroll', floor: 'Floor 3' },
-  { id: 'dept-3', name: 'Finance', code: 'FIN', manager: 'Elena Rostova', description: 'Financial planning, accounting, treasury, and tax operations', floor: 'Floor 3' },
-  { id: 'dept-4', name: 'Product', code: 'PRD', manager: 'Lucas Dupont', description: 'Product strategy, roadmap management, and UX design', floor: 'Floor 4' },
-  { id: 'dept-5', name: 'Sales', code: 'SLS', manager: 'Ethan Cole', description: 'Enterprise sales, account executives, and client partnerships', floor: 'Floor 2' },
-  { id: 'dept-6', name: 'Marketing', code: 'MKT', manager: 'Daniel Brooks', description: 'Growth marketing, brand, content, and communications', floor: 'Floor 2' },
-  { id: 'dept-7', name: 'Operations', code: 'OPS', manager: 'Sophia Al-Mansoor', description: 'Business operations, facilities, logistics, and compliance', floor: 'Floor 1' },
-  { id: 'dept-8', name: 'Legal', code: 'LGL', manager: 'Victor Vance', description: 'Corporate law, contracts, regulatory compliance & IP', floor: 'Floor 3' },
+export const DEFAULT_DEPARTMENTS = [];
+
+export const DEFAULT_JOB_POSITIONS = [];
+
+const LEGACY_MOCK_STORAGE_KEYS = [
+  'peoplepay_payruns',
+  'peoplepay_payslips',
+  'peoplepay_salary_structures',
+  'peoplepay_salary_rules',
+  'peoplepay_departments',
+  'peoplepay_job_positions',
+  'peoplepay_hr_timeoff',
+  'peoplepay_hr_attendance',
+  'peoplepay_contracts',
 ];
 
-export const DEFAULT_JOB_POSITIONS = [
-  { id: 'pos-1', title: 'Senior Software Engineer', department: 'Engineering', level: 'Senior', status: 'Active', description: 'Full stack development with Node.js and React' },
-  { id: 'pos-2', title: 'Staff Software Engineer', department: 'Engineering', level: 'Lead', status: 'Active', description: 'Architecture, technical direction, and team leadership' },
-  { id: 'pos-3', title: 'Junior Frontend Developer', department: 'Engineering', level: 'Entry', status: 'Active', description: 'UI implementation and component maintenance' },
-  { id: 'pos-4', title: 'DevOps Engineer', department: 'Engineering', level: 'Mid', status: 'Active', description: 'CI/CD pipelines, Kubernetes, and cloud infrastructure' },
-  { id: 'pos-5', title: 'QA Test Engineer', department: 'Engineering', level: 'Mid', status: 'Active', description: 'Automation and quality assurance verification' },
-  { id: 'pos-6', title: 'HR Manager', department: 'Human Resources', level: 'Executive', status: 'Active', description: 'Workforce oversight, employee relations, and HR policies' },
-  { id: 'pos-7', title: 'HR Payroll Manager', department: 'Human Resources', level: 'Executive', status: 'Active', description: 'Compensation, benefits, and payroll management' },
-  { id: 'pos-8', title: 'Talent Acquisition Lead', department: 'Human Resources', level: 'Lead', status: 'Active', description: 'Sourcing, technical hiring, and candidate experience' },
-  { id: 'pos-9', title: 'HR Payroll User', department: 'Finance', level: 'Mid', status: 'Active', description: 'Payroll calculations, timesheets, and pay run validation' },
-  { id: 'pos-10', title: 'Senior Accountant', department: 'Finance', level: 'Senior', status: 'Active', description: 'Financial ledger, audit reporting, and taxation' },
-  { id: 'pos-11', title: 'Senior Product Designer', department: 'Product', level: 'Senior', status: 'Active', description: 'UI/UX design systems, user journey maps, and wireframing' },
-  { id: 'pos-12', title: 'Product Manager', department: 'Product', level: 'Senior', status: 'Active', description: 'Sprint prioritization, requirements, and user research' },
-  { id: 'pos-13', title: 'Enterprise Sales Director', department: 'Sales', level: 'Lead', status: 'Active', description: 'Key accounts, enterprise revenue, and business development' },
-  { id: 'pos-14', title: 'Account Executive', department: 'Sales', level: 'Mid', status: 'Active', description: 'Outbound sales, contract negotiation, and deals' },
-  { id: 'pos-15', title: 'Marketing Specialist', department: 'Marketing', level: 'Mid', status: 'Active', description: 'Campaigns, digital media, and social analytics' },
-  { id: 'pos-16', title: 'Operations Analyst', department: 'Operations', level: 'Mid', status: 'Active', description: 'Workflow optimization, vendor management, and reporting' },
-  { id: 'pos-17', title: 'Legal Counsel', department: 'Legal', level: 'Senior', status: 'Active', description: 'Employment agreements, NDA governance, and legal review' },
-];
+const readStoredList = (key, fallback = []) => {
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('peoplepay_mock_cleared') !== '1') {
+      LEGACY_MOCK_STORAGE_KEYS.forEach((storageKey) => localStorage.removeItem(storageKey));
+      localStorage.setItem('peoplepay_mock_cleared', '1');
+    }
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return fallback;
+};
 
 export function HRDataProvider({ children }) {
   const [employees, setEmployees] = useState([]);
@@ -65,37 +59,13 @@ export function HRDataProvider({ children }) {
   const { user } = useAuth();
 
   // Payroll States
-  const [payruns, setPayruns] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_payruns');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_PAYRUNS;
-  });
+  const [payruns, setPayruns] = useState(() => readStoredList('peoplepay_payruns'));
 
-  const [payslips, setPayslips] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_payslips');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_PAYSLIPS;
-  });
+  const [payslips, setPayslips] = useState(() => readStoredList('peoplepay_payslips'));
 
-  const [salaryStructures, setSalaryStructures] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_salary_structures');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_SALARY_STRUCTURES;
-  });
+  const [salaryStructures, setSalaryStructures] = useState(() => readStoredList('peoplepay_salary_structures'));
 
-  const [salaryRules, setSalaryRules] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_salary_rules');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_SALARY_RULES;
-  });
+  const [salaryRules, setSalaryRules] = useState(() => readStoredList('peoplepay_salary_rules'));
 
   const [activeRoleOverride, setActiveRoleOverride] = useState(null);
 
@@ -124,167 +94,18 @@ export function HRDataProvider({ children }) {
   }, [salaryRules]);
 
   // Managed Departments State with Local Persistence
-  const [departmentsList, setDepartmentsList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_departments');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_DEPARTMENTS;
-  });
+  const [departmentsList, setDepartmentsList] = useState(() => readStoredList('peoplepay_departments', DEFAULT_DEPARTMENTS));
 
   // Managed Job Positions State with Local Persistence
-  const [jobPositionsList, setJobPositionsList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_job_positions');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_JOB_POSITIONS;
-  });
+  const [jobPositionsList, setJobPositionsList] = useState(() =>
+    readStoredList('peoplepay_job_positions', DEFAULT_JOB_POSITIONS)
+  );
 
   // HR Manager & HR Payroll Manager Leave Requests
-  const [hrTimeOffRequests, setHrTimeOffRequests] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_hr_timeoff');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'REQ-HR-101',
-        employeeId: 'HRMGR',
-        employeeName: 'David Kim',
-        role: 'HR_MANAGER',
-        roleName: 'HR Manager',
-        department: 'Human Resources',
-        jobPosition: 'HR Manager',
-        timeOffType: 'Personal Leave',
-        startDate: '2026-09-15',
-        endDate: '2026-09-17',
-        duration: 3,
-        durationUnit: 'days',
-        status: 'Pending',
-        reason: 'Family event and personal commitments',
-        appliedDate: '2026-09-04',
-      },
-      {
-        id: 'REQ-HR-102',
-        employeeId: 'HRPAYMGR',
-        employeeName: 'Sarah Jenkins',
-        role: 'HR_PAYROLL_MANAGER',
-        roleName: 'HR Payroll Manager',
-        department: 'Human Resources',
-        jobPosition: 'HR Payroll Manager',
-        timeOffType: 'Sick Leave',
-        startDate: '2026-09-22',
-        endDate: '2026-09-23',
-        duration: 2,
-        durationUnit: 'days',
-        status: 'Pending',
-        reason: 'Medical checkup and doctor prescribed rest',
-        appliedDate: '2026-09-05',
-      },
-      {
-        id: 'REQ-HR-103',
-        employeeId: 'HRMGR',
-        employeeName: 'David Kim',
-        role: 'HR_MANAGER',
-        roleName: 'HR Manager',
-        department: 'Human Resources',
-        jobPosition: 'HR Manager',
-        timeOffType: 'Festival Leave',
-        startDate: '2026-08-10',
-        endDate: '2026-08-12',
-        duration: 3,
-        durationUnit: 'days',
-        status: 'Approved',
-        reason: 'Annual cultural festival celebration',
-        appliedDate: '2026-08-01',
-      }
-    ];
-  });
+  const [hrTimeOffRequests, setHrTimeOffRequests] = useState(() => readStoredList('peoplepay_hr_timeoff'));
 
   // HR Manager & HR Payroll Manager Daily Attendance Timing Logs
-  const [hrAttendanceList, setHrAttendanceList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('peoplepay_hr_attendance');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const dayBefore = new Date(Date.now() - 172800000).toISOString().split('T')[0];
-
-    return [
-      {
-        id: 'att-hr-1',
-        date: today,
-        employeeCode: 'HRMGR',
-        employeeName: 'David Kim',
-        role: 'HR_MANAGER',
-        roleName: 'HR Manager',
-        department: 'Human Resources',
-        checkIn: '09:02',
-        checkOut: '--:--',
-        workedHours: 0,
-        status: 'Present',
-        notes: 'Active today via HR Portal',
-      },
-      {
-        id: 'att-hr-2',
-        date: today,
-        employeeCode: 'HRPAYMGR',
-        employeeName: 'Sarah Jenkins',
-        role: 'HR_PAYROLL_MANAGER',
-        roleName: 'HR Payroll Manager',
-        department: 'Human Resources',
-        checkIn: '08:55',
-        checkOut: '17:30',
-        workedHours: 8.5,
-        status: 'Present',
-        notes: 'Standard workday shift',
-      },
-      {
-        id: 'att-hr-3',
-        date: yesterday,
-        employeeCode: 'HRMGR',
-        employeeName: 'David Kim',
-        role: 'HR_MANAGER',
-        roleName: 'HR Manager',
-        department: 'Human Resources',
-        checkIn: '09:10',
-        checkOut: '18:15',
-        workedHours: 9.0,
-        status: 'Present',
-        notes: 'Completed full workday',
-      },
-      {
-        id: 'att-hr-4',
-        date: yesterday,
-        employeeCode: 'HRPAYMGR',
-        employeeName: 'Sarah Jenkins',
-        role: 'HR_PAYROLL_MANAGER',
-        roleName: 'HR Payroll Manager',
-        department: 'Human Resources',
-        checkIn: '09:00',
-        checkOut: '13:00',
-        workedHours: 4.0,
-        status: 'Half-day',
-        notes: 'Authorized half day',
-      },
-      {
-        id: 'att-hr-5',
-        date: dayBefore,
-        employeeCode: 'HRMGR',
-        employeeName: 'David Kim',
-        role: 'HR_MANAGER',
-        roleName: 'HR Manager',
-        department: 'Human Resources',
-        checkIn: '08:50',
-        checkOut: '17:50',
-        workedHours: 9.0,
-        status: 'Present',
-        notes: 'On time',
-      }
-    ];
-  });
+  const [hrAttendanceList, setHrAttendanceList] = useState(() => readStoredList('peoplepay_hr_attendance'));
 
   // Local storage auto-sync
   useEffect(() => {
@@ -1235,7 +1056,7 @@ export function HRDataProvider({ children }) {
     const newReq = {
       id: `REQ-HR-${Date.now().toString().slice(-4)}`,
       employeeId: leaveData.employeeId || 'HRMGR',
-      employeeName: leaveData.employeeName || 'David Kim',
+      employeeName: leaveData.employeeName || '',
       role: leaveData.role || 'HR_MANAGER',
       roleName: leaveData.role === 'HR_PAYROLL_MANAGER' ? 'HR Payroll Manager' : 'HR Manager',
       department: 'Human Resources',
@@ -1306,7 +1127,7 @@ export function HRDataProvider({ children }) {
       id: `att-hr-${Date.now()}`,
       date: recordData.date || new Date().toISOString().split('T')[0],
       employeeCode: recordData.employeeCode || 'HRMGR',
-      employeeName: recordData.employeeName || 'David Kim',
+      employeeName: recordData.employeeName || '',
       role: recordData.role || 'HR_MANAGER',
       roleName: recordData.role === 'HR_PAYROLL_MANAGER' ? 'HR Payroll Manager' : 'HR Manager',
       department: 'Human Resources',

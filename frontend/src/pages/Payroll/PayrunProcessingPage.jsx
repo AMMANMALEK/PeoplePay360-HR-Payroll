@@ -14,6 +14,7 @@ import {
   Building,
 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
+import { formatINR } from '../../utils/formatCurrency';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PayrollWarning from '../../components/payroll/PayrollWarning';
 
@@ -201,17 +202,17 @@ export default function PayrunProcessingPage() {
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Total Gross Salary</span>
-          <p className="text-xl font-bold text-slate-900 mt-1">${(payrun.totalGross || 0).toLocaleString()}</p>
+          <p className="text-xl font-bold text-slate-900 mt-1">{formatINR(payrun.totalGross || 0)}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Total Deductions</span>
-          <p className="text-xl font-bold text-rose-700 mt-1">${(payrun.totalDeductions || 0).toLocaleString()}</p>
+          <p className="text-xl font-bold text-rose-700 mt-1">{formatINR(payrun.totalDeductions || 0)}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
           <span className="text-[11px] font-semibold text-slate-400 uppercase">Net Disbursement</span>
-          <p className="text-xl font-bold text-emerald-700 mt-1">${(payrun.totalNetSalary || 0).toLocaleString()}</p>
+          <p className="text-xl font-bold text-emerald-700 mt-1">{formatINR(payrun.totalNetSalary || 0)}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
@@ -265,19 +266,19 @@ export default function PayrunProcessingPage() {
                     </td>
                     <td className="px-6 py-4 text-slate-600">{ps.department}</td>
                     <td className="px-6 py-4 text-slate-900 font-semibold">
-                      ${(ps.wageAmount || 0).toLocaleString()}
+                      {formatINR(ps.wageAmount || 0)}
                     </td>
                     <td className="px-6 py-4 text-slate-700">
                       {ps.workedDays}/{ps.totalWorkingDays} days
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-900">
-                      ${(ps.grossSalary || 0).toLocaleString()}
+                      {formatINR(ps.grossSalary || 0)}
                     </td>
                     <td className="px-6 py-4 font-semibold text-rose-700">
-                      -${(ps.totalDeductions || 0).toLocaleString()}
+                      -{formatINR(ps.totalDeductions || 0)}
                     </td>
                     <td className="px-6 py-4 font-bold text-emerald-700">
-                      ${(ps.netSalary || 0).toLocaleString()}
+                      {formatINR(ps.netSalary || 0)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button

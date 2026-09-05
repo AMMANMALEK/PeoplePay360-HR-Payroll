@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Calculator, ArrowRight, DollarSign, Users, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Filter, Calculator, ArrowRight, IndianRupee, Users, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PayrunWizard from './PayrunWizard';
@@ -72,10 +73,10 @@ export default function PayrunListPage() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Total Net Salary Paid</span>
             <div className="rounded-xl bg-emerald-50 p-2 text-emerald-600">
-              <DollarSign className="h-4 w-4" />
+              <IndianRupee className="h-4 w-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">${totalNetSum.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-2">{formatINR(totalNetSum)}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">Disbursed to employees</p>
         </div>
 
@@ -97,7 +98,7 @@ export default function PayrunListPage() {
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">${totalGrossSum.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-2">{formatINR(totalGrossSum)}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">Before tax & deductions</p>
         </div>
       </div>
@@ -175,10 +176,10 @@ export default function PayrunListPage() {
                       </span>
                     </td>
                     <td className="px-5 py-4 font-semibold text-slate-900">
-                      ${(run.totalGross || 0).toLocaleString()}
+                      {formatINR(run.totalGross || 0)}
                     </td>
                     <td className="px-5 py-4 font-bold text-emerald-700">
-                      ${(run.totalNetSalary || 0).toLocaleString()}
+                      {formatINR(run.totalNetSalary || 0)}
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge status={run.status} />

@@ -1,11 +1,10 @@
 import { apiClient } from './apiService';
-import { INITIAL_PAYRUNS, INITIAL_PAYSLIPS, INITIAL_SALARY_RULES } from '../data/mockData';
 
 export const PAYRUNS_ENDPOINT = ''; // Decoupled: empty placeholder
 export const PAYSLIPS_ENDPOINT = ''; // Decoupled: empty placeholder
 
-let localPayruns = [...INITIAL_PAYRUNS];
-let localPayslips = [...INITIAL_PAYSLIPS];
+let localPayruns = [];
+let localPayslips = [];
 
 /**
  * Computes a single employee's payslip based on contract wage and salary rules
@@ -14,7 +13,7 @@ export function computeEmployeePayslip({
   employee,
   contract,
   payrun,
-  salaryRules = INITIAL_SALARY_RULES,
+  salaryRules = [],
   workedDays = 22,
   totalWorkDays = 22,
 }) {

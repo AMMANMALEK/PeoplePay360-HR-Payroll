@@ -1,6 +1,8 @@
 // src/services/payrollComputeEngine.js
 // Business logic for payroll calculation, contract eligibility checks, and warning detection.
 
+import { formatINR } from '../utils/formatCurrency';
+
 /**
  * Validates employee contract eligibility for a payrun date range.
  * Detects missing contracts, overlapping contracts, or expiring contracts.
@@ -104,44 +106,44 @@ export function computeEmployeePayslip({
     switch (rule.code) {
       case 'BASIC':
         computedAmount = Math.round(wageAmount * prorationFactor);
-        calculationSummary = `Base Contract Wage ($${wageAmount.toLocaleString()}) * Proration (${workedDays}/${totalWorkingDays} days)`;
+        calculationSummary = `Base Contract Wage (${formatINR(wageAmount)}) * Proration (${workedDays}/${totalWorkingDays} days)`;
         basicSalary = computedAmount;
         break;
 
       case 'HRA':
         if (rule.calculationType === 'percentage') {
           computedAmount = Math.round(basicSalary * (rule.percentage / 100));
-          calculationSummary = `${rule.percentage}% of Basic ($${basicSalary.toLocaleString()})`;
+          calculationSummary = `${rule.percentage}% of Basic (${formatINR(basicSalary)})`;
         } else {
           computedAmount = Math.round((rule.amount || 0) * prorationFactor);
-          calculationSummary = `Fixed amount $${rule.amount} prorated`;
+          calculationSummary = `Fixed amount ${formatINR(rule.amount)} prorated`;
         }
         break;
 
       case 'TA':
         computedAmount = Math.round((rule.amount || 2000) * prorationFactor);
-        calculationSummary = `Fixed Transport Allowance $${rule.amount || 2000} prorated`;
+        calculationSummary = `Fixed Transport Allowance ${formatINR(rule.amount || 2000)} prorated`;
         break;
 
       case 'MA':
         computedAmount = Math.round((rule.amount || 1250) * prorationFactor);
-        calculationSummary = `Fixed Medical Allowance $${rule.amount || 1250} prorated`;
+        calculationSummary = `Fixed Medical Allowance ${formatINR(rule.amount || 1250)} prorated`;
         break;
 
       case 'GROSS':
         const allowancesSum = (lineItemsMap['HRA']?.amount || 0) + (lineItemsMap['TA']?.amount || 0) + (lineItemsMap['MA']?.amount || 0);
         computedAmount = lineItemsMap['BASIC']?.amount + allowancesSum;
-        calculationSummary = `Basic ($${lineItemsMap['BASIC']?.amount}) + Allowances ($${allowancesSum})`;
+        calculationSummary = `Basic (${formatINR(lineItemsMap['BASIC']?.amount)}) + Allowances (${formatINR(allowancesSum)})`;
         grossSalary = computedAmount;
         break;
 
       case 'PF':
         if (rule.calculationType === 'percentage') {
           computedAmount = Math.round(basicSalary * (rule.percentage / 100));
-          calculationSummary = `${rule.percentage}% of Basic ($${basicSalary.toLocaleString()})`;
+          calculationSummary = `${rule.percentage}% of Basic (${formatINR(basicSalary)})`;
         } else {
           computedAmount = rule.amount || 0;
-          calculationSummary = `Fixed PF $${rule.amount}`;
+          calculationSummary = `Fixed PF ${formatINR(rule.amount)}`;
         }
         totalDeductions += computedAmount;
         break;
@@ -163,13 +165,13 @@ export function computeEmployeePayslip({
           annualTax = (annualGross - 50000) * 0.10;
         }
         computedAmount = Math.round(annualTax / 12);
-        calculationSummary = `Estimated income tax based on annual projection ($${Math.round(annualGross).toLocaleString()})`;
+        calculationSummary = `Estimated income tax based on annual projection (${formatINR(Math.round(annualGross))})`;
         totalDeductions += computedAmount;
         break;
 
       case 'NET':
         computedAmount = Math.max(0, grossSalary - totalDeductions);
-        calculationSummary = `Gross ($${grossSalary.toLocaleString()}) - Total Deductions ($${totalDeductions.toLocaleString()})`;
+        calculationSummary = `Gross (${formatINR(grossSalary)}) - Total Deductions (${formatINR(totalDeductions)})`;
         break;
 
       default:
@@ -179,7 +181,7 @@ export function computeEmployeePayslip({
           calculationSummary = `${rule.percentage}% of Basic`;
         } else if (rule.calculationType === 'fixed') {
           computedAmount = Math.round((rule.amount || 0) * prorationFactor);
-          calculationSummary = `Fixed amount $${rule.amount}`;
+          calculationSummary = `Fixed amount ${formatINR(rule.amount)}`;
         } else {
           computedAmount = rule.amount || 0;
           calculationSummary = `Custom formula rule`;

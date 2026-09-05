@@ -169,7 +169,7 @@ export default function UsersPage() {
           className="btn-primary shrink-0"
         >
           <UserPlus className="h-4 w-4" />
-          <span>+ New User</span>
+          <span>New User</span>
         </button>
       </div>
 
