@@ -46,34 +46,40 @@ export default function TodayAttendanceCard() {
   const isCheckOutDisabled = isSaving || cooldownSeconds > 0;
 
   return (
-    <section className="app-card p-5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-slate-900">Today's attendance</h3>
-          <p className="mt-0.5 text-xs text-slate-500">{localToday()}</p>
+    <section className="app-card p-5 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Title & Status */}
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">Today's attendance</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{localToday()}</p>
+          </div>
+          <StatusBadge status={todayRecord?.status || 'Not recorded'} />
         </div>
-        <StatusBadge status={todayRecord?.status || 'Not recorded'} />
-      </div>
 
-      {isLoading ? (
-        <p className="text-sm text-slate-500">Loading today's record…</p>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-medium text-slate-500">Check in</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">
+        {/* Center: Check-in & Check-out displays */}
+        {isLoading ? (
+          <p className="text-sm text-slate-500">Loading today's record…</p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-2.5">
+              <span className="text-xs font-medium text-slate-500">Check in</span>
+              <span className="text-base font-bold text-slate-900">
                 {todayRecord?.checkInDisplay || '--'}
-              </p>
+              </span>
             </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-medium text-slate-500">Check out</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">
+            <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-2.5">
+              <span className="text-xs font-medium text-slate-500">Check out</span>
+              <span className="text-base font-bold text-slate-900">
                 {todayRecord?.checkOutDisplay || '--'}
-              </p>
+              </span>
             </div>
           </div>
-          <div className="mt-4">
+        )}
+
+        {/* Right: Actions */}
+        {!isLoading && (
+          <div className="flex flex-col items-start gap-1.5 sm:items-end">
             {canCheckIn && (
               <button
                 type="button"
@@ -84,8 +90,9 @@ export default function TodayAttendanceCard() {
                 {isSaving ? 'Saving…' : 'Check in'}
               </button>
             )}
+
             {canCheckOut && (
-              <div className="space-y-2">
+              <div className="flex flex-col items-start gap-1.5 sm:items-end">
                 <button
                   type="button"
                   className={`btn-primary ${
@@ -99,20 +106,21 @@ export default function TodayAttendanceCard() {
                 {cooldownSeconds > 0 && (
                   <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                    Cannot check out at the same time as check in. Available in {cooldownSeconds}s.
+                    Cannot check out at the same time as check in ({cooldownSeconds}s).
                   </p>
                 )}
               </div>
             )}
+
             {todayRecord?.hasCheckIn && todayRecord?.hasCheckOut && (
               <p className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                Today's attendance is complete ({todayRecord?.workedHours || 0} hrs logged).
+                Completed ({todayRecord?.workedHours || 0} hrs logged)
               </p>
             )}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </section>
   );
 }

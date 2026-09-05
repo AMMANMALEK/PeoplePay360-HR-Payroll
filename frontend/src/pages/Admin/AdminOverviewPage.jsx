@@ -1,30 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
+import Modal from '../../components/ui/Modal';
 import { useHRData } from '../../context/HRDataContext';
 import {
-  ShieldCheck,
   Users,
   KeyRound,
-  AlertTriangle,
-  Activity,
-  ArrowRight,
-  Shield,
+  CalendarCheck,
+  Edit2,
   Clock,
-  CheckCircle2,
-  ExternalLink
+  ArrowRight
 } from 'lucide-react';
 
 export default function AdminOverviewPage() {
   const navigate = useNavigate();
-  const { kpis, users, auditLogs, systemStatus } = useHRData();
+  const {
+    users,
+    auditLogs,
+    fixedLeaveAllowances,
+    updateFixedLeaveAllowances
+  } = useHRData();
 
   const totalUsers = users.length || 24;
   const activeUsers = users.filter((u) => u.status === 'Active').length || 22;
 
   // Recent 6 admin actions
   const recentActivity = auditLogs.slice(0, 6);
+
+  // Edit Fixed Leaves Modal State
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [leaveForm, setLeaveForm] = useState({});
+
+  const handleOpenEditLeaves = () => {
+    setLeaveForm({ ...fixedLeaveAllowances });
+    setIsLeaveModalOpen(true);
+  };
+
+  const handleSaveLeaves = (e) => {
+    e.preventDefault();
+    updateFixedLeaveAllowances(leaveForm);
+    setIsLeaveModalOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -38,28 +55,36 @@ export default function AdminOverviewPage() {
             Platform administration overview and access governance command.
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-800">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Platform Status: Healthy</span>
-          </span>
-        </div>
       </div>
 
-      {/* PLATFORM SNAPSHOT CARDS */}
-      <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-          Platform Snapshot
-        </h2>
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+      {/* PLATFORM SNAPSHOT CARDS WITH TOP-LEFT ACTION BUTTONS */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => navigate('/admin/users')}
+            className="btn-primary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold"
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>Manage Users</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/admin/roles')}
+            className="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            <span>Manage Roles</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="TOTAL USERS"
             value={totalUsers}
             subtext={`${activeUsers} Active accounts`}
             icon="users"
             colorScheme="sky"
-            onClick={() => navigate('/admin/users')}
           />
 
           <StatCard
@@ -68,7 +93,6 @@ export default function AdminOverviewPage() {
             subtext="Configured roles"
             icon="present"
             colorScheme="lilac"
-            onClick={() => navigate('/admin/roles')}
           />
 
           <StatCard
@@ -77,7 +101,6 @@ export default function AdminOverviewPage() {
             subtext="Configured permissions"
             icon="contract"
             colorScheme="mint"
-            onClick={() => navigate('/admin/roles')}
           />
 
           <StatCard
@@ -86,67 +109,67 @@ export default function AdminOverviewPage() {
             subtext="Requires review"
             icon="alert"
             colorScheme="peach"
-            onClick={() => navigate('/admin/users')}
-          />
-
-          <StatCard
-            title="SYSTEM STATUS"
-            value="● Healthy"
-            subtext="All core modules operational"
-            icon="health"
-            colorScheme="lime"
-            onClick={() => navigate('/admin/system')}
           />
         </div>
       </div>
 
-      {/* ACCESS GOVERNANCE PROMINENT CARD */}
-      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 via-white to-slate-50 p-5 shadow-subtle">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-bold tracking-tight text-slate-900 uppercase">
-                Access Governance
-              </h3>
+      {/* FIXED LEAVE POLICY & ALLOWANCES SECTION */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-card space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-100/70 text-slate-800">
+              <CalendarCheck className="h-5 w-5" />
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-700">
-              <span>{totalUsers} Users</span>
-              <span>·</span>
-              <span>5 Roles</span>
-              <span>·</span>
-              <span>86 Permissions</span>
-              <span>·</span>
-              <span className="inline-flex items-center gap-1 text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                ● No critical permission conflicts
-              </span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                Fixed Leave Policy & Annual Allowances
+              </h2>
+              <p className="text-xs text-slate-500">
+                Configure the baseline fixed annual leaves allocated across all leave types.
+              </p>
             </div>
-            <p className="text-xs text-slate-500 max-w-2xl">
-              Role-Based Access Control (RBAC Level 3) is active across all 12 modules. User authentication and granular module rights are synchronized with the central governance engine.
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/users')}
-              className="btn-primary"
-            >
-              <Users className="h-3.5 w-3.5" />
-              <span>Manage Users</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/roles')}
-              className="btn-secondary"
-            >
-              <KeyRound className="h-3.5 w-3.5" />
-              <span>Manage Roles</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleOpenEditLeaves}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors shrink-0"
+          >
+            <Edit2 className="h-3.5 w-3.5 text-slate-500" />
+            <span>Edit Fixed Leaves</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Object.entries(fixedLeaveAllowances || {
+            'Personal Leave': 15,
+            'Sick Leave': 10,
+            'Festival Leave': 5,
+          }).map(([typeName, days]) => {
+            const isPersonal = typeName === 'Personal Leave';
+            const isSick = typeName === 'Sick Leave';
+            const bgClass = isPersonal
+              ? 'bg-[#e4f4ea] border-emerald-200/90 text-emerald-950'
+              : isSick
+              ? 'bg-[#fde9d8] border-amber-200/90 text-amber-950'
+              : 'bg-[#eee8fb] border-purple-200/90 text-purple-950';
+
+            return (
+              <div
+                key={typeName}
+                className={`flex items-center justify-between rounded-xl border p-4 shadow-subtle ${bgClass}`}
+              >
+                <div>
+                  <span className="text-xs font-bold block">{typeName}</span>
+                  <span className="text-[11px] opacity-75">Annual Fixed Allowance</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black">{days}</span>
+                  <span className="text-xs font-semibold opacity-75">Days</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -215,6 +238,73 @@ export default function AdminOverviewPage() {
           </table>
         </div>
       </div>
+
+      {/* EDIT FIXED LEAVES MODAL */}
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        title="Edit Fixed Leave Allowances"
+        subtitle="Set the annual baseline quota of fixed leaves for each leave category"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsLeaveModalOpen(false)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveLeaves}
+              className="btn-primary px-4 py-2 text-xs font-semibold"
+            >
+              Save Allowances
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveLeaves} className="space-y-4">
+          <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-xs text-slate-600">
+            Modifying these values updates the fixed leave allocations across the platform for employees and HR staff.
+          </div>
+
+          <div className="space-y-3">
+            {Object.keys(fixedLeaveAllowances || {
+              'Personal Leave': 15,
+              'Sick Leave': 10,
+              'Festival Leave': 5,
+            }).map((typeName) => (
+              <div
+                key={typeName}
+                className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-subtle"
+              >
+                <div>
+                  <label className="text-xs font-bold text-slate-900 block">{typeName}</label>
+                  <span className="text-[11px] text-slate-400">Fixed days allocated per year</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="365"
+                    required
+                    value={leaveForm[typeName] ?? fixedLeaveAllowances[typeName] ?? 0}
+                    onChange={(e) =>
+                      setLeaveForm({
+                        ...leaveForm,
+                        [typeName]: Math.max(0, parseInt(e.target.value, 10) || 0),
+                      })
+                    }
+                    className="w-20 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-center text-xs font-bold text-slate-900 shadow-subtle focus:border-brand-400 focus:outline-none"
+                  />
+                  <span className="text-xs font-medium text-slate-500">Days</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

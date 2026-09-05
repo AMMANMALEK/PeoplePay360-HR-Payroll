@@ -10,8 +10,12 @@ import {
   ChevronLeft,
   X,
   LogOut,
+  KeyRound,
+  Activity,
+  Shield,
+  Building2,
 } from 'lucide-react';
-import { NAV_ITEMS, APP_ROLE } from '../../constants/navigation';
+import { NAV_ITEMS, APP_ROLE, ADMIN_NAV_ITEMS, ADMIN_APP_ROLE, ROLES } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,11 +26,18 @@ const ICON_MAP = {
   FileText,
   CalendarDays,
   CalendarCheck,
+  KeyRound,
+  Activity,
+  Shield,
+  Building2,
 };
 
 export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) {
   const { kpis } = useHRData();
-  const { logout } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
+
+  const isAdministrator = isAdmin || user?.role === ROLES.ADMIN;
+  const currentNavItems = isAdministrator ? ADMIN_NAV_ITEMS : NAV_ITEMS;
 
   const getBadgeValue = (key) => {
     if (key === 'pendingTimeOff') return kpis.pendingTimeOff;
@@ -50,7 +61,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         <NavLink
           key={item.path}
           to={item.path}
-          end={item.path === '/'}
+          end={item.path === '/' || item.path === '/admin'}
           onClick={isMobile ? onCloseMobile : undefined}
           title={collapsed ? item.label : undefined}
           className={({ isActive }) =>
@@ -94,7 +105,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
             }`}
           >
             <span className="block text-sm font-semibold tracking-tight text-slate-900">PeopleFlow</span>
-            <span className="block text-[11px] font-medium text-slate-400">HR Operations</span>
+            <span className="block text-[11px] font-medium text-slate-400">
+              {isAdministrator ? 'Admin Console' : 'HR Operations'}
+            </span>
           </div>
         </div>
         {isMobile ? (
@@ -124,10 +137,12 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
             collapsed ? 'sr-only' : ''
           }`}
         >
-          Menu
+          {isAdministrator ? 'Governance' : 'Menu'}
         </p>
-        <nav className="space-y-1">{renderNav(NAV_ITEMS.filter((item) => !item.isSecondary), collapsed, isMobile)}</nav>
-        {NAV_ITEMS.some((item) => item.isSecondary) && (
+        <nav className="space-y-1">
+          {renderNav(currentNavItems.filter((item) => !item.isSecondary), collapsed, isMobile)}
+        </nav>
+        {currentNavItems.some((item) => item.isSecondary) && (
           <>
             <p
               className={`mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
@@ -137,7 +152,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
               Insights
             </p>
             <nav className="space-y-1">
-              {renderNav(NAV_ITEMS.filter((item) => item.isSecondary), collapsed, isMobile)}
+              {renderNav(currentNavItems.filter((item) => item.isSecondary), collapsed, isMobile)}
             </nav>
           </>
         )}
@@ -146,11 +161,15 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       <div className="shrink-0 border-t border-slate-100 p-3">
         <div className={`flex items-center rounded-2xl bg-slate-50 p-2 ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-slate-800">
-            HR
+            {isAdministrator ? 'AD' : 'HR'}
           </div>
           <div className={`min-w-0 ${collapsed ? 'hidden' : 'flex-1'}`}>
-            <p className="truncate text-xs font-semibold text-slate-900">HR Manager</p>
-            <p className="truncate text-[11px] text-slate-500">{APP_ROLE.name}</p>
+            <p className="truncate text-xs font-semibold text-slate-900">
+              {isAdministrator ? (user?.name || user?.email?.split('@')[0] || 'Administrator') : 'HR Manager'}
+            </p>
+            <p className="truncate text-[11px] text-slate-500">
+              {isAdministrator ? ADMIN_APP_ROLE.name : APP_ROLE.name}
+            </p>
           </div>
         </div>
         <button

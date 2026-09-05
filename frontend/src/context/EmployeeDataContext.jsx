@@ -127,31 +127,91 @@ export function EmployeeDataProvider({ children }) {
   };
 
   const currentYear = new Date().getFullYear();
+
+  const [fixedLeavesVersion, setFixedLeavesVersion] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setFixedLeavesVersion((v) => v + 1);
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('peoplepay_fixed_leaves_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('peoplepay_fixed_leaves_updated', handleUpdate);
+    };
+  }, []);
+
+  // Read admin-configured fixed leave allowances
+  const configuredAllowances = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_fixed_leaves');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { 'Personal Leave': 15, 'Sick Leave': 10, 'Festival Leave': 5 };
+  }, [allocations, fixedLeavesVersion]);
+
+  const syncedAllocations = useMemo(() => {
+    const defaultTypes = [
+      { typeName: 'Personal Leave', typeCode: 'PERSONAL' },
+      { typeName: 'Sick Leave', typeCode: 'SICK' },
+      { typeName: 'Festival Leave', typeCode: 'FESTIVAL' },
+    ];
+
+    const result = [...allocations];
+
+    defaultTypes.forEach(({ typeName, typeCode }) => {
+      const configured = configuredAllowances[typeName];
+      if (configured != null) {
+        const idx = result.findIndex((a) => a.typeName === typeName || a.typeCode === typeCode);
+        if (idx >= 0) {
+          const taken = result[idx].taken || 0;
+          result[idx] = {
+            ...result[idx],
+            allocated: configured,
+            remaining: Math.max(0, configured - taken),
+          };
+        } else {
+          result.push({
+            id: `alloc-${typeCode.toLowerCase()}`,
+            typeName,
+            typeCode,
+            allocated: configured,
+            taken: 0,
+            remaining: configured,
+            validity: `${currentYear}-12-31`,
+            status: 'Active',
+          });
+        }
+      }
+    });
+
+    return result;
+  }, [allocations, configuredAllowances, currentYear]);
+
   const currentPersonalLeave =
-    allocations.find(
+    syncedAllocations.find(
       (row) =>
         (row.typeName === 'Personal Leave' || row.typeCode === 'PERSONAL') &&
         String(row.validity || '').startsWith(String(currentYear))
     ) ||
-    allocations.find((row) => row.typeName === 'Personal Leave') ||
+    syncedAllocations.find((row) => row.typeName === 'Personal Leave') ||
     null;
 
   const currentSickLeave =
-    allocations.find(
+    syncedAllocations.find(
       (row) =>
         (row.typeName === 'Sick Leave' || row.typeCode === 'SICK') &&
         String(row.validity || '').startsWith(String(currentYear))
     ) ||
-    allocations.find((row) => row.typeName === 'Sick Leave') ||
+    syncedAllocations.find((row) => row.typeName === 'Sick Leave') ||
     null;
 
   const currentFestivalLeave =
-    allocations.find(
+    syncedAllocations.find(
       (row) =>
         (row.typeName === 'Festival Leave' || row.typeCode === 'FESTIVAL') &&
         String(row.validity || '').startsWith(String(currentYear))
     ) ||
-    allocations.find((row) => row.typeName === 'Festival Leave') ||
+    syncedAllocations.find((row) => row.typeName === 'Festival Leave') ||
     null;
 
   const remainingLeave = Number(currentPersonalLeave?.remaining) || 0;
@@ -167,7 +227,7 @@ export function EmployeeDataProvider({ children }) {
       value={{
         profile,
         attendance,
-        allocations,
+        allocations: syncedAllocations,
         requests,
         types,
         todayRecord,

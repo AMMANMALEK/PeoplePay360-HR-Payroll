@@ -69,12 +69,17 @@ export default function LoginPage() {
     }
   }, []);
 
-  if (isAuthenticated && (isHrManager || isAdmin)) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (isAuthenticated && isEmployee) {
-    return <Navigate to="/employee" replace />;
+  if (isAuthenticated) {
+    if (isAdmin) {
+      return <Navigate to="/admin" replace />;
+    }
+    if (isHrManager) {
+      return <Navigate to="/" replace />;
+    }
+    if (isEmployee) {
+      return <Navigate to="/employee" replace />;
+    }
+    return <Navigate to="/admin" replace />;
   }
 
   const handleSubmit = async (event) => {
@@ -101,7 +106,9 @@ export default function LoginPage() {
         window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
 
-      if (user.role === ROLES.HR_MANAGER || user.role === ROLES.ADMIN) {
+      if (user.role === ROLES.ADMIN) {
+        window.location.assign('/admin');
+      } else if (user.role === ROLES.HR_MANAGER) {
         window.location.assign('/');
       } else {
         window.location.assign('/employee');

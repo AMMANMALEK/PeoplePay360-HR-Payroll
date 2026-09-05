@@ -59,3 +59,59 @@ export const NAV_ITEMS = [
     badgeKey: "pendingTimeOff"
   }
 ];
+
+export const ADMIN_APP_ROLE = {
+  name: "System Administrator",
+  code: ROLES.ADMIN,
+  permissions: {
+    canManageUsers: true,
+    canManageRoles: true,
+    canViewAuditLogs: true,
+    canViewSystemStatus: true,
+  },
+};
+
+export const ADMIN_NAV_ITEMS = [
+  {
+    label: "Overview",
+    path: "/admin",
+    icon: "LayoutDashboard",
+    description: "Platform snapshot & access governance",
+  },
+  {
+    label: "Departments & Positions",
+    path: "/admin/departments",
+    icon: "Building2",
+    description: "Manage organizational departments and job positions",
+  },
+  {
+    label: "HR Governance",
+    path: "/admin/hr-governance",
+    icon: "CalendarCheck",
+    description: "Approve HR Manager leaves & adjust check-in/out timings",
+  },
+  {
+    label: "Users",
+    path: "/admin/users",
+    icon: "Users",
+    description: "Manage system user accounts & access",
+  },
+  {
+    label: "Roles & Permissions",
+    path: "/admin/roles",
+    icon: "KeyRound",
+    description: "RBAC roles and granular permission sets",
+  },
+  {
+    label: "System Status",
+    path: "/admin/system",
+    icon: "Activity",
+    description: "Platform health and module uptime",
+  },
+  {
+    label: "Audit Logs",
+    path: "/admin/audit",
+    icon: "Shield",
+    description: "Security and administrative audit trail",
+  },
+];

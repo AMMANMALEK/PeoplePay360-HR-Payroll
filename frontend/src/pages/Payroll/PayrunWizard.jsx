@@ -4,7 +4,7 @@ import { useHRData } from '../../context/HRDataContext';
 import { evaluateEmployeeEligibility } from '../../services/payrollComputeEngine';
 
 export default function PayrunWizard({ isOpen, onClose, onCreated }) {
-  const { employees, contracts, createPayrun } = useHRData();
+  const { employees, contracts, createPayrun, departments } = useHRData();
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -40,8 +40,6 @@ export default function PayrunWizard({ isOpen, onClose, onCreated }) {
   const filteredEmployees = employees.filter((e) =>
     deptFilter === 'ALL' ? true : e.department === deptFilter
   );
-
-  const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];
 
   const handleSubmit = async () => {
     const newRun = await createPayrun({

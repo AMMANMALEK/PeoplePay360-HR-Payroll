@@ -42,17 +42,18 @@ const EMPLOYMENT_TYPES = [
 ];
 
 export default function EmployeeFormModal({ isOpen, onClose, initialData = null }) {
-  const { departments, schedules, employees, addEmployee, updateEmployee } = useHRData();
+  const { departments, jobPositions, schedules, employees, addEmployee, updateEmployee } = useHRData();
 
   const uniqueDepartments = useMemo(() => {
     return Array.from(new Set((departments || []).filter(Boolean))).sort();
   }, [departments]);
 
   const uniqueJobPositions = useMemo(() => {
+    const fromContext = jobPositions || [];
     const fromEmployees = (employees || []).map((e) => e.jobPosition).filter(Boolean);
     const current = initialData?.jobPosition ? [initialData.jobPosition] : [];
-    return Array.from(new Set([...BASE_JOB_POSITIONS, ...fromEmployees, ...current])).sort();
-  }, [employees, initialData?.jobPosition]);
+    return Array.from(new Set([...BASE_JOB_POSITIONS, ...fromContext, ...fromEmployees, ...current])).sort();
+  }, [jobPositions, employees, initialData?.jobPosition]);
 
   const uniqueSchedules = useMemo(() => {
     const seen = new Set();

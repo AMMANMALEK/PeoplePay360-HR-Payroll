@@ -105,22 +105,29 @@ export default function EmployeeDashboardPage() {
         />
       </section>
 
-      {/* Today's Attendance & Leave Balance */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-        <div className="xl:col-span-3">
-          <TodayAttendanceCard />
-        </div>
-        <section className="app-card p-5 xl:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
+      {/* Today's Attendance Card - Horizontal */}
+      <TodayAttendanceCard />
+
+      {/* Leave balance - Horizontal with 3 cards side by side */}
+      <section className="app-card p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
             <h3 className="text-base font-semibold text-slate-900">Leave balance</h3>
-            <button type="button" className="btn-ghost" onClick={() => navigate('/employee/time-off')}>
-              View all
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Personal, Sick, and Festival leave allocations
+            </p>
           </div>
-          <LeaveBalanceSection compact />
-        </section>
-      </div>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => navigate('/employee/time-off')}
+          >
+            View all
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <LeaveBalanceSection />
+      </section>
 
       {/* Recent Tables with proper spacing */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

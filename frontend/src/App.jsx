@@ -20,12 +20,23 @@ import EmployeeProfilePage from './pages/Employee/EmployeeProfilePage';
 import EmployeeAttendancePage from './pages/Employee/EmployeeAttendancePage';
 import EmployeeTimeOffPage from './pages/Employee/EmployeeTimeOffPage';
 
+// Admin Pages
+import AdminOverviewPage from './pages/Admin/AdminOverviewPage';
+import DepartmentManagementPage from './pages/Admin/DepartmentManagementPage';
+import HRGovernancePage from './pages/Admin/HRGovernancePage';
+import UsersPage from './pages/Admin/UsersPage';
+import RolesPermissionsPage from './pages/Admin/RolesPermissionsPage';
+import SystemAdminPage from './pages/Admin/SystemAdminPage';
+import AuditLogPage from './pages/Admin/AuditLogPage';
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Employee Routes */}
           <Route
             path="/employee"
             element={
@@ -39,6 +50,28 @@ export default function App() {
             <Route path="attendance" element={<EmployeeAttendancePage />} />
             <Route path="time-off" element={<EmployeeTimeOffPage />} />
           </Route>
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth roles={[ROLES.ADMIN]}>
+                <HRDataProvider>
+                  <AppShell />
+                </HRDataProvider>
+              </RequireAuth>
+            }
+          >
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="departments" element={<DepartmentManagementPage />} />
+            <Route path="hr-governance" element={<HRGovernancePage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="roles" element={<RolesPermissionsPage />} />
+            <Route path="system" element={<SystemAdminPage />} />
+            <Route path="audit" element={<AuditLogPage />} />
+          </Route>
+
+          {/* HR Manager Routes */}
           <Route
             path="/"
             element={
@@ -57,6 +90,7 @@ export default function App() {
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="time-off" element={<TimeOffPage />} />
           </Route>
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

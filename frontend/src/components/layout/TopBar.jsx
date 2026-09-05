@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu, Search, Bell } from 'lucide-react';
-import { APP_ROLE } from '../../constants/navigation';
+import { APP_ROLE, ADMIN_APP_ROLE, ROLES } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
 import GlobalSearchModal from './GlobalSearchModal';
 import { Link } from 'react-router-dom';
 
 const PAGE_META = {
+  '/admin': { title: 'Admin Overview', subtitle: 'Platform administration overview and access governance.' },
+  '/admin/departments': { title: 'Departments & Positions', subtitle: 'Manage organizational departments and job positions.' },
+  '/admin/hr-governance': { title: 'HR Leadership Governance', subtitle: 'Approve HR Manager leaves & adjust check-in/out timings.' },
+  '/admin/users': { title: 'User Management', subtitle: 'Manage platform accounts, status, and role assignments.' },
+  '/admin/roles': { title: 'Roles & Permissions', subtitle: 'RBAC definitions and granular system permissions.' },
+  '/admin/system': { title: 'System Status', subtitle: 'Platform health, database status, and operational uptime.' },
+  '/admin/audit': { title: 'Audit Logs', subtitle: 'Administrative actions, security changes, and system trail.' },
   '/': { title: 'Dashboard', subtitle: 'Workforce snapshot and items that need a decision today.' },
   '/employees': { title: 'Employees', subtitle: 'Directory, profiles, and employment records.' },
   '/attendance': { title: 'Attendance', subtitle: 'Daily presence, exceptions, and corrections.' },
@@ -18,8 +26,11 @@ const PAGE_META = {
 export default function TopBar({ onOpenMobileMenu }) {
   const location = useLocation();
   const { attentionItems } = useHRData();
+  const { user, isAdmin } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const isAdministrator = isAdmin || user?.role === ROLES.ADMIN;
 
   React.useEffect(() => {
     const handleKeyDown = (e) => {
@@ -116,11 +127,15 @@ export default function TopBar({ onOpenMobileMenu }) {
 
           <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white py-1 pl-1 pr-3 lg:flex">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-200 text-[11px] font-bold text-slate-800">
-              HR
+              {isAdministrator ? 'AD' : 'HR'}
             </div>
             <div>
-              <p className="text-xs font-semibold leading-tight text-slate-900">HR Manager</p>
-              <p className="text-[10px] text-slate-500">{APP_ROLE.name}</p>
+              <p className="text-xs font-semibold leading-tight text-slate-900">
+                {isAdministrator ? (user?.name || user?.email?.split('@')[0] || 'Administrator') : 'HR Manager'}
+              </p>
+              <p className="text-[10px] text-slate-500">
+                {isAdministrator ? ADMIN_APP_ROLE.name : APP_ROLE.name}
+              </p>
             </div>
           </div>
         </div>

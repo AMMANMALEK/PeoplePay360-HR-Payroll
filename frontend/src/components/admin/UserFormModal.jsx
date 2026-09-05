@@ -193,20 +193,17 @@ export default function UserFormModal({ isOpen, onClose, initialData = null }) {
             <label className="block text-[11px] font-semibold text-slate-700">
               Department <span className="text-rose-500">*</span>
             </label>
-            <input
-              list="user-department-options"
+            <select
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              placeholder="e.g. Engineering"
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <datalist id="user-department-options">
-              {['Engineering', 'Human Resources', 'Finance', 'Operations', 'Product', 'Design', 'Sales', 'Legal', 'Executive'].map(
-                (d) => (
-                  <option key={d} value={d} />
-                )
-              )}
-            </datalist>
+            >
+              {departments.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

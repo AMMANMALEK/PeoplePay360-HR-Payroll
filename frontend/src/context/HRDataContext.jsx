@@ -4,9 +4,41 @@ import { attendanceService } from '../services/attendanceService';
 import { contractService } from '../services/contractService';
 import { scheduleService } from '../services/scheduleService';
 import { timeOffService } from '../services/timeOffService';
+import { adminService } from '../services/adminService';
 import { setApiErrorHandler } from '../services/apiService';
 
 const HRDataContext = createContext(null);
+
+export const DEFAULT_DEPARTMENTS = [
+  { id: 'dept-1', name: 'Engineering', code: 'ENG', manager: 'David Kim', description: 'Software engineering, DevOps, infrastructure, and QA', floor: 'Floor 4' },
+  { id: 'dept-2', name: 'Human Resources', code: 'HR', manager: 'Sarah Jenkins', description: 'People operations, talent acquisition, culture & payroll', floor: 'Floor 3' },
+  { id: 'dept-3', name: 'Finance', code: 'FIN', manager: 'Elena Rostova', description: 'Financial planning, accounting, treasury, and tax operations', floor: 'Floor 3' },
+  { id: 'dept-4', name: 'Product', code: 'PRD', manager: 'Lucas Dupont', description: 'Product strategy, roadmap management, and UX design', floor: 'Floor 4' },
+  { id: 'dept-5', name: 'Sales', code: 'SLS', manager: 'Ethan Cole', description: 'Enterprise sales, account executives, and client partnerships', floor: 'Floor 2' },
+  { id: 'dept-6', name: 'Marketing', code: 'MKT', manager: 'Daniel Brooks', description: 'Growth marketing, brand, content, and communications', floor: 'Floor 2' },
+  { id: 'dept-7', name: 'Operations', code: 'OPS', manager: 'Sophia Al-Mansoor', description: 'Business operations, facilities, logistics, and compliance', floor: 'Floor 1' },
+  { id: 'dept-8', name: 'Legal', code: 'LGL', manager: 'Victor Vance', description: 'Corporate law, contracts, regulatory compliance & IP', floor: 'Floor 3' },
+];
+
+export const DEFAULT_JOB_POSITIONS = [
+  { id: 'pos-1', title: 'Senior Software Engineer', department: 'Engineering', level: 'Senior', status: 'Active', description: 'Full stack development with Node.js and React' },
+  { id: 'pos-2', title: 'Staff Software Engineer', department: 'Engineering', level: 'Lead', status: 'Active', description: 'Architecture, technical direction, and team leadership' },
+  { id: 'pos-3', title: 'Junior Frontend Developer', department: 'Engineering', level: 'Entry', status: 'Active', description: 'UI implementation and component maintenance' },
+  { id: 'pos-4', title: 'DevOps Engineer', department: 'Engineering', level: 'Mid', status: 'Active', description: 'CI/CD pipelines, Kubernetes, and cloud infrastructure' },
+  { id: 'pos-5', title: 'QA Test Engineer', department: 'Engineering', level: 'Mid', status: 'Active', description: 'Automation and quality assurance verification' },
+  { id: 'pos-6', title: 'HR Manager', department: 'Human Resources', level: 'Executive', status: 'Active', description: 'Workforce oversight, employee relations, and HR policies' },
+  { id: 'pos-7', title: 'HR Payroll Manager', department: 'Human Resources', level: 'Executive', status: 'Active', description: 'Compensation, benefits, and payroll management' },
+  { id: 'pos-8', title: 'Talent Acquisition Lead', department: 'Human Resources', level: 'Lead', status: 'Active', description: 'Sourcing, technical hiring, and candidate experience' },
+  { id: 'pos-9', title: 'HR Payroll User', department: 'Finance', level: 'Mid', status: 'Active', description: 'Payroll calculations, timesheets, and pay run validation' },
+  { id: 'pos-10', title: 'Senior Accountant', department: 'Finance', level: 'Senior', status: 'Active', description: 'Financial ledger, audit reporting, and taxation' },
+  { id: 'pos-11', title: 'Senior Product Designer', department: 'Product', level: 'Senior', status: 'Active', description: 'UI/UX design systems, user journey maps, and wireframing' },
+  { id: 'pos-12', title: 'Product Manager', department: 'Product', level: 'Senior', status: 'Active', description: 'Sprint prioritization, requirements, and user research' },
+  { id: 'pos-13', title: 'Enterprise Sales Director', department: 'Sales', level: 'Lead', status: 'Active', description: 'Key accounts, enterprise revenue, and business development' },
+  { id: 'pos-14', title: 'Account Executive', department: 'Sales', level: 'Mid', status: 'Active', description: 'Outbound sales, contract negotiation, and deals' },
+  { id: 'pos-15', title: 'Marketing Specialist', department: 'Marketing', level: 'Mid', status: 'Active', description: 'Campaigns, digital media, and social analytics' },
+  { id: 'pos-16', title: 'Operations Analyst', department: 'Operations', level: 'Mid', status: 'Active', description: 'Workflow optimization, vendor management, and reporting' },
+  { id: 'pos-17', title: 'Legal Counsel', department: 'Legal', level: 'Senior', status: 'Active', description: 'Employment agreements, NDA governance, and legal review' },
+];
 
 export function HRDataProvider({ children }) {
   const [employees, setEmployees] = useState([]);
@@ -17,7 +49,222 @@ export function HRDataProvider({ children }) {
   const [timeOffRequests, setTimeOffRequests] = useState([]);
   const [allocations, setAllocations] = useState([]);
   const [timeOffTypes, setTimeOffTypes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [systemStatus, setSystemStatus] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Managed Departments State with Local Persistence
+  const [departmentsList, setDepartmentsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_departments');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_DEPARTMENTS;
+  });
+
+  // Managed Job Positions State with Local Persistence
+  const [jobPositionsList, setJobPositionsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_job_positions');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_JOB_POSITIONS;
+  });
+
+  // HR Manager & HR Payroll Manager Leave Requests
+  const [hrTimeOffRequests, setHrTimeOffRequests] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_hr_timeoff');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'REQ-HR-101',
+        employeeId: 'HRMGR',
+        employeeName: 'David Kim',
+        role: 'HR_MANAGER',
+        roleName: 'HR Manager',
+        department: 'Human Resources',
+        jobPosition: 'HR Manager',
+        timeOffType: 'Personal Leave',
+        startDate: '2026-09-15',
+        endDate: '2026-09-17',
+        duration: 3,
+        durationUnit: 'days',
+        status: 'Pending',
+        reason: 'Family event and personal commitments',
+        appliedDate: '2026-09-04',
+      },
+      {
+        id: 'REQ-HR-102',
+        employeeId: 'HRPAYMGR',
+        employeeName: 'Sarah Jenkins',
+        role: 'HR_PAYROLL_MANAGER',
+        roleName: 'HR Payroll Manager',
+        department: 'Human Resources',
+        jobPosition: 'HR Payroll Manager',
+        timeOffType: 'Sick Leave',
+        startDate: '2026-09-22',
+        endDate: '2026-09-23',
+        duration: 2,
+        durationUnit: 'days',
+        status: 'Pending',
+        reason: 'Medical checkup and doctor prescribed rest',
+        appliedDate: '2026-09-05',
+      },
+      {
+        id: 'REQ-HR-103',
+        employeeId: 'HRMGR',
+        employeeName: 'David Kim',
+        role: 'HR_MANAGER',
+        roleName: 'HR Manager',
+        department: 'Human Resources',
+        jobPosition: 'HR Manager',
+        timeOffType: 'Festival Leave',
+        startDate: '2026-08-10',
+        endDate: '2026-08-12',
+        duration: 3,
+        durationUnit: 'days',
+        status: 'Approved',
+        reason: 'Annual cultural festival celebration',
+        appliedDate: '2026-08-01',
+      }
+    ];
+  });
+
+  // HR Manager & HR Payroll Manager Daily Attendance Timing Logs
+  const [hrAttendanceList, setHrAttendanceList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_hr_attendance');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const dayBefore = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+
+    return [
+      {
+        id: 'att-hr-1',
+        date: today,
+        employeeCode: 'HRMGR',
+        employeeName: 'David Kim',
+        role: 'HR_MANAGER',
+        roleName: 'HR Manager',
+        department: 'Human Resources',
+        checkIn: '09:02',
+        checkOut: '--:--',
+        workedHours: 0,
+        status: 'Present',
+        notes: 'Active today via HR Portal',
+      },
+      {
+        id: 'att-hr-2',
+        date: today,
+        employeeCode: 'HRPAYMGR',
+        employeeName: 'Sarah Jenkins',
+        role: 'HR_PAYROLL_MANAGER',
+        roleName: 'HR Payroll Manager',
+        department: 'Human Resources',
+        checkIn: '08:55',
+        checkOut: '17:30',
+        workedHours: 8.5,
+        status: 'Present',
+        notes: 'Standard workday shift',
+      },
+      {
+        id: 'att-hr-3',
+        date: yesterday,
+        employeeCode: 'HRMGR',
+        employeeName: 'David Kim',
+        role: 'HR_MANAGER',
+        roleName: 'HR Manager',
+        department: 'Human Resources',
+        checkIn: '09:10',
+        checkOut: '18:15',
+        workedHours: 9.0,
+        status: 'Present',
+        notes: 'Completed full workday',
+      },
+      {
+        id: 'att-hr-4',
+        date: yesterday,
+        employeeCode: 'HRPAYMGR',
+        employeeName: 'Sarah Jenkins',
+        role: 'HR_PAYROLL_MANAGER',
+        roleName: 'HR Payroll Manager',
+        department: 'Human Resources',
+        checkIn: '09:00',
+        checkOut: '13:00',
+        workedHours: 4.0,
+        status: 'Half-day',
+        notes: 'Authorized half day',
+      },
+      {
+        id: 'att-hr-5',
+        date: dayBefore,
+        employeeCode: 'HRMGR',
+        employeeName: 'David Kim',
+        role: 'HR_MANAGER',
+        roleName: 'HR Manager',
+        department: 'Human Resources',
+        checkIn: '08:50',
+        checkOut: '17:50',
+        workedHours: 9.0,
+        status: 'Present',
+        notes: 'On time',
+      }
+    ];
+  });
+
+  // Local storage auto-sync
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_departments', JSON.stringify(departmentsList));
+      window.dispatchEvent(new CustomEvent('peoplepay_departments_updated', { detail: departmentsList }));
+    } catch {}
+  }, [departmentsList]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_job_positions', JSON.stringify(jobPositionsList));
+      window.dispatchEvent(new CustomEvent('peoplepay_job_positions_updated', { detail: jobPositionsList }));
+    } catch {}
+  }, [jobPositionsList]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_hr_timeoff', JSON.stringify(hrTimeOffRequests));
+      window.dispatchEvent(new CustomEvent('peoplepay_hr_timeoff_updated', { detail: hrTimeOffRequests }));
+    } catch {}
+  }, [hrTimeOffRequests]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_hr_attendance', JSON.stringify(hrAttendanceList));
+      window.dispatchEvent(new CustomEvent('peoplepay_hr_attendance_updated', { detail: hrAttendanceList }));
+    } catch {}
+  }, [hrAttendanceList]);
+
+  // Managed Fixed Leave Allowances (Admin can edit number of fixed leaves for all leave types)
+  const [fixedLeaveAllowances, setFixedLeaveAllowances] = useState(() => {
+    try {
+      const saved = localStorage.getItem('peoplepay_fixed_leaves');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      'Personal Leave': 15,
+      'Sick Leave': 10,
+      'Festival Leave': 5,
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('peoplepay_fixed_leaves', JSON.stringify(fixedLeaveAllowances));
+      window.dispatchEvent(new CustomEvent('peoplepay_fixed_leaves_updated', { detail: fixedLeaveAllowances }));
+    } catch {}
+  }, [fixedLeaveAllowances]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type, id: Date.now() });
@@ -46,6 +293,9 @@ export function HRDataProvider({ children }) {
       requestRows,
       allocationRows,
       typeRows,
+      userRows,
+      auditRows,
+      statusRow,
     ] = await Promise.all([
       employeeService.getEmployees().catch(() => []),
       contractService.getContracts().catch(() => []),
@@ -54,15 +304,31 @@ export function HRDataProvider({ children }) {
       timeOffService.getRequests().catch(() => []),
       timeOffService.getAllocations().catch(() => []),
       timeOffService.getTypes().catch(() => []),
+      adminService.getUsers().catch(() => []),
+      adminService.getAuditLogs().catch(() => []),
+      adminService.getSystemStatus().catch(() => null),
     ]);
 
     setEmployees(Array.isArray(employeeRows) ? employeeRows : []);
     setContracts(Array.isArray(contractRows) ? contractRows : []);
     setAttendance(Array.isArray(attendanceRows) ? attendanceRows : []);
     setSchedules(Array.isArray(scheduleRows) ? scheduleRows : []);
-    setTimeOffRequests(Array.isArray(requestRows) ? requestRows : []);
-    setAllocations(Array.isArray(allocationRows) ? allocationRows : []);
+    const syncedAllocations = (Array.isArray(allocationRows) ? allocationRows : []).map((a) => {
+      const configured = fixedLeaveAllowances[a.typeName];
+      if (configured != null) {
+        return {
+          ...a,
+          allocated: configured,
+          remaining: Math.max(0, configured - (a.taken || 0)),
+        };
+      }
+      return a;
+    });
+    setAllocations(syncedAllocations);
     setTimeOffTypes(Array.isArray(typeRows) ? typeRows : []);
+    setUsers(Array.isArray(userRows) ? userRows : []);
+    setAuditLogs(Array.isArray(auditRows) ? auditRows : []);
+    setSystemStatus(statusRow);
   };
 
   useEffect(() => {
@@ -78,6 +344,9 @@ export function HRDataProvider({ children }) {
           setTimeOffRequests([]);
           setAllocations([]);
           setTimeOffTypes([]);
+          setUsers([]);
+          setAuditLogs([]);
+          setSystemStatus(null);
         }
       })
       .finally(() => {
@@ -90,8 +359,16 @@ export function HRDataProvider({ children }) {
   }, []);
 
   const departments = useMemo(() => {
-    return [...new Set(employees.map((e) => e.department).filter(Boolean))].sort();
-  }, [employees]);
+    const fromList = departmentsList.map((d) => d.name).filter(Boolean);
+    const fromEmployees = employees.map((e) => e.department).filter(Boolean);
+    return Array.from(new Set([...fromList, ...fromEmployees])).sort();
+  }, [departmentsList, employees]);
+
+  const jobPositions = useMemo(() => {
+    const fromList = jobPositionsList.map((p) => p.title).filter(Boolean);
+    const fromEmployees = employees.map((e) => e.jobPosition).filter(Boolean);
+    return Array.from(new Set([...fromList, ...fromEmployees])).sort();
+  }, [jobPositionsList, employees]);
 
   const kpis = useMemo(() => {
     const totalEmployees = employees.length;
@@ -423,6 +700,388 @@ export function HRDataProvider({ children }) {
     return updated;
   };
 
+  const addUser = async (userData) => {
+    try {
+      const created = await adminService.createUser(userData);
+      setUsers((prev) => [created, ...prev]);
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast('User created successfully!');
+      return created;
+    } catch (err) {
+      showToast(err.message || 'Failed to create user', 'error');
+      throw err;
+    }
+  };
+
+  const updateUser = async (userId, updates) => {
+    try {
+      const updated = await adminService.updateUser(userId, updates);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast('User updated successfully!');
+      return updated;
+    } catch (err) {
+      showToast(err.message || 'Failed to update user', 'error');
+      throw err;
+    }
+  };
+
+  const changeUserRole = async (userId, newRole) => {
+    try {
+      const updated = await adminService.changeUserRole(userId, newRole);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast(`User role updated to ${newRole.replace(/_/g, ' ')}!`);
+      return updated;
+    } catch (err) {
+      showToast(err.message || 'Failed to change role', 'error');
+      throw err;
+    }
+  };
+
+  const deactivateUser = async (userId) => {
+    try {
+      const updated = await adminService.deactivateUser(userId);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast('User deactivated.');
+      return updated;
+    } catch (err) {
+      showToast(err.message || 'Failed to deactivate user', 'error');
+      throw err;
+    }
+  };
+
+  const activateUser = async (userId) => {
+    try {
+      const updated = await adminService.activateUser(userId);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast('User activated successfully!');
+      return updated;
+    } catch (err) {
+      showToast(err.message || 'Failed to activate user', 'error');
+      throw err;
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      await adminService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      const updatedLogs = await adminService.getAuditLogs();
+      setAuditLogs(updatedLogs);
+      showToast('User deleted permanently.');
+    } catch (err) {
+      showToast(err.message || 'Failed to delete user', 'error');
+      throw err;
+    }
+  };
+
+  const logAdminAction = (actionDetails) => {
+    const newLog = adminService.logAction(actionDetails);
+    setAuditLogs((prev) => [newLog, ...prev]);
+    return newLog;
+  };
+
+  // --- Department CRUD Operations ---
+  const addDepartment = (deptData) => {
+    const newDept = {
+      id: `dept-${Date.now()}`,
+      name: deptData.name.trim(),
+      code: (deptData.code || deptData.name.substring(0, 3)).toUpperCase().trim(),
+      manager: deptData.manager || 'Unassigned',
+      description: deptData.description || '',
+      floor: deptData.floor || 'Floor 1',
+    };
+    setDepartmentsList((prev) => [...prev, newDept]);
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Department created',
+      module: 'Departments',
+      target: `${newDept.name} (${newDept.code})`,
+      status: 'Success'
+    });
+    showToast(`Department "${newDept.name}" created successfully!`);
+    return newDept;
+  };
+
+  const updateDepartment = (id, updates) => {
+    let updatedDept = null;
+    setDepartmentsList((prev) =>
+      prev.map((d) => {
+        if (d.id === id || d.name === id) {
+          updatedDept = { ...d, ...updates };
+          return updatedDept;
+        }
+        return d;
+      })
+    );
+    if (updates.name) {
+      // Cascade department rename to job positions
+      setJobPositionsList((prev) =>
+        prev.map((p) => (p.department === id ? { ...p, department: updates.name } : p))
+      );
+    }
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Department updated',
+      module: 'Departments',
+      target: updates.name || id,
+      status: 'Success'
+    });
+    showToast('Department updated successfully!');
+    return updatedDept;
+  };
+
+  const deleteDepartment = (id) => {
+    const target = departmentsList.find((d) => d.id === id || d.name === id);
+    setDepartmentsList((prev) => prev.filter((d) => d.id !== id && d.name !== id));
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Department deleted',
+      module: 'Departments',
+      target: target ? target.name : id,
+      status: 'Success'
+    });
+    showToast(`Department "${target?.name || id}" removed.`, 'info');
+  };
+
+  // --- Job Position CRUD Operations ---
+  const addJobPosition = (posData) => {
+    const newPos = {
+      id: `pos-${Date.now()}`,
+      title: posData.title.trim(),
+      department: posData.department || departmentsList[0]?.name || 'Engineering',
+      level: posData.level || 'Mid',
+      status: posData.status || 'Active',
+      description: posData.description || '',
+    };
+    setJobPositionsList((prev) => [...prev, newPos]);
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Job Position created',
+      module: 'Positions',
+      target: `${newPos.title} in ${newPos.department}`,
+      status: 'Success'
+    });
+    showToast(`Position "${newPos.title}" created successfully!`);
+    return newPos;
+  };
+
+  const updateJobPosition = (id, updates) => {
+    let updatedPos = null;
+    setJobPositionsList((prev) =>
+      prev.map((p) => {
+        if (p.id === id || p.title === id) {
+          updatedPos = { ...p, ...updates };
+          return updatedPos;
+        }
+        return p;
+      })
+    );
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Job Position updated',
+      module: 'Positions',
+      target: updates.title || id,
+      status: 'Success'
+    });
+    showToast('Position updated successfully!');
+    return updatedPos;
+  };
+
+  const deleteJobPosition = (id) => {
+    const target = jobPositionsList.find((p) => p.id === id || p.title === id);
+    setJobPositionsList((prev) => prev.filter((p) => p.id !== id && p.title !== id));
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Job Position deleted',
+      module: 'Positions',
+      target: target ? target.title : id,
+      status: 'Success'
+    });
+    showToast(`Position "${target?.title || id}" removed.`, 'info');
+  };
+
+  // --- HR Manager Leaves Approval ---
+  const approveHRLeave = (id) => {
+    setHrTimeOffRequests((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: 'Approved', approvedAt: new Date().toISOString() } : r))
+    );
+    setTimeOffRequests((prev) =>
+      prev.map((r) => (r.id === id || r._id === id ? { ...r, status: 'Approved' } : r))
+    );
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'HR Leave Approved',
+      module: 'HR Governance',
+      target: `Leave approved for request ${id}`,
+      status: 'Success'
+    });
+    showToast('HR Manager leave request approved.');
+  };
+
+  const refuseHRLeave = (id, refusalReason) => {
+    setHrTimeOffRequests((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: 'Refused', refusalReason, refusedAt: new Date().toISOString() }
+          : r
+      )
+    );
+    setTimeOffRequests((prev) =>
+      prev.map((r) => (r.id === id || r._id === id ? { ...r, status: 'Refused', refusalReason } : r))
+    );
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'HR Leave Refused',
+      module: 'HR Governance',
+      target: `Leave refused for request ${id}: ${refusalReason}`,
+      status: 'Success'
+    });
+    showToast('HR Manager leave request refused.', 'info');
+  };
+
+  const addHRLeaveRequest = (leaveData) => {
+    const newReq = {
+      id: `REQ-HR-${Date.now().toString().slice(-4)}`,
+      employeeId: leaveData.employeeId || 'HRMGR',
+      employeeName: leaveData.employeeName || 'David Kim',
+      role: leaveData.role || 'HR_MANAGER',
+      roleName: leaveData.role === 'HR_PAYROLL_MANAGER' ? 'HR Payroll Manager' : 'HR Manager',
+      department: 'Human Resources',
+      jobPosition: leaveData.jobPosition || (leaveData.role === 'HR_PAYROLL_MANAGER' ? 'HR Payroll Manager' : 'HR Manager'),
+      timeOffType: leaveData.timeOffType || 'Personal Leave',
+      startDate: leaveData.startDate,
+      endDate: leaveData.endDate,
+      duration: leaveData.duration || 1,
+      durationUnit: 'days',
+      status: leaveData.status || 'Pending',
+      reason: leaveData.reason || '',
+      appliedDate: new Date().toISOString().split('T')[0],
+    };
+    setHrTimeOffRequests((prev) => [newReq, ...prev]);
+    setTimeOffRequests((prev) => [newReq, ...prev]);
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'HR Leave Submitted',
+      module: 'HR Governance',
+      target: `${newReq.employeeName} (${newReq.timeOffType}: ${newReq.duration} days)`,
+      status: 'Success'
+    });
+    showToast('Leave request submitted successfully.');
+    return newReq;
+  };
+
+  // --- HR Manager Attendance Timing Adjustments ---
+  const adjustHRAttendance = (id, timingData) => {
+    setHrAttendanceList((prev) =>
+      prev.map((rec) => {
+        if (rec.id === id) {
+          let workedHours = rec.workedHours;
+          if (timingData.checkIn && timingData.checkOut && timingData.checkOut !== '--:--') {
+            const [h1, m1] = timingData.checkIn.split(':').map(Number);
+            const [h2, m2] = timingData.checkOut.split(':').map(Number);
+            const mins = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+            workedHours = Number((mins / 60).toFixed(1));
+          }
+          return {
+            ...rec,
+            ...timingData,
+            workedHours,
+            adjustedByAdmin: true,
+          };
+        }
+        return rec;
+      })
+    );
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'HR Attendance Timing Adjusted',
+      module: 'HR Governance',
+      target: `Timing updated for record ${id} (In: ${timingData.checkIn}, Out: ${timingData.checkOut})`,
+      status: 'Success'
+    });
+    showToast('Attendance timing updated successfully.');
+  };
+
+  const addHRAttendanceRecord = (recordData) => {
+    let workedHours = 0;
+    if (recordData.checkIn && recordData.checkOut && recordData.checkOut !== '--:--') {
+      const [h1, m1] = recordData.checkIn.split(':').map(Number);
+      const [h2, m2] = recordData.checkOut.split(':').map(Number);
+      const mins = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+      workedHours = Number((mins / 60).toFixed(1));
+    }
+    const newRecord = {
+      id: `att-hr-${Date.now()}`,
+      date: recordData.date || new Date().toISOString().split('T')[0],
+      employeeCode: recordData.employeeCode || 'HRMGR',
+      employeeName: recordData.employeeName || 'David Kim',
+      role: recordData.role || 'HR_MANAGER',
+      roleName: recordData.role === 'HR_PAYROLL_MANAGER' ? 'HR Payroll Manager' : 'HR Manager',
+      department: 'Human Resources',
+      checkIn: recordData.checkIn || '09:00',
+      checkOut: recordData.checkOut || '18:00',
+      workedHours,
+      status: recordData.status || (workedHours >= 4 ? 'Present' : 'Half-day'),
+      notes: recordData.notes || 'Recorded by Administrator',
+      adjustedByAdmin: true,
+    };
+    setHrAttendanceList((prev) => [newRecord, ...prev]);
+    setAttendance((prev) => [newRecord, ...prev]);
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'HR Attendance Punch Created',
+      module: 'HR Governance',
+      target: `${newRecord.employeeName} on ${newRecord.date}`,
+      status: 'Success'
+    });
+    showToast('Attendance punch added successfully.');
+    return newRecord;
+  };
+
+  // --- Fixed Leave Allowances Management ---
+  const updateFixedLeaveAllowances = (newAllowances) => {
+    setFixedLeaveAllowances((prev) => {
+      const updated = { ...prev, ...newAllowances };
+      try {
+        localStorage.setItem('peoplepay_fixed_leaves', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    // Also update existing allocations in memory
+    setAllocations((prev) =>
+      prev.map((a) => {
+        if (newAllowances[a.typeName] != null) {
+          const newAllocated = Number(newAllowances[a.typeName]);
+          return {
+            ...a,
+            allocated: newAllocated,
+            remaining: Math.max(0, newAllocated - (a.taken || 0)),
+          };
+        }
+        return a;
+      })
+    );
+
+    logAdminAction({
+      administrator: 'Administrator',
+      action: 'Fixed Leave Allowances Updated',
+      module: 'Leave Policy',
+      target: Object.entries(newAllowances).map(([k, v]) => `${k}: ${v} days`).join(', '),
+      status: 'Success'
+    });
+    showToast('Fixed leave allowances updated successfully!');
+  };
+
   const value = {
     employees,
     isLoadingEmployees,
@@ -433,6 +1092,13 @@ export function HRDataProvider({ children }) {
     allocations,
     timeOffTypes,
     departments,
+    jobPositions,
+    departmentsList,
+    jobPositionsList,
+    hrTimeOffRequests,
+    hrAttendanceList,
+    fixedLeaveAllowances,
+    updateFixedLeaveAllowances,
     kpis,
     attentionItems,
     toast,
@@ -453,6 +1119,28 @@ export function HRDataProvider({ children }) {
     updateSchedule,
     deleteSchedule,
     addTimeOffType,
+    users,
+    auditLogs,
+    systemStatus,
+    addUser,
+    createUser: addUser,
+    updateUser,
+    changeUserRole,
+    deactivateUser,
+    activateUser,
+    deleteUser,
+    logAdminAction,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment,
+    addJobPosition,
+    updateJobPosition,
+    deleteJobPosition,
+    approveHRLeave,
+    refuseHRLeave,
+    addHRLeaveRequest,
+    adjustHRAttendance,
+    addHRAttendanceRecord,
   };
 
   return <HRDataContext.Provider value={value}>{children}</HRDataContext.Provider>;
