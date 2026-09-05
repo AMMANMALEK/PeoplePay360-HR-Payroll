@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { UserCheck, Clock, UserX, CalendarCheck, FileEdit, LogIn, LogOut, CheckCircle2 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
@@ -20,6 +20,7 @@ export default function AttendancePage() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isCorrectionOpen, setIsCorrectionOpen] = useState(false);
   const [isProcessingHrAction, setIsProcessingHrAction] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
@@ -47,6 +48,52 @@ export default function AttendancePage() {
     (hrTodayRecord?.hasCheckIn || (hrTodayRecord?.checkIn && hrTodayRecord?.checkIn !== '--:--')) &&
       (!hrTodayRecord?.hasCheckOut && (!hrTodayRecord?.checkOut || hrTodayRecord?.checkOut === '--:--'))
   );
+
+  useEffect(() => {
+    if (!hrTodayRecord?.hasCheckIn || hrTodayRecord?.hasCheckOut) {
+      setCooldownSeconds(0);
+      return;
+    }
+
+    const getCheckInMs = () => {
+      try {
+        const stored = Number(localStorage.getItem(`hr_checkin_time_${todayStr}`));
+        if (stored && Date.now() - stored < 60000 && Date.now() - stored >= 0) return stored;
+      } catch {}
+      if (hrTodayRecord.checkInTimeMs) return hrTodayRecord.checkInTimeMs;
+      if (hrTodayRecord.rawCheckIn) {
+        const ms = new Date(hrTodayRecord.rawCheckIn).getTime();
+        if (!isNaN(ms)) return ms;
+      }
+      if (hrTodayRecord.checkIn && hrTodayRecord.checkIn !== '--:--') {
+        const parts = hrTodayRecord.checkIn.split(':');
+        if (parts.length >= 2) {
+          const d = new Date();
+          d.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+          return d.getTime();
+        }
+      }
+      return null;
+    };
+
+    const updateCooldown = () => {
+      const checkInMs = getCheckInMs();
+      if (!checkInMs) {
+        setCooldownSeconds(0);
+        return;
+      }
+      const diffMs = Date.now() - checkInMs;
+      if (diffMs >= 0 && diffMs < 60000) {
+        setCooldownSeconds(Math.ceil((60000 - diffMs) / 1000));
+      } else {
+        setCooldownSeconds(0);
+      }
+    };
+
+    updateCooldown();
+    const interval = setInterval(updateCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [hrTodayRecord, todayStr]);
 
   const handleHrCheckIn = async () => {
     setIsProcessingHrAction(true);
@@ -290,15 +337,29 @@ export default function AttendancePage() {
             )}
 
             {canCheckOut && (
-              <button
-                type="button"
-                disabled={isProcessingHrAction}
-                onClick={handleHrCheckOut}
-                className="btn-primary"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>{isProcessingHrAction ? 'Checking Out…' : 'Check Out'}</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  disabled={isProcessingHrAction || cooldownSeconds > 0}
+                  onClick={handleHrCheckOut}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>
+                    {isProcessingHrAction
+                      ? 'Checking Out…'
+                      : cooldownSeconds > 0
+                      ? `Wait ${cooldownSeconds}s`
+                      : 'Check Out'}
+                  </span>
+                </button>
+                {cooldownSeconds > 0 && (
+                  <div className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                    <span>Cannot check out at the same time as check in. Available in {cooldownSeconds}s.</span>
+                  </div>
+                )}
+              </div>
             )}
 
             {!canCheckIn && !canCheckOut && (

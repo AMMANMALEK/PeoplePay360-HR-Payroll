@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 import { useHRData } from '../../context/HRDataContext';
 import {
   Calculator,

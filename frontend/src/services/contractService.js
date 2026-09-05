@@ -5,6 +5,7 @@ function titleStatus(status) {
   const map = {
     active: 'Active',
     expired: 'Expired',
+    'expiring soon': 'Expiring Soon',
     draft: 'Draft',
     terminated: 'Terminated',
   };
@@ -65,7 +66,7 @@ export function toBackendContract(form, employee) {
     wageType,
     wageAmount: parseWageAmount(form.wage),
     salaryStructure: form.salaryStructure || '',
-    status: String(form.status || 'Active').toLowerCase() === 'active' ? 'active' : 'draft',
+    status: String(form.status || 'Active').toLowerCase(),
     notes: form.notes || form.contractName || '',
   };
 

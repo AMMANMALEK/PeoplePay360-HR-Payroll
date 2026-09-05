@@ -5,8 +5,10 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 
 const TYPE_TO_BACKEND = {
   'Full-Time': 'fixed',
+  'full time': 'fixed',
   Compressed: 'shift',
   'Part-Time': 'flexible',
+  'part time': 'flexible',
   fixed: 'fixed',
   flexible: 'flexible',
   shift: 'shift',
@@ -15,7 +17,7 @@ const TYPE_TO_BACKEND = {
 const TYPE_TO_FRONTEND = {
   fixed: 'Full-Time',
   flexible: 'Part-Time',
-  shift: 'Compressed',
+  shift: 'Full-Time',
 };
 
 export function weeklyPatternToDays(weeklyPattern = []) {

@@ -19,7 +19,6 @@ import {
   UserX
 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
-import EmployeeAvatar from '../../components/ui/EmployeeAvatar';
 import StatusBadge from '../../components/ui/StatusBadge';
 import SmartNavCard from '../../components/employees/SmartNavCard';
 import AllocationCard from '../../components/timeoff/AllocationCard';
@@ -133,10 +132,8 @@ export default function EmployeeDetailPage() {
       {/* Main Operational Command Header */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-subtle">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <EmployeeAvatar name={employee.fullName} src={employee.avatar} size="lg" />
-            <div>
-              <div className="flex items-center gap-2.5">
+          <div>
+            <div className="flex items-center gap-2.5">
                 <h1 className="text-xl font-bold tracking-tight text-slate-900">
                   {employee.fullName}
                 </h1>
@@ -150,7 +147,6 @@ export default function EmployeeDetailPage() {
                 <span className="font-mono text-slate-400 font-medium">{employee.id}</span>
               </div>
             </div>
-          </div>
 
           {/* Header Actions: [ Edit Employee ] [•••] */}
           <div className="flex items-center gap-2">

@@ -229,7 +229,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           className="btn-success"
-                          onClick={() => approveTimeOff(req.id)}
+                          onClick={() => approveTimeOff(req.id || req._id)}
                         >
                           <Check className="h-3.5 w-3.5" />
                           Approve

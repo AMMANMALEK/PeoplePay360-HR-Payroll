@@ -33,7 +33,8 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
   useEffect(() => {
     if (initialData) {
       setName(initialData.name || '');
-      setType(initialData.type || 'Full-Time');
+      const rawType = String(initialData.type || 'Full-Time');
+      setType(rawType.toLowerCase().includes('part') ? 'Part-Time' : 'Full-Time');
       if (initialData.days) setDays(initialData.days);
     } else {
       setName('');
@@ -195,10 +196,8 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
                 onChange={(e) => setType(e.target.value)}
                 className="field-input"
               >
-                <option value="Full-Time">Full-Time (Standard)</option>
-                <option value="Compressed">Compressed Work Week</option>
+                <option value="Full-Time">Full-Time</option>
                 <option value="Part-Time">Part-Time</option>
-                <option value="Shift Rotation">Shift Rotation</option>
               </select>
             </div>
           </div>

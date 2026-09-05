@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2, FileText, ArrowRight } from 'lucide-react';
 import DataTable from '../ui/DataTable';
 import StatusBadge from '../ui/StatusBadge';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 
 export default function EmployeeListView({
   employees,
@@ -20,14 +19,11 @@ export default function EmployeeListView({
       label: 'Employee',
       sortable: true,
       render: (name, row) => (
-        <div className="flex items-center gap-3">
-          <EmployeeAvatar name={name} src={row.avatar} size="md" />
-          <div className="min-w-0">
-            <div className="font-semibold text-slate-900 truncate hover:text-brand-700 transition-colors">
-              {name}
-            </div>
-            <div className="text-[11px] text-slate-400 font-mono">{row.id}</div>
+        <div className="min-w-0">
+          <div className="font-semibold text-slate-900 truncate hover:text-brand-700 transition-colors">
+            {name}
           </div>
+          <div className="text-[11px] text-slate-400 font-mono">{row.id}</div>
         </div>
       )
     },

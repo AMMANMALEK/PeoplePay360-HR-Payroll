@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail, Phone, Calendar } from 'lucide-react';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 import StatusBadge from '../ui/StatusBadge';
 
 export default function EmployeeKanbanView({ employees, departments }) {
@@ -87,14 +86,11 @@ export default function EmployeeKanbanView({ employees, departments }) {
                       className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-3.5 shadow-subtle hover:border-brand-300 hover:shadow-hover transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <EmployeeAvatar name={emp.fullName} src={emp.avatar} size="sm" />
-                          <div>
-                            <div className="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
-                              {emp.fullName}
-                            </div>
-                            <div className="text-[11px] font-mono text-slate-400">{emp.id}</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
+                            {emp.fullName}
                           </div>
+                          <div className="text-[11px] font-mono text-slate-400">{emp.id}</div>
                         </div>
                         {groupBy === 'department' && (
                           <StatusBadge status={emp.employmentStatus} size="sm" />
