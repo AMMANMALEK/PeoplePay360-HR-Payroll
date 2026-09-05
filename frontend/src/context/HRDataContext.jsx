@@ -6,6 +6,11 @@ import { scheduleService } from '../services/scheduleService';
 import { timeOffService } from '../services/timeOffService';
 import { setApiErrorHandler } from '../services/apiService';
 
+import * as payrunServiceModule from '../services/payrunService';
+import * as payslipServiceModule from '../services/payslipService';
+import * as salaryStructureServiceModule from '../services/salaryStructureService';
+import * as salaryRuleServiceModule from '../services/salaryRuleService';
+
 const HRDataContext = createContext(null);
 
 export function HRDataProvider({ children }) {
@@ -18,6 +23,15 @@ export function HRDataProvider({ children }) {
   const [allocations, setAllocations] = useState([]);
   const [timeOffTypes, setTimeOffTypes] = useState([]);
   const [toast, setToast] = useState(null);
+
+  // Role State
+  const [currentRole, setCurrentRole] = useState('HR_PAYROLL_USER');
+
+  // Payroll State
+  const [payruns, setPayruns] = useState([]);
+  const [payslips, setPayslips] = useState([]);
+  const [salaryStructures, setSalaryStructures] = useState([]);
+  const [salaryRules, setSalaryRules] = useState([]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type, id: Date.now() });
@@ -46,6 +60,10 @@ export function HRDataProvider({ children }) {
       requestRows,
       allocationRows,
       typeRows,
+      payrunRows,
+      payslipRows,
+      structureRows,
+      ruleRows,
     ] = await Promise.all([
       employeeService.getEmployees().catch(() => []),
       contractService.getContracts().catch(() => []),
@@ -54,6 +72,10 @@ export function HRDataProvider({ children }) {
       timeOffService.getRequests().catch(() => []),
       timeOffService.getAllocations().catch(() => []),
       timeOffService.getTypes().catch(() => []),
+      payrunServiceModule.getPayruns().catch(() => []),
+      payslipServiceModule.getPayslips().catch(() => []),
+      salaryStructureServiceModule.getSalaryStructures().catch(() => []),
+      salaryRuleServiceModule.getSalaryRules().catch(() => []),
     ]);
 
     setEmployees(Array.isArray(employeeRows) ? employeeRows : []);
@@ -63,6 +85,10 @@ export function HRDataProvider({ children }) {
     setTimeOffRequests(Array.isArray(requestRows) ? requestRows : []);
     setAllocations(Array.isArray(allocationRows) ? allocationRows : []);
     setTimeOffTypes(Array.isArray(typeRows) ? typeRows : []);
+    setPayruns(Array.isArray(payrunRows) ? payrunRows : []);
+    setPayslips(Array.isArray(payslipRows) ? payslipRows : []);
+    setSalaryStructures(Array.isArray(structureRows) ? structureRows : []);
+    setSalaryRules(Array.isArray(ruleRows) ? ruleRows : []);
   };
 
   useEffect(() => {
@@ -296,6 +322,71 @@ export function HRDataProvider({ children }) {
     return persisted;
   };
 
+  // ─── PAYROLL ACTIONS ──────────────────────────────────────────────────
+  const createPayrun = async (payrunData) => {
+    const newPayrun = await payrunServiceModule.createPayrun(payrunData);
+    setPayruns((prev) => [newPayrun, ...prev]);
+    showToast(`Payrun ${newPayrun.id} created as Draft.`);
+    return newPayrun;
+  };
+
+  const computePayrun = async (payrunId) => {
+    const defaultStructure = salaryStructures[0] || { id: 'STRUCT-STD', name: 'Standard Structure' };
+    const { payrun: updatedRun, payslips: runSlips } = await payrunServiceModule.computePayrun(
+      payrunId,
+      employees,
+      contracts,
+      defaultStructure,
+      salaryRules
+    );
+
+    setPayruns((prev) => prev.map((p) => (p.id === payrunId ? updatedRun : p)));
+    setPayslips((prev) => [
+      ...runSlips,
+      ...prev.filter((ps) => ps.payrunId !== payrunId),
+    ]);
+
+    if (updatedRun.status === 'Validation Required') {
+      showToast(`Payrun computed with warnings. Validation required.`, 'info');
+    } else {
+      showToast(`Payrun computed successfully. ${runSlips.length} payslips generated.`);
+    }
+
+    return updatedRun;
+  };
+
+  const validatePayrun = async (payrunId) => {
+    const updated = await payrunServiceModule.validatePayrun(payrunId);
+    setPayruns((prev) => prev.map((p) => (p.id === payrunId ? updated : p)));
+    showToast(`Payrun ${payrunId} validated.`);
+    return updated;
+  };
+
+  const markPayrunPaid = async (payrunId) => {
+    const updated = await payrunServiceModule.markPayrunPaid(payrunId);
+    setPayruns((prev) => prev.map((p) => (p.id === payrunId ? updated : p)));
+    // Also update associated payslips to Paid
+    setPayslips((prev) =>
+      prev.map((ps) => (ps.payrunId === payrunId ? { ...ps, status: 'Paid' } : ps))
+    );
+    showToast(`Payrun ${payrunId} marked as Paid. Disbursements finalized.`);
+    return updated;
+  };
+
+  const sendPayrunPayslips = async (payrunId) => {
+    const updated = await payrunServiceModule.sendPayrunPayslips(payrunId);
+    setPayruns((prev) => prev.map((p) => (p.id === payrunId ? updated : p)));
+    showToast(`Payslips for ${payrunId} sent to employees.`);
+    return updated;
+  };
+
+  const updatePayslip = async (id, updates) => {
+    const updated = await payslipServiceModule.updatePayslip(id, updates);
+    setPayslips((prev) => prev.map((ps) => (ps.id === id ? updated : ps)));
+    showToast(`Payslip updated.`);
+    return updated;
+  };
+
   const value = {
     employees,
     isLoadingEmployees,
@@ -322,6 +413,20 @@ export function HRDataProvider({ children }) {
     addSchedule,
     updateSchedule,
     addTimeOffType,
+    // Role State
+    currentRole,
+    setCurrentRole,
+    // Payroll State & Actions
+    payruns,
+    payslips,
+    salaryStructures,
+    salaryRules,
+    createPayrun,
+    computePayrun,
+    validatePayrun,
+    markPayrunPaid,
+    sendPayrunPayslips,
+    updatePayslip,
   };
 
   return <HRDataContext.Provider value={value}>{children}</HRDataContext.Provider>;

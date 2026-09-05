@@ -14,11 +14,16 @@ const PAGE_META = {
   '/schedules': { title: 'Working Schedules', subtitle: 'Shift patterns and weekly working hours.' },
   '/time-off': { title: 'Time Off', subtitle: 'Leave requests, balances, and approval decisions.' },
   '/reports': { title: 'Reports', subtitle: 'Operational HR metrics from current records.' },
+  '/payroll/dashboard': { title: 'Payroll Dashboard', subtitle: 'Disbursement trends, alerts, and cost allocations.' },
+  '/payroll/payruns': { title: 'Payrun Operations', subtitle: 'Create, compute, validate, and process regular & off-cycle payroll.' },
+  '/payroll/payslips': { title: 'Employee Payslips', subtitle: 'Directory of generated employee salary statements.' },
+  '/payroll/salary-structures': { title: 'Salary Structures', subtitle: 'Rule execution hierarchies applied to employee contracts.' },
+  '/payroll/salary-rules': { title: 'Salary Rules', subtitle: 'Sequential calculation formulas and statutory tax rules.' },
 };
 
 export default function TopBar({ onOpenMobileMenu }) {
   const location = useLocation();
-  const { attentionItems } = useHRData();
+  const { attentionItems, currentRole, setCurrentRole, showToast } = useHRData();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -60,6 +65,26 @@ export default function TopBar({ onOpenMobileMenu }) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Topbar Role Switcher Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextRole = currentRole === 'HR_MANAGER' ? 'HR_PAYROLL_USER' : 'HR_MANAGER';
+              setCurrentRole(nextRole);
+              showToast(`Switched role to ${nextRole === 'HR_MANAGER' ? 'HR Manager' : 'HR Payroll User'}`);
+            }}
+            className="flex items-center gap-2 rounded-2xl border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-brand-100 transition-colors shadow-2xs cursor-pointer"
+            title="Click to toggle user role"
+          >
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="hidden md:inline text-slate-500 font-medium">Role:</span>
+            <span className="font-bold text-slate-900">
+              {currentRole === 'HR_MANAGER' ? 'HR Manager' : 'HR Payroll User'}
+            </span>
+            <span className="rounded-md bg-white px-1.5 py-0.5 text-[10px] font-extrabold text-brand-700 border border-brand-200 shadow-2xs">
+              Switch
+            </span>
+          </button>
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}

@@ -1,11 +1,12 @@
 import React from 'react';
-import { FileText, Clock, CalendarCheck, PieChart, ArrowRight } from 'lucide-react';
+import { FileText, Clock, CalendarCheck, PieChart, ArrowRight, Receipt } from 'lucide-react';
 
 const ICONS = {
   contracts: FileText,
   attendance: Clock,
   timeoff: CalendarCheck,
-  allocations: PieChart
+  allocations: PieChart,
+  payslips: Receipt
 };
 
 export default function SmartNavCard({
