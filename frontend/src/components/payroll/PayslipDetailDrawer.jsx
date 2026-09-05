@@ -32,13 +32,12 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-sm font-bold text-slate-900">{payslip.employeeName}</h4>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                  <span>{payslip.jobPosition}</span>
-                  <span>·</span>
-                  <span>{payslip.department}</span>
-                  <span>·</span>
-                  <span className="font-mono">{payslip.employeeCode}</span>
-                </div>
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                <span>{payslip.jobPosition}</span>
+                <span>·</span>
+                <span>{payslip.department}</span>
+                <span>·</span>
+                <span className="font-mono">{payslip.employeeCode}</span>
               </div>
             </div>
             <StatusBadge status={payslip.status} />
