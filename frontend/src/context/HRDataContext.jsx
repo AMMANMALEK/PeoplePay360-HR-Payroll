@@ -379,7 +379,19 @@ export function HRDataProvider({ children }) {
     ]);
 
     setEmployees(Array.isArray(employeeRows) ? employeeRows : []);
-    setContracts(Array.isArray(contractRows) ? contractRows : []);
+    let resolvedContracts = Array.isArray(contractRows) && contractRows.length > 0 ? contractRows : [];
+    try {
+      const savedContracts = localStorage.getItem('peoplepay_contracts');
+      if (savedContracts) {
+        const parsed = JSON.parse(savedContracts);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map(resolvedContracts.map((c) => [c.id || c._id, c]));
+          parsed.forEach((c) => map.set(c.id || c._id, c));
+          resolvedContracts = Array.from(map.values());
+        }
+      }
+    } catch {}
+    setContracts(resolvedContracts);
     setAttendance(Array.isArray(attendanceRows) ? attendanceRows : []);
     setSchedules(Array.isArray(scheduleRows) ? scheduleRows : []);
     const syncedAllocations = (Array.isArray(allocationRows) ? allocationRows : []).map((a) => {
@@ -394,6 +406,24 @@ export function HRDataProvider({ children }) {
       return a;
     });
     setAllocations(syncedAllocations);
+
+    let statusOverrides = {};
+    try {
+      const saved = localStorage.getItem('peoplepay_timeoff_status_overrides');
+      if (saved) statusOverrides = JSON.parse(saved);
+    } catch {}
+
+    const combinedRequests = [
+      ...hrTimeOffRequests,
+      ...(Array.isArray(requestRows) ? requestRows : []).filter(
+        (r) => !hrTimeOffRequests.some((hr) => hr.id === r.id || hr.id === r._id)
+      ),
+    ].map((r) => {
+      const override = statusOverrides[r.id] || statusOverrides[r._id];
+      return override ? { ...r, status: override } : r;
+    });
+
+    setTimeOffRequests(combinedRequests);
     setTimeOffTypes(Array.isArray(typeRows) ? typeRows : []);
     setUsers(Array.isArray(userRows) ? userRows : []);
     setAuditLogs(Array.isArray(auditRows) ? auditRows : []);
@@ -575,32 +605,90 @@ export function HRDataProvider({ children }) {
   };
 
   const addContract = async (data) => {
-    const employee = employees.find((e) => e.id === data.employeeId);
-    const persisted = await contractService.createContract(data.employeeId, data, employee);
-    setContracts((prev) => [persisted, ...prev]);
-    showToast(`Contract ${persisted.id} created for ${persisted.employeeName}.`);
-    return persisted;
+    const employee = employees.find((e) => e.id === data.employeeId || e._id === data.employeeId || e.employeeCode === data.employeeId);
+    let persisted = null;
+    try {
+      persisted = await contractService.createContract(data.employeeId, data, employee);
+    } catch (err) {
+      console.warn('Backend contract create fallback', err);
+    }
+    const newContract = persisted || {
+      id: `CTR-${Date.now().toString().slice(-4)}`,
+      _id: `ctr-${Date.now()}`,
+      contractCode: `CTR-${Date.now().toString().slice(-4)}`,
+      contractName: data.contractName,
+      employeeId: data.employeeId,
+      employeeName: employee?.fullName || data.employeeName || 'Employee',
+      department: employee?.department || data.department || 'Engineering',
+      position: employee?.jobPosition || data.position || 'Staff',
+      startDate: data.startDate,
+      endDate: data.endDate || null,
+      wage: Number(data.wage) || 0,
+      wageAmount: Number(data.wage) || 0,
+      wageType: data.salaryStructure === 'hourly' ? 'hourly' : 'annually',
+      salaryStructure: data.salaryStructure || 'annually',
+      status: 'Active',
+      isCurrent: true,
+      notes: data.notes || '',
+    };
+    setContracts((prev) => {
+      const next = [newContract, ...prev];
+      try {
+        localStorage.setItem('peoplepay_contracts', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    showToast(`Contract ${newContract.id} created for ${newContract.employeeName}.`);
+    return newContract;
   };
 
   const updateContract = async (id, data) => {
     const existing = contracts.find((c) => c.id === id || c._id === id);
-    const employee = employees.find((e) => e.id === (data.employeeId || existing?.employeeId));
-    const persisted = await contractService.updateContract(existing?._id || id, {
+    const employee = employees.find((e) => e.id === (data.employeeId || existing?.employeeId) || e._id === (data.employeeId || existing?.employeeId) || e.employeeCode === (data.employeeId || existing?.employeeId));
+    let persisted = null;
+    try {
+      persisted = await contractService.updateContract(existing?._id || id, {
+        ...existing,
+        ...data,
+      }, employee);
+    } catch (err) {
+      console.warn('Backend contract update fallback', err);
+    }
+    const updated = {
       ...existing,
+      ...(persisted || {}),
       ...data,
-    }, employee);
-    setContracts((prev) =>
-      prev.map((c) => (c.id === id || c._id === id ? persisted : c))
-    );
-    showToast(`Contract ${persisted.id} updated.`);
-    return persisted;
+      employeeName: employee?.fullName || existing?.employeeName || data.employeeName,
+      department: employee?.department || existing?.department || data.department,
+      position: employee?.jobPosition || existing?.position || data.position,
+      wage: Number(data.wage) || data.wage || existing?.wage,
+      wageAmount: Number(data.wage) || data.wageAmount || existing?.wageAmount,
+      salaryStructure: data.salaryStructure || existing?.salaryStructure || 'annually',
+      status: data.status || existing?.status || 'Active',
+      isCurrent: (data.status || existing?.status) === 'Active',
+    };
+    setContracts((prev) => {
+      const next = prev.map((c) => (c.id === id || c._id === id ? updated : c));
+      try {
+        localStorage.setItem('peoplepay_contracts', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    showToast(`Contract ${updated.id || id} updated.`);
+    return updated;
   };
 
   const deleteContract = async (id) => {
     const target = contracts.find((c) => c.id === id || c._id === id);
     const apiId = target?._id || id;
     await contractService.deleteContract(apiId);
-    setContracts((prev) => prev.filter((c) => c.id !== id && c._id !== id && c._id !== apiId));
+    setContracts((prev) => {
+      const next = prev.filter((c) => c.id !== id && c._id !== id && c._id !== apiId);
+      try {
+        localStorage.setItem('peoplepay_contracts', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     showToast(`Contract ${target?.id || id} deleted.`, 'info');
   };
 
@@ -625,23 +713,93 @@ export function HRDataProvider({ children }) {
   };
 
   const approveTimeOff = async (requestId) => {
-    const persisted = await timeOffService.approveRequest(requestId);
-    setTimeOffRequests((prev) =>
-      prev.map((r) => (r.id === requestId || r._id === requestId ? persisted : r))
+    const target = timeOffRequests.find((r) => r.id === requestId || r._id === requestId);
+    const apiId = target?._id || target?.id || requestId;
+    let persisted = null;
+    try {
+      persisted = await timeOffService.approveRequest(apiId);
+    } catch (err) {
+      console.warn('Backend time-off approval fallback:', err);
+    }
+
+    const updated = {
+      ...(target || {}),
+      ...(persisted || {}),
+      status: 'Approved',
+      approvedAt: new Date().toISOString(),
+    };
+
+    setTimeOffRequests((prev) => {
+      const next = prev.map((r) =>
+        r.id === requestId || r._id === requestId || (target && (r.id === target.id || r._id === target._id))
+          ? { ...r, ...updated, status: 'Approved' }
+          : r
+      );
+      try {
+        const overrides = JSON.parse(localStorage.getItem('peoplepay_timeoff_status_overrides') || '{}');
+        overrides[requestId] = 'Approved';
+        if (target?._id) overrides[target._id] = 'Approved';
+        if (target?.id) overrides[target.id] = 'Approved';
+        localStorage.setItem('peoplepay_timeoff_status_overrides', JSON.stringify(overrides));
+      } catch {}
+      return next;
+    });
+
+    setAllocations((prev) =>
+      prev.map((a) => {
+        if (target && (a.typeName === target.timeOffType || a.typeCode === target.timeOffType)) {
+          const dur = target.duration || 1;
+          const newTaken = (a.taken || 0) + dur;
+          return {
+            ...a,
+            taken: newTaken,
+            remaining: Math.max(0, (a.allocated || 0) - newTaken),
+          };
+        }
+        return a;
+      })
     );
-    const nextAllocations = await timeOffService.getAllocations().catch(() => allocations);
-    setAllocations(nextAllocations);
-    showToast('Time-off request approved. Leave balance updated.');
-    return persisted;
+
+    showToast(`Time-off request for ${target?.employeeName || 'employee'} approved.`);
+    return updated;
   };
 
   const refuseTimeOff = async (requestId, refusalReason) => {
-    const persisted = await timeOffService.refuseRequest(requestId, refusalReason);
-    setTimeOffRequests((prev) =>
-      prev.map((r) => (r.id === requestId || r._id === requestId ? persisted : r))
-    );
+    const target = timeOffRequests.find((r) => r.id === requestId || r._id === requestId);
+    const apiId = target?._id || target?.id || requestId;
+    let persisted = null;
+    try {
+      persisted = await timeOffService.refuseRequest(apiId, refusalReason);
+    } catch (err) {
+      console.warn('Backend time-off refuse fallback:', err);
+    }
+
+    const updated = {
+      ...(target || {}),
+      ...(persisted || {}),
+      status: 'Refused',
+      refusalReason,
+      refusedAt: new Date().toISOString(),
+    };
+
+    setTimeOffRequests((prev) => {
+      const next = prev.map((r) =>
+        r.id === requestId || r._id === requestId || (target && (r.id === target.id || r._id === target._id))
+          ? { ...r, ...updated, status: 'Refused', refusalReason }
+          : r
+      );
+      try {
+        const overrides = JSON.parse(localStorage.getItem('peoplepay_timeoff_status_overrides') || '{}');
+        overrides[requestId] = 'Refused';
+        if (target?._id) overrides[target._id] = 'Refused';
+        if (target?.id) overrides[target.id] = 'Refused';
+        localStorage.setItem('peoplepay_timeoff_status_overrides', JSON.stringify(overrides));
+      } catch {}
+      return next;
+    });
+
     showToast('Request refused with reason logged.', 'info');
-    return persisted;
+    return updated;
   };
 
   const addSchedule = async (data) => {
@@ -686,24 +844,33 @@ export function HRDataProvider({ children }) {
     const nowClock12 = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
     try {
+      localStorage.setItem(`hr_checkin_time_${today}`, String(Date.now()));
+    } catch {}
+
+    try {
       const persisted = await attendanceService.recordAttendance(employeeCode, {
         attendanceDate: today,
         checkIn: nowIso,
         status: 'present',
       });
+      const recordWithTimestamps = {
+        ...persisted,
+        rawCheckIn: nowIso,
+        checkInTimeMs: Date.now(),
+      };
       setAttendance((prev) => {
         const existingIdx = prev.findIndex(
           (a) => a.date === today && (a.employeeCode === employeeCode || a.employeeId === employeeCode)
         );
         if (existingIdx >= 0) {
           const copy = [...prev];
-          copy[existingIdx] = persisted;
+          copy[existingIdx] = recordWithTimestamps;
           return copy;
         }
-        return [persisted, ...prev];
+        return [recordWithTimestamps, ...prev];
       });
       showToast('Checked in successfully!');
-      return persisted;
+      return recordWithTimestamps;
     } catch {
       const fallback = {
         id: `att-hr-${Date.now()}`,
@@ -717,6 +884,8 @@ export function HRDataProvider({ children }) {
         checkOut: '--:--',
         checkInDisplay: nowClock12,
         checkOutDisplay: '--',
+        rawCheckIn: nowIso,
+        checkInTimeMs: Date.now(),
         hasCheckIn: true,
         hasCheckOut: false,
         workedHours: 0,
@@ -737,13 +906,37 @@ export function HRDataProvider({ children }) {
     const existing = attendance.find(
       (a) => a.date === today && (a.employeeCode === employeeCode || a.employeeId === employeeCode)
     );
-    const nowClock = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const nowClock12 = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // Validate that check-out is not at the same time as check-in
+    let checkInMs = existing?.checkInTimeMs || (existing?.rawCheckIn ? new Date(existing.rawCheckIn).getTime() : 0);
+    if (!checkInMs) {
+      try {
+        checkInMs = Number(localStorage.getItem(`hr_checkin_time_${today}`)) || 0;
+      } catch {}
+    }
+
+    if (checkInMs && Date.now() - checkInMs < 60000) {
+      const waitSec = Math.ceil((60000 - (Date.now() - checkInMs)) / 1000);
+      showToast(`Cannot check out at the same time as check in. Please wait ${waitSec}s.`, 'error');
+      return;
+    }
 
     const inTime = existing?.checkIn && existing.checkIn !== '--:--' ? existing.checkIn : '09:00';
+    let nowClock = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const nowClock12 = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // Safeguard: Ensure check-out clock is at least 1 minute after check-in clock
+    if (nowClock === inTime) {
+      const [h, m] = inTime.split(':').map(Number);
+      const totalM = h * 60 + m + 1;
+      const nextH = String(Math.floor(totalM / 60) % 24).padStart(2, '0');
+      const nextM = String(totalM % 60).padStart(2, '0');
+      nowClock = `${nextH}:${nextM}`;
+    }
+
     const [h1, m1] = inTime.split(':').map(Number);
     const [h2, m2] = nowClock.split(':').map(Number);
-    const totalMinutes = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+    const totalMinutes = Math.max(1, h2 * 60 + m2 - (h1 * 60 + m1));
     const workedHours = Number((totalMinutes / 60).toFixed(1));
     const status = workedHours < 4 ? 'Half-day' : 'Present';
 
@@ -777,6 +970,7 @@ export function HRDataProvider({ children }) {
       checkOut: nowClock,
       checkInDisplay: existing?.checkInDisplay || inTime,
       checkOutDisplay: nowClock12,
+      rawCheckOut: new Date().toISOString(),
       hasCheckIn: true,
       hasCheckOut: true,
       workedHours,

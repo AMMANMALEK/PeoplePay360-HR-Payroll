@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 import { useHRData } from '../../context/HRDataContext';
 import { Layers, Calendar, Users, Check, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck } from 'lucide-react';
 
@@ -327,12 +326,9 @@ export default function NewPayrunWizardModal({ isOpen, onClose, onCreated }) {
                           />
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <EmployeeAvatar name={emp.fullName} src={emp.avatar} size="sm" />
-                            <div>
-                              <div className="font-semibold text-slate-900 leading-snug">{emp.fullName}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">{emp.id}</div>
-                            </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 leading-snug">{emp.fullName}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{emp.id}</div>
                           </div>
                         </td>
                         <td className="px-3 py-3 text-slate-600">{emp.department}</td>

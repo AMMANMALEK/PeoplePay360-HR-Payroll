@@ -104,16 +104,8 @@ export default function EmployeeProfilePage() {
       {/* Hero Profile Banner */}
       <div className="relative overflow-hidden rounded-[22px] border border-slate-200/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-xl sm:p-8">
         <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-5">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-300 to-brand-100 text-2xl font-bold tracking-wider text-slate-900 shadow-inner">
-              {(profile.firstName || 'E').slice(0, 1)}
-              {(profile.lastName || '').slice(0, 1)}
-              <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 ring-4 ring-slate-900">
-                <Check className="h-3.5 w-3.5 text-white" />
-              </span>
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2.5">
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
                   {profile.fullName}
                 </h2>
@@ -143,7 +135,6 @@ export default function EmployeeProfilePage() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Profile Details Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import StatusBadge from '../ui/StatusBadge';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 import EmptyState from '../ui/EmptyState';
 import { useHRData } from '../../context/HRDataContext';
 import { Search, Eye, Filter, Download, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -105,14 +104,11 @@ export default function PayslipListView({ onSelectPayslip }) {
                     className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                   >
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <EmployeeAvatar name={payslip.employeeName} size="sm" />
-                        <div>
-                          <div className="font-semibold text-slate-900 group-hover:text-brand-900 leading-snug">
-                            {payslip.employeeName}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-mono">{payslip.employeeCode}</div>
+                      <div>
+                        <div className="font-semibold text-slate-900 group-hover:text-brand-900 leading-snug">
+                          {payslip.employeeName}
                         </div>
+                        <div className="text-[10px] text-slate-400 font-mono">{payslip.employeeCode}</div>
                       </div>
                     </td>
                     <td className="px-3 py-3.5 text-slate-700">

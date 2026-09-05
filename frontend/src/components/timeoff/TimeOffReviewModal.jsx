@@ -28,7 +28,7 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
   const balanceAfterApproval = Math.max(0, remainingDays - request.duration);
 
   const handleApprove = () => {
-    approveTimeOff(request.id)
+    approveTimeOff(request.id || request._id)
       .then(() => {
         setMode('approved_feedback');
         setTimeout(() => {
@@ -45,7 +45,7 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
       setRefusalError('Refusal reason is mandatory to document the decision for the employee.');
       return;
     }
-    refuseTimeOff(request.id, refusalReason.trim())
+    refuseTimeOff(request.id || request._id, refusalReason.trim())
       .then(() => {
         setMode('view');
         setRefusalReason('');
@@ -54,37 +54,61 @@ export default function TimeOffReviewModal({ isOpen, onClose, request = null }) 
       .catch(() => {});
   };
 
+  const isHRLeadershipRequest =
+    Boolean(request.requiresAdminApproval) ||
+    request.employeeId === 'HRMGR' ||
+    request.employeeId === 'HRPAYMGR' ||
+    String(request.id || '').startsWith('REQ-HR-') ||
+    request.role === 'HR_MANAGER' ||
+    request.role === 'HR_PAYROLL_MANAGER';
+
   const footerActions = (
     <>
       {request.status === 'Pending' && mode === 'view' ? (
-        <div className="flex w-full items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => setMode('refuse')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
-          >
-            <XCircle className="h-3.5 w-3.5" />
-            <span>Refuse</span>
-          </button>
-
-          <div className="flex items-center gap-2">
+        isHRLeadershipRequest ? (
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-xs text-amber-800 font-semibold flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+              Administrator governance approval required for HR leadership leave.
+            </span>
             <button
               type="button"
               onClick={onClose}
               className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-subtle"
             >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleApprove}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors"
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              <span>Approve & Deduct</span>
+              Close
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex w-full items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('refuse')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              <span>Refuse</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-subtle"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApprove}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors"
+              >
+                <CheckCircle className="h-3.5 w-3.5" />
+                <span>Approve & Deduct</span>
+              </button>
+            </div>
+          </div>
+        )
       ) : (
         <button
           type="button"

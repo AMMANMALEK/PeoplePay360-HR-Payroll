@@ -66,7 +66,7 @@ export function toFrontendEmployee(raw) {
     joinedDate,
     dob: raw.dob ? new Date(raw.dob).toISOString().split('T')[0] : '',
     employmentType: raw.employmentType || '',
-    avatar: raw.avatar || '',
+    avatar: '',
     profileComplete,
     address: raw.address || {},
   };

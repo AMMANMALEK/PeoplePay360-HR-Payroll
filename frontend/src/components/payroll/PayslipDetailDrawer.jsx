@@ -1,7 +1,6 @@
 import React from 'react';
 import Drawer from '../ui/Drawer';
 import StatusBadge from '../ui/StatusBadge';
-import EmployeeAvatar from '../ui/EmployeeAvatar';
 import {
   FileText,
   Calendar,
@@ -31,10 +30,8 @@ export default function PayslipDetailDrawer({ isOpen, onClose, payslip }) {
         {/* Header Profile Summary */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-subtle">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <EmployeeAvatar name={payslip.employeeName} size="md" />
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">{payslip.employeeName}</h4>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900">{payslip.employeeName}</h4>
                 <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                   <span>{payslip.jobPosition}</span>
                   <span>·</span>

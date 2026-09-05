@@ -57,7 +57,8 @@ export function toFrontendAttendance(raw) {
     employeeName:
       `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || employee.fullName || '',
     department: employee.department || '',
-    date,
+    rawCheckIn: raw.checkIn || null,
+    rawCheckOut: raw.checkOut || null,
     checkIn: formatClock(raw.checkIn),
     checkOut: formatClock(raw.checkOut),
     checkInDisplay: formatClock12(raw.checkIn),
