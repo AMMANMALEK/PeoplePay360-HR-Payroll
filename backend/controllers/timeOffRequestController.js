@@ -9,6 +9,11 @@ const {
   refuseTimeOffRequest,
   syncExpiredAllocations,
 } = require('../services/timeOffService');
+const {
+  yearFromDate,
+  ensureEmployeePersonalLeaveAllocation,
+  findOverlappingRequest,
+} = require('../services/personalLeavePolicy');
 
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&
@@ -63,11 +68,26 @@ const handleRequestError = (error, res, next) => {
   }
 
   if (error.message === 'INSUFFICIENT_BALANCE') {
+    const remaining = Number(error.remaining || 0);
     return res.status(400).json({
       success: false,
-      message: 'Insufficient leave balance for this request',
-      remaining: error.remaining,
+      message: `You have only ${remaining} Personal Leave days remaining.`,
+      remaining,
       requested: error.requested,
+    });
+  }
+
+  if (error.message === 'OVERLAPPING_REQUEST') {
+    return res.status(409).json({
+      success: false,
+      message: 'This request overlaps an existing Personal Leave request.',
+    });
+  }
+
+  if (error.message === 'TYPE_NOT_ALLOWED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Only Personal Leave can be requested.',
     });
   }
 
@@ -141,6 +161,7 @@ const getEmployeeTimeOffRequests = async (req, res, next) => {
     }
 
     await syncExpiredAllocations(employee._id);
+    await ensureEmployeePersonalLeaveAllocation(employee._id);
 
     const { status } = req.query;
     const filter = { employee: employee._id };
@@ -178,43 +199,97 @@ const createEmployeeTimeOffRequest = async (req, res, next) => {
       });
     }
 
-    const { timeOffType, startDate, endDate, duration, reason } = req.body;
+    const { timeOffType, startDate, endDate, reason } = req.body;
 
-    if (!timeOffType || !startDate || !endDate) {
+    if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        message: 'timeOffType, startDate, and endDate are required',
+        message: 'startDate and endDate are required',
       });
     }
 
-    const type = await findTimeOffTypeByIdentifier(timeOffType);
+    const executeCreate = async (session) => {
+      const { type, allocation } = await ensureEmployeePersonalLeaveAllocation(
+        employee._id,
+        yearFromDate(startDate),
+        session
+      );
 
-    if (!type) {
-      return res.status(400).json({
-        success: false,
-        message: 'Time off type not found',
-      });
+      if (timeOffType) {
+        const requestedType = await findTimeOffTypeByIdentifier(timeOffType);
+        if (
+          !requestedType ||
+          String(requestedType._id) !== String(type._id) ||
+          requestedType.isActive === false
+        ) {
+          const error = new Error('TYPE_NOT_ALLOWED');
+          throw error;
+        }
+      }
+
+      const calculatedDuration = calculateDuration(startDate, endDate, type.unit);
+
+      const overlap = await findOverlappingRequest(employee._id, startDate, endDate, session);
+      if (overlap) {
+        const error = new Error('OVERLAPPING_REQUEST');
+        throw error;
+      }
+
+      if (allocation.remaining < calculatedDuration) {
+        const error = new Error('INSUFFICIENT_BALANCE');
+        error.remaining = allocation.remaining;
+        error.requested = calculatedDuration;
+        throw error;
+      }
+
+      const [created] = await TimeOffRequest.create(
+        [
+          {
+            employee: employee._id,
+            timeOffType: type._id,
+            startDate,
+            endDate,
+            duration: calculatedDuration,
+            unit: type.unit,
+            reason,
+            status: 'pending',
+          },
+        ],
+        session ? { session } : undefined
+      );
+
+      await approveTimeOffRequest(
+        created,
+        null,
+        'Personal Leave approved automatically.',
+        session
+      );
+
+      return created._id;
+    };
+
+    let requested;
+    try {
+      requested = await mongoose.connection.transaction(executeCreate);
+    } catch (error) {
+      const message = String(error.message || '');
+      if (message.includes('Transaction numbers are only allowed')) {
+        requested = await executeCreate(null);
+      } else {
+        throw error;
+      }
     }
 
-    const calculatedDuration =
-      duration !== undefined ? duration : calculateDuration(startDate, endDate, type.unit);
-
-    const request = await TimeOffRequest.create({
-      employee: employee._id,
-      timeOffType: type._id,
-      startDate,
-      endDate,
-      duration: calculatedDuration,
-      unit: type.unit,
-      reason,
-      status: 'pending',
-    });
-
-    const populatedRequest = await populateRequest(TimeOffRequest.findById(request._id));
+    const populatedRequest = await populateRequest(TimeOffRequest.findById(requested));
+    const remaining =
+      populatedRequest?.allocation && typeof populatedRequest.allocation === 'object'
+        ? populatedRequest.allocation.remaining
+        : undefined;
 
     res.status(201).json({
       success: true,
-      message: 'Time off request created successfully',
+      message: 'Personal Leave approved successfully.',
+      remaining,
       data: populatedRequest,
     });
   } catch (error) {

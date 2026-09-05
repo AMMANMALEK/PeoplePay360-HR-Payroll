@@ -18,6 +18,13 @@ function formatClock(value) {
   return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+function formatClock12(value) {
+  if (!value) return '--';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '--';
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 function clockToIso(dateStr, clock) {
   if (!clock || clock === '--:--') return null;
   const local = new Date(`${dateStr}T${clock}:00`);
@@ -44,6 +51,10 @@ export function toFrontendAttendance(raw) {
     date,
     checkIn: formatClock(raw.checkIn),
     checkOut: formatClock(raw.checkOut),
+    checkInDisplay: formatClock12(raw.checkIn),
+    checkOutDisplay: formatClock12(raw.checkOut),
+    hasCheckIn: Boolean(raw.checkIn),
+    hasCheckOut: Boolean(raw.checkOut),
     workedHours: raw.workedHours ?? 0,
     status: STATUS_TO_UI[statusKey] || raw.status,
     isException:

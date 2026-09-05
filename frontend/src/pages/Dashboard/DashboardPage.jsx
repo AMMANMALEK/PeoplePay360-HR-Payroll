@@ -74,8 +74,7 @@ export default function DashboardPage() {
         <StatCard
           title="Present Today"
           value={kpis.presentToday}
-          secondaryValue={`${kpis.presentRate}%`}
-          subtext="From loaded attendance records"
+          subtext="Employees present, late, or overtime today"
           icon="present"
           colorScheme="mint"
           onClick={() => navigate('/attendance')}
@@ -83,7 +82,7 @@ export default function DashboardPage() {
         <StatCard
           title="Pending Time Off"
           value={kpis.pendingTimeOff}
-          subtext="Waiting for approve or refuse"
+          subtext="Personal Leave is approved automatically"
           icon="calendar"
           colorScheme="peach"
           onClick={() => navigate('/time-off?status=Pending')}

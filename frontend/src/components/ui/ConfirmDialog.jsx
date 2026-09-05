@@ -28,11 +28,7 @@ export default function ConfirmDialog({
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-        >
+        <button type="button" onClick={onClose} className="btn-secondary">
           {cancelLabel}
         </button>
         <button
@@ -41,11 +37,7 @@ export default function ConfirmDialog({
             onConfirm();
             onClose();
           }}
-            className={`rounded-lg px-3.5 py-2 text-xs font-medium shadow-sm transition-colors ${
-            isDestructive
-              ? 'bg-rose-600 text-white hover:bg-rose-700'
-              : 'bg-brand-400 text-slate-900 hover:bg-brand-500'
-          }`}
+          className={isDestructive ? 'btn-danger' : 'btn-primary'}
         >
           {confirmLabel}
         </button>

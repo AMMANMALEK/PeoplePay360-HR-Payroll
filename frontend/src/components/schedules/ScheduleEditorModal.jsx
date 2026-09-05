@@ -1,9 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { useHRData } from '../../context/HRDataContext';
-import { Clock, Calculator, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle } from 'lucide-react';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const BREAK_OPTIONS = [
+  { value: 0, label: '0 min' },
+  { value: 0.5, label: '30 min' },
+  { value: 1.0, label: '60 min' },
+  { value: 1.5, label: '90 min' },
+];
 
 export default function ScheduleEditorModal({ isOpen, onClose, initialData = null }) {
   const { addSchedule, updateSchedule } = useHRData();
@@ -21,6 +28,7 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
   });
 
   const [validationError, setValidationError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -41,6 +49,7 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
       });
     }
     setValidationError('');
+    setIsSubmitting(false);
   }, [initialData, isOpen]);
 
   // Compute daily hours helper with validation
@@ -117,172 +126,206 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
       weeklyHours: Number(totalWeeklyHours.toFixed(1))
     };
 
-    if (initialData?.id) {
-      updateSchedule(initialData.id, payload).then(() => onClose()).catch(() => {});
-    } else {
-      addSchedule(payload).then(() => onClose()).catch(() => {});
-    }
+    setIsSubmitting(true);
+    const request = initialData?.id
+      ? updateSchedule(initialData.id, payload)
+      : addSchedule(payload);
+
+    request
+      .then(() => onClose())
+      .catch(() => {})
+      .finally(() => setIsSubmitting(false));
   };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={initialData ? `Edit Schedule: ${initialData.name}` : 'New Working Schedule'}
-      description="Configure weekly shifts. Total weekly hours are automatically computed from shift intervals."
-      maxWidth="max-w-2xl"
+      layout="panel"
+      maxWidth="max-w-3xl"
+      title={initialData ? 'Edit Working Schedule' : 'Create Working Schedule'}
+      description="Configure working days, shifts and weekly hours."
+      footer={
+        <>
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={isSubmitting}>
+            Cancel
+          </button>
+          <button type="submit" form="schedule-editor-form" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting
+              ? initialData
+                ? 'Saving…'
+                : 'Creating…'
+              : initialData
+                ? 'Save Schedule'
+                : 'Create Schedule'}
+          </button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Validation error notice */}
+      <form id="schedule-editor-form" onSubmit={handleSubmit} className="space-y-6">
         {validationError && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs text-rose-700">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
             <span>{validationError}</span>
           </div>
         )}
 
-        {/* Header fields */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700">
-              Schedule Name <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Standard 5-Day (40h)"
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700">Schedule Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="Full-Time">Full-Time (Standard)</option>
-              <option value="Compressed">Compressed Work Week</option>
-              <option value="Part-Time">Part-Time</option>
-              <option value="Shift Rotation">Shift Rotation</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Real-time Calculated Total Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/90 p-3.5 text-indigo-950 shadow-sm gap-2">
-          <div className="flex items-center gap-2">
-            <Calculator className="h-4 w-4 text-indigo-600 shrink-0" />
+        <section>
+          <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Basic information
+          </h4>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <span className="text-xs font-bold block">Calculated Weekly Hours</span>
-              <span className="text-[11px] text-indigo-700 font-medium">
-                {activeWorkingDays} working days × {avgHoursPerDay} hrs/day
-              </span>
+              <label className="block text-[11px] font-medium text-slate-700">
+                Schedule Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Standard 5-Day (40h)"
+                className="field-input"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-700">Schedule Type</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="field-input"
+              >
+                <option value="Full-Time">Full-Time (Standard)</option>
+                <option value="Compressed">Compressed Work Week</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Shift Rotation">Shift Rotation</option>
+              </select>
             </div>
           </div>
-          <div className="flex items-baseline gap-1 self-end sm:self-auto">
-            <span className="text-2xl font-extrabold text-indigo-700">{totalWeeklyHours.toFixed(1)}</span>
-            <span className="text-xs font-bold text-indigo-600">hrs / week</span>
+        </section>
+
+        <section className="rounded-[18px] bg-[#eef8d8] px-5 py-4">
+          <p className="text-[11px] font-medium text-slate-600">Weekly Hours</p>
+          <p className="mt-1 text-[28px] font-semibold tracking-tight text-slate-900">
+            {totalWeeklyHours.toFixed(1)}
+            <span className="ml-1.5 text-sm font-medium text-slate-600">hrs / week</span>
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {activeWorkingDays} working days × {avgHoursPerDay} hrs/day
+          </p>
+        </section>
+
+        <section>
+          <div className="mb-3">
+            <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              Working days
+            </h4>
+            <p className="mt-1 text-xs text-slate-500">
+              Select working days and configure their shift timings.
+            </p>
           </div>
-        </div>
 
-        {/* Monday - Sunday Daily Editor */}
-        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-            Weekly Daily Hours Configuration
-          </div>
+          <div className="space-y-2">
+            {DAYS.map((day) => {
+              const config = days[day];
+              const dayHours = calculateDailyHours(config);
 
-          {DAYS.map((day) => {
-            const config = days[day];
-            const dayHours = calculateDailyHours(config);
-
-            return (
-              <div
-                key={day}
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border p-2.5 transition-colors ${
-                  config.enabled ? 'border-slate-200 bg-white' : 'border-slate-200/50 bg-slate-100/50 opacity-60'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 w-32">
-                  <input
-                    type="checkbox"
-                    id={`check-${day}`}
-                    checked={config.enabled}
-                    onChange={(e) => handleDayChange(day, 'enabled', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                  />
-                  <label
-                    htmlFor={`check-${day}`}
-                    className="text-xs font-semibold capitalize text-slate-800 cursor-pointer"
-                  >
-                    {day}
-                  </label>
-                </div>
-
-                {config.enabled ? (
-                  <div className="flex flex-1 flex-wrap items-center gap-2 text-xs">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400 font-medium">Start:</span>
+              return (
+                <div
+                  key={day}
+                  className={`rounded-2xl border px-3.5 py-3 transition-colors ${
+                    config.enabled
+                      ? 'border-slate-200/80 bg-white hover:border-brand-200'
+                      : 'border-transparent bg-slate-50'
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <label
+                      htmlFor={`check-${day}`}
+                      className="flex w-full cursor-pointer items-center gap-3 lg:w-36"
+                    >
                       <input
-                        type="time"
-                        value={config.start}
-                        onChange={(e) => handleDayChange(day, 'start', e.target.value)}
-                        className="rounded border border-slate-300 px-2 py-1 text-xs"
+                        type="checkbox"
+                        id={`check-${day}`}
+                        checked={config.enabled}
+                        onChange={(e) => handleDayChange(day, 'enabled', e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-500 accent-brand-400 focus:ring-brand-400"
                       />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400 font-medium">End:</span>
-                      <input
-                        type="time"
-                        value={config.end}
-                        onChange={(e) => handleDayChange(day, 'end', e.target.value)}
-                        className="rounded border border-slate-300 px-2 py-1 text-xs"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400 font-medium">Break:</span>
-                      <select
-                        value={config.breakHours}
-                        onChange={(e) => handleDayChange(day, 'breakHours', Number(e.target.value))}
-                        className="rounded border border-slate-300 px-1.5 py-1 text-xs font-medium"
+                      <span
+                        className={`text-sm font-semibold capitalize ${
+                          config.enabled ? 'text-slate-900' : 'text-slate-500'
+                        }`}
                       >
-                        <option value={0}>0h</option>
-                        <option value={0.5}>0.5h (30m)</option>
-                        <option value={1.0}>1.0h (60m)</option>
-                        <option value={1.5}>1.5h</option>
-                      </select>
-                    </div>
-                    <div className="ml-auto text-xs font-bold text-slate-800">
-                      {dayHours} hrs
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-xs italic text-slate-400 font-medium">Rest / Off</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                        {day}
+                      </span>
+                    </label>
 
-        {/* Form Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn-primary"
-          >
-            {initialData ? 'Save Schedule' : 'Create Schedule'}
-          </button>
-        </div>
+                    {config.enabled ? (
+                      <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
+                        <div>
+                          <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                            Start
+                          </span>
+                          <div className="relative">
+                            <Clock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="time"
+                              value={config.start}
+                              onChange={(e) => handleDayChange(day, 'start', e.target.value)}
+                              className="field-input mt-0 pl-9"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                            End
+                          </span>
+                          <div className="relative">
+                            <Clock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="time"
+                              value={config.end}
+                              onChange={(e) => handleDayChange(day, 'end', e.target.value)}
+                              className="field-input mt-0 pl-9"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                            Break
+                          </span>
+                          <select
+                            value={config.breakHours}
+                            onChange={(e) => handleDayChange(day, 'breakHours', Number(e.target.value))}
+                            className="field-input mt-0 min-w-[108px]"
+                          >
+                            {BREAK_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-end justify-between pb-2 lg:block lg:pb-2.5 lg:text-right">
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+                            Total
+                          </span>
+                          <span className="text-sm font-semibold text-slate-900">{dayHours} hrs</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-1 items-center justify-between lg:justify-end">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                          Rest / Off
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </form>
     </Modal>
   );

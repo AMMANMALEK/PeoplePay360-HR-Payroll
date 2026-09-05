@@ -6,36 +6,26 @@ export function setApiErrorHandler(handler) {
   onApiError = handler;
 }
 
-function getAuthToken() {
-  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-}
-
 export async function apiClient(endpoint, options = {}) {
-  if (!API_BASE_URL || !endpoint) {
+  if (!endpoint) {
     const error = new Error('API is not configured');
     error.code = 'NO_ENDPOINT';
     throw error;
   }
 
-  const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (response.status === 401) {
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('authToken');
     if (window.location.pathname !== '/login') {
       window.location.assign('/login');
     }

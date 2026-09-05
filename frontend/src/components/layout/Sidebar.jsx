@@ -7,13 +7,13 @@ import {
   FileText,
   CalendarDays,
   CalendarCheck,
-  BarChart3,
   ChevronLeft,
   X,
   LogOut,
 } from 'lucide-react';
 import { NAV_ITEMS, APP_ROLE } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -22,11 +22,11 @@ const ICON_MAP = {
   FileText,
   CalendarDays,
   CalendarCheck,
-  BarChart3,
 };
 
 export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) {
   const { kpis } = useHRData();
+  const { logout } = useAuth();
 
   const getBadgeValue = (key) => {
     if (key === 'pendingTimeOff') return kpis.pendingTimeOff;
@@ -36,9 +36,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('authToken');
-    window.location.reload();
+    logout().finally(() => {
+      window.location.assign('/login');
+    });
   };
 
   const renderNav = (items, collapsed, isMobile) =>
@@ -127,14 +127,20 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
           Menu
         </p>
         <nav className="space-y-1">{renderNav(NAV_ITEMS.filter((item) => !item.isSecondary), collapsed, isMobile)}</nav>
-        <p
-          className={`mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
-            collapsed ? 'sr-only' : ''
-          }`}
-        >
-          Insights
-        </p>
-        <nav className="space-y-1">{renderNav(NAV_ITEMS.filter((item) => item.isSecondary), collapsed, isMobile)}</nav>
+        {NAV_ITEMS.some((item) => item.isSecondary) && (
+          <>
+            <p
+              className={`mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 ${
+                collapsed ? 'sr-only' : ''
+              }`}
+            >
+              Insights
+            </p>
+            <nav className="space-y-1">
+              {renderNav(NAV_ITEMS.filter((item) => item.isSecondary), collapsed, isMobile)}
+            </nav>
+          </>
+        )}
       </div>
 
       <div className="shrink-0 border-t border-slate-100 p-3">

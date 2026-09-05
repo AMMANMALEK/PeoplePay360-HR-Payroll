@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
-  Plus, 
   CheckCircle, 
   XCircle, 
   Clock,
@@ -15,7 +14,6 @@ import FilterBar from '../../components/ui/FilterBar';
 import PageHeader from '../../components/ui/PageHeader';
 import AllocationCard from '../../components/timeoff/AllocationCard';
 import TimeOffReviewModal from '../../components/timeoff/TimeOffReviewModal';
-import TimeOffTypeModal from '../../components/timeoff/TimeOffTypeModal';
 
 export default function TimeOffPage() {
   const [searchParams] = useSearchParams();
@@ -27,7 +25,6 @@ export default function TimeOffPage() {
   const [activeSubTab, setActiveSubTab] = useState('requests'); // 'requests' | 'allocations' | 'types'
   const [searchQuery, setSearchQuery] = useState(searchParam || '');
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
@@ -168,15 +165,8 @@ export default function TimeOffPage() {
     <div className="space-y-6">
       <PageHeader
         title="Time Off"
-        subtitle="Review leave requests, balances, and time-off types."
-        actions={
-          activeSubTab === 'types' ? (
-            <button type="button" onClick={() => setIsTypeModalOpen(true)} className="btn-primary">
-              <Plus className="h-4 w-4" />
-              Add Time Off Type
-            </button>
-          ) : null
-        }
+        subtitle="Personal Leave is approved automatically. Review balances and request history."
+        actions={null}
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -260,10 +250,12 @@ export default function TimeOffPage() {
       {activeSubTab === 'allocations' && (
         <div className="space-y-4">
           <div className="text-xs text-slate-500">
-            Current balance consumption per employee across annual leave and statutory quotas.
+            Current Personal Leave balances per employee for the current allocation period.
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {allocations.map((alc) => (
+            {allocations
+              .filter((alc) => !alc.typeName || alc.typeName === 'Personal Leave')
+              .map((alc) => (
               <div key={alc.id} className="space-y-2">
                 <div className="text-xs font-bold text-slate-800 px-1">{alc.employeeName}</div>
                 <AllocationCard allocation={alc} />
@@ -277,7 +269,9 @@ export default function TimeOffPage() {
       {activeSubTab === 'types' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {timeOffTypes.map((t) => (
+            {timeOffTypes
+              .filter((t) => t.isActive !== false)
+              .map((t) => (
               <div
                 key={t.id}
                 className="rounded-xl border border-slate-200 bg-white p-5 shadow-card space-y-3"
@@ -313,12 +307,6 @@ export default function TimeOffPage() {
         isOpen={!!selectedRequest}
         onClose={() => setSelectedRequest(null)}
         request={selectedRequest}
-      />
-
-      {/* Time Off Type Modal */}
-      <TimeOffTypeModal
-        isOpen={isTypeModalOpen}
-        onClose={() => setIsTypeModalOpen(false)}
       />
     </div>
   );

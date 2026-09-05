@@ -19,7 +19,7 @@ export function toFrontendTimeOffType(raw) {
     name: raw.name || '',
     unit: raw.unit === 'hours' ? 'Hours' : 'Days',
     allocationRequired: Boolean(raw.requiresAllocation),
-    approvalWorkflow: raw.requiresApproval ? 'Manager + HR Approval' : 'Direct HR Notification',
+    approvalWorkflow: raw.requiresApproval ? 'Manager + HR Approval' : 'Automatically approved',
     isActive: raw.isActive !== false,
   };
 }
@@ -61,6 +61,10 @@ export function toFrontendRequest(raw) {
     duration: raw.duration ?? 0,
     durationUnit: raw.unit === 'hours' ? 'hours' : 'days',
     status: titleCase(raw.status),
+    remaining:
+      raw.allocation && typeof raw.allocation === 'object' && raw.allocation.remaining != null
+        ? raw.allocation.remaining
+        : undefined,
     reason: raw.reason || '',
     refusalReason: raw.reviewNotes || '',
     appliedDate: raw.createdAt ? new Date(raw.createdAt).toISOString().split('T')[0] : '',
@@ -79,7 +83,7 @@ export const timeOffService = {
   },
 
   async getTypes() {
-    const response = await apiClient(TIME_OFF_TYPES_ENDPOINT);
+    const response = await apiClient(`${TIME_OFF_TYPES_ENDPOINT}?isActive=true`);
     return Array.isArray(response?.data) ? response.data.map(toFrontendTimeOffType) : [];
   },
 

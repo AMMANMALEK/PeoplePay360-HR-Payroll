@@ -1,7 +1,14 @@
 const mongoose = require('mongoose');
 const Employee = require('../models/Employee');
-const { findEmployeeByCode, findEmployeeByCodeOrId } = require('../utils/employeeHelper');
+const { findEmployeeByCode, findEmployeeByCodeOrId, getDefaultManagerEmployee } = require('../utils/employeeHelper');
 const { findScheduleByIdentifier } = require('../utils/scheduleHelper');
+const {
+  assertEmailAvailable,
+  provisionEmployeeAccount,
+  syncEmployeeAccountEmail,
+  deleteEmployeeAccount,
+} = require('../services/employeeAccountService');
+const { ensureEmployeePersonalLeaveAllocation } = require('../services/personalLeavePolicy');
 
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&
@@ -34,6 +41,9 @@ const resolveWorkingSchedule = async (value) => {
 
 const prepareEmployeePayload = async (body) => {
   const payload = { ...body };
+  delete payload.password;
+  delete payload.passwordHash;
+  delete payload.role;
 
   if ('manager' in payload) {
     payload.manager = await resolveManager(payload.manager);
@@ -61,8 +71,35 @@ const handleEmployeeError = (error, res, next) => {
     });
   }
 
+  if (error.message === 'EMAIL_IN_USE') {
+    return res.status(409).json({
+      success: false,
+      message: 'This email is already associated with an employee account.',
+    });
+  }
+
+  if (error.message === 'EMAIL_RESERVED') {
+    return res.status(409).json({
+      success: false,
+      message: 'This email is already associated with an employee account.',
+    });
+  }
+
+  if (error.message === 'EMAIL_REQUIRED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Email is required',
+    });
+  }
+
   if (error.code === 11000) {
-    const field = Object.keys(error.keyPattern)[0];
+    const field = Object.keys(error.keyPattern || { email: 1 })[0];
+    if (field === 'email') {
+      return res.status(409).json({
+        success: false,
+        message: 'This email is already associated with an employee account.',
+      });
+    }
     return res.status(409).json({
       success: false,
       message: `${field} already exists`,
@@ -140,8 +177,28 @@ const getEmployeeByCode = async (req, res, next) => {
 const createEmployee = async (req, res, next) => {
   try {
     const payload = await prepareEmployeePayload(req.body);
-    const employee = await Employee.create(payload);
-    
+    if (!payload.manager) {
+      const defaultManager = await getDefaultManagerEmployee();
+      const creatingSelf =
+        defaultManager &&
+        ((payload.employeeCode &&
+          String(payload.employeeCode).trim().toUpperCase() === defaultManager.employeeCode) ||
+          (payload.email &&
+            String(payload.email).trim().toLowerCase() === String(defaultManager.email || '').toLowerCase()));
+      if (defaultManager && !creatingSelf) {
+        payload.manager = defaultManager._id;
+      }
+    }
+
+    const employee = await mongoose.connection.transaction(async (session) => {
+      await assertEmailAvailable(payload.email, { session });
+      const [created] = await Employee.create([payload], { session });
+      await provisionEmployeeAccount(created, session);
+      return created;
+    });
+
+    await ensureEmployeePersonalLeaveAllocation(employee._id);
+
     await employee.populate([
       { path: 'manager', select: 'firstName lastName email employeeCode' },
       { path: 'workingSchedule', select: 'name scheduleCode scheduleType weeklyHours' }
@@ -164,8 +221,19 @@ const updateEmployeeByCode = async (req, res, next) => {
     }
 
     const payload = await prepareEmployeePayload(req.body);
+    const previousEmail = employee.email;
     Object.assign(employee, payload);
-    await employee.save();
+
+    await mongoose.connection.transaction(async (session) => {
+      if (employee.email && employee.email !== previousEmail) {
+        await assertEmailAvailable(employee.email, {
+          session,
+          excludeEmployeeId: employee._id,
+        });
+      }
+      await employee.save({ session });
+      await syncEmployeeAccountEmail(employee, session);
+    });
     
     await employee.populate([
       { path: 'manager', select: 'firstName lastName email employeeCode' },
@@ -192,7 +260,10 @@ const deleteEmployeeByCode = async (req, res, next) => {
       });
     }
 
-    await employee.deleteOne();
+    await mongoose.connection.transaction(async (session) => {
+      await deleteEmployeeAccount(employee, session);
+      await employee.deleteOne({ session });
+    });
     res.status(200).json({ success: true, message: 'Employee deleted successfully', data: employee });
   } catch (error) {
     next(error);

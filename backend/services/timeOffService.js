@@ -47,19 +47,23 @@ const calculateDuration = (startDate, endDate, unit = 'days', hoursPerDay = 8) =
   return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 };
 
-const findActiveAllocation = async (employeeId, timeOffTypeId, requestStartDate) => {
+const findActiveAllocation = async (employeeId, timeOffTypeId, requestStartDate, session = null) => {
   const date = normalizeDate(requestStartDate);
 
-  return TimeOffAllocation.findOne({
+  const query = TimeOffAllocation.findOne({
     employee: employeeId,
     timeOffType: timeOffTypeId,
     status: 'approved',
     validFrom: { $lte: date },
     validTo: { $gte: date },
   }).sort({ validFrom: -1 });
+  if (session) {
+    query.session(session);
+  }
+  return query;
 };
 
-const approveAllocationRecord = async (allocation) => {
+const approveAllocationRecord = async (allocation, session = null) => {
   if (allocation.status === 'approved') {
     const error = new Error('ALLOCATION_ALREADY_APPROVED');
     throw error;
@@ -67,17 +71,21 @@ const approveAllocationRecord = async (allocation) => {
 
   allocation.status = 'approved';
   allocation.remaining = Math.max(allocation.allocated - allocation.taken, 0);
-  await allocation.save();
+  await allocation.save(session ? { session } : undefined);
   return allocation;
 };
 
-const approveTimeOffRequest = async (request, reviewerId, reviewNotes = '') => {
+const approveTimeOffRequest = async (request, reviewerId, reviewNotes = '', session = null) => {
   if (request.status !== 'pending') {
     const error = new Error('REQUEST_NOT_PENDING');
     throw error;
   }
 
-  const timeOffType = await TimeOffType.findById(request.timeOffType);
+  const typeQuery = TimeOffType.findById(request.timeOffType);
+  if (session) {
+    typeQuery.session(session);
+  }
+  const timeOffType = await typeQuery;
 
   if (!timeOffType) {
     const error = new Error('TYPE_NOT_FOUND');
@@ -88,7 +96,8 @@ const approveTimeOffRequest = async (request, reviewerId, reviewNotes = '') => {
     const allocation = await findActiveAllocation(
       request.employee,
       request.timeOffType,
-      request.startDate
+      request.startDate,
+      session
     );
 
     if (!allocation) {
@@ -105,7 +114,7 @@ const approveTimeOffRequest = async (request, reviewerId, reviewNotes = '') => {
 
     allocation.taken += request.duration;
     allocation.remaining = Math.max(allocation.allocated - allocation.taken, 0);
-    await allocation.save();
+    await allocation.save(session ? { session } : undefined);
     request.allocation = allocation._id;
   }
 
@@ -113,7 +122,7 @@ const approveTimeOffRequest = async (request, reviewerId, reviewNotes = '') => {
   request.reviewedBy = reviewerId || null;
   request.reviewNotes = reviewNotes;
   request.reviewedAt = new Date();
-  await request.save();
+  await request.save(session ? { session } : undefined);
 
   return request;
 };

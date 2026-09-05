@@ -13,7 +13,6 @@ const PAGE_META = {
   '/contracts': { title: 'Contracts', subtitle: 'Active terms, renewals, and contract history.' },
   '/schedules': { title: 'Working Schedules', subtitle: 'Shift patterns and weekly working hours.' },
   '/time-off': { title: 'Time Off', subtitle: 'Leave requests, balances, and approval decisions.' },
-  '/reports': { title: 'Reports', subtitle: 'Operational HR metrics from current records.' },
 };
 
 export default function TopBar({ onOpenMobileMenu }) {

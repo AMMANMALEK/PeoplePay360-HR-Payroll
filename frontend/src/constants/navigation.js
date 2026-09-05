@@ -1,6 +1,11 @@
+export const ROLES = {
+  HR_MANAGER: 'HR_MANAGER',
+  EMPLOYEE: 'EMPLOYEE',
+};
+
 export const APP_ROLE = {
   name: "HR Manager",
-  code: "HR_MANAGER",
+  code: ROLES.HR_MANAGER,
   permissions: {
     canManageEmployees: true,
     canManageAttendance: true,
@@ -51,12 +56,5 @@ export const NAV_ITEMS = [
     icon: "CalendarCheck",
     description: "Leave requests, approval workflows & balances",
     badgeKey: "pendingTimeOff"
-  },
-  {
-    label: "Reports",
-    path: "/reports",
-    icon: "BarChart3",
-    description: "Operational HR workforce metrics",
-    isSecondary: true
   }
 ];

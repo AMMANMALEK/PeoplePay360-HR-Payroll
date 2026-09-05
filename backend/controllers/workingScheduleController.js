@@ -164,5 +164,4 @@ module.exports = {
   createWorkingSchedule,
   updateWorkingSchedule,
   deleteWorkingSchedule,
-  assignScheduleToEmployee,
 };

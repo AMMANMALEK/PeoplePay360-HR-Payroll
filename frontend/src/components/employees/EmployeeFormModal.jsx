@@ -23,6 +23,13 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
 
   const [errors, setErrors] = useState({});
 
+  const defaultManager = employees.find(
+    (e) =>
+      String(e.employeeCode || e.id || '').toUpperCase() === 'HRMGR' ||
+      String(e.jobPosition || '').toLowerCase() === 'hr manager' ||
+      String(e.workEmail || '').toLowerCase() === 'hr.manager@peoplepay360.local'
+  );
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -49,8 +56,8 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
         dob: '',
         jobPosition: '',
         department: departments[0] || '',
-        managerId: '',
-        managerName: '',
+        managerId: defaultManager?.id || '',
+        managerName: defaultManager?.fullName || '',
         scheduleId: schedules[0]?.id || '',
         scheduleName: schedules[0]?.name || '',
         employmentStatus: 'Active',
@@ -58,7 +65,7 @@ export default function EmployeeFormModal({ isOpen, onClose, initialData = null 
       });
     }
     setErrors({});
-  }, [initialData, isOpen, departments, schedules]);
+  }, [initialData, isOpen, departments, schedules, defaultManager?.id, defaultManager?.fullName]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => {

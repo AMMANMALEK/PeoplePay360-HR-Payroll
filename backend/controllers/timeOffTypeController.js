@@ -8,6 +8,8 @@ const getAllTimeOffTypes = async (req, res, next) => {
 
     if (isActive !== undefined) {
       filter.isActive = isActive === 'true';
+    } else {
+      filter.isActive = true;
     }
 
     if (unit) {
@@ -55,7 +57,23 @@ const getTimeOffTypeById = async (req, res, next) => {
 
 const createTimeOffType = async (req, res, next) => {
   try {
-    const type = await TimeOffType.create(req.body);
+    const requestedName = String(req.body?.name || '').trim().toLowerCase();
+    const requestedCode = String(req.body?.typeCode || '').trim().toUpperCase();
+    if (requestedName !== 'personal leave' && requestedCode !== 'PERSONAL') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only Personal Leave is supported as a Time Off type.',
+      });
+    }
+
+    const type = await TimeOffType.create({
+      ...req.body,
+      typeCode: 'PERSONAL',
+      name: 'Personal Leave',
+      requiresApproval: false,
+      requiresAllocation: true,
+      isActive: true,
+    });
 
     res.status(201).json({
       success: true,
@@ -93,7 +111,17 @@ const updateTimeOffType = async (req, res, next) => {
       });
     }
 
-    Object.assign(type, req.body);
+    if (type.typeCode === 'PERSONAL') {
+      Object.assign(type, req.body, {
+        typeCode: 'PERSONAL',
+        name: 'Personal Leave',
+        requiresApproval: false,
+        requiresAllocation: true,
+        isActive: true,
+      });
+    } else {
+      type.isActive = false;
+    }
     await type.save();
 
     res.status(200).json({
@@ -132,11 +160,19 @@ const deleteTimeOffType = async (req, res, next) => {
       });
     }
 
-    await type.deleteOne();
+    if (type.typeCode === 'PERSONAL') {
+      return res.status(409).json({
+        success: false,
+        message: 'Personal Leave cannot be deleted',
+      });
+    }
+
+    type.isActive = false;
+    await type.save();
 
     res.status(200).json({
       success: true,
-      message: 'Time off type deleted successfully',
+      message: 'Time off type deactivated to preserve historical records',
       data: type,
     });
   } catch (error) {

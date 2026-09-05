@@ -97,4 +97,11 @@ export const contractService = {
     });
     return toFrontendContract(response.data);
   },
+
+  async deleteContract(contractId) {
+    await apiClient(`${CONTRACTS_ENDPOINT}/${contractId}`, {
+      method: 'DELETE',
+    });
+    return { success: true };
+  },
 };

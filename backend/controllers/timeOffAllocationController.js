@@ -7,6 +7,10 @@ const {
   approveAllocationRecord,
   syncExpiredAllocations,
 } = require('../services/timeOffService');
+const {
+  ensureEmployeePersonalLeaveAllocation,
+  ensurePersonalLeaveType,
+} = require('../services/personalLeavePolicy');
 
 const isValidObjectId = (value) =>
   mongoose.Types.ObjectId.isValid(value) &&
@@ -70,9 +74,10 @@ const getEmployeeAllocations = async (req, res, next) => {
     }
 
     await syncExpiredAllocations(employee._id);
+    const { type } = await ensureEmployeePersonalLeaveAllocation(employee._id);
 
     const { status } = req.query;
-    const filter = { employee: employee._id };
+    const filter = { employee: employee._id, timeOffType: type._id };
 
     if (status) {
       filter.status = status;
@@ -120,10 +125,10 @@ const createEmployeeAllocation = async (req, res, next) => {
 
     const type = await findTimeOffTypeByIdentifier(timeOffType);
 
-    if (!type) {
+    if (!type || type.isActive === false || type.typeCode !== 'PERSONAL') {
       return res.status(400).json({
         success: false,
-        message: 'Time off type not found',
+        message: 'Only Personal Leave can be allocated.',
       });
     }
 
@@ -307,9 +312,10 @@ const approveAllocation = async (req, res, next) => {
 const getAllAllocations = async (req, res, next) => {
   try {
     await syncExpiredAllocations();
+    const personalType = await ensurePersonalLeaveType();
 
     const { status } = req.query;
-    const filter = {};
+    const filter = { timeOffType: personalType._id };
 
     if (status) {
       filter.status = status;

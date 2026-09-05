@@ -95,9 +95,11 @@ export function HRDataProvider({ children }) {
 
   const kpis = useMemo(() => {
     const totalEmployees = employees.length;
-    const presentToday = attendance.filter(
-      (a) => a.status === 'Present' || a.status === 'Overtime' || a.status === 'Late'
-    ).length;
+    const today = new Date().toISOString().split('T')[0];
+    const presentToday = attendance.filter((a) => {
+      if (a.date !== today) return false;
+      return a.status === 'Present' || a.status === 'Overtime' || a.status === 'Late';
+    }).length;
     const attendanceExceptions = attendance.filter((a) => a.isException).length;
     const pendingTimeOff = timeOffRequests.filter((r) => r.status === 'Pending').length;
     const activeContracts = contracts.filter((c) => c.status === 'Active').length;
@@ -113,7 +115,6 @@ export function HRDataProvider({ children }) {
     return {
       totalEmployees,
       presentToday,
-      presentRate: Math.round((presentToday / (totalEmployees || 1)) * 100),
       pendingTimeOff,
       activeContracts,
       expiringContracts,
@@ -229,6 +230,14 @@ export function HRDataProvider({ children }) {
     return persisted;
   };
 
+  const deleteContract = async (id) => {
+    const target = contracts.find((c) => c.id === id || c._id === id);
+    const apiId = target?._id || id;
+    await contractService.deleteContract(apiId);
+    setContracts((prev) => prev.filter((c) => c.id !== id && c._id !== id && c._id !== apiId));
+    showToast(`Contract ${target?.id || id} deleted.`, 'info');
+  };
+
   const correctAttendance = async (attendanceId, { checkIn, checkOut, reason }) => {
     const record = attendance.find((a) => a.id === attendanceId || a._id === attendanceId);
     const empCode = record?.employeeCode || record?.employeeId;
@@ -289,6 +298,14 @@ export function HRDataProvider({ children }) {
     return persisted;
   };
 
+  const deleteSchedule = async (id) => {
+    const target = schedules.find((s) => s.id === id || s._id === id);
+    const apiId = target?._id || target?.scheduleCode || id;
+    await scheduleService.deleteSchedule(apiId);
+    setSchedules((prev) => prev.filter((s) => s.id !== id && s._id !== id && s._id !== apiId));
+    showToast(`Schedule "${target?.name || id}" deleted.`, 'info');
+  };
+
   const addTimeOffType = async (data) => {
     const persisted = await timeOffService.createType(data);
     setTimeOffTypes((prev) => [...prev, persisted]);
@@ -316,11 +333,13 @@ export function HRDataProvider({ children }) {
     deleteEmployee,
     addContract,
     updateContract,
+    deleteContract,
     correctAttendance,
     approveTimeOff,
     refuseTimeOff,
     addSchedule,
     updateSchedule,
+    deleteSchedule,
     addTimeOffType,
   };
 

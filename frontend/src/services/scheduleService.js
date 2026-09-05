@@ -104,4 +104,11 @@ export const scheduleService = {
     });
     return toFrontendSchedule(response.data);
   },
+
+  async deleteSchedule(id) {
+    await apiClient(`${WORKING_SCHEDULES_ENDPOINT}/${id}`, {
+      method: 'DELETE',
+    });
+    return { success: true };
+  },
 };

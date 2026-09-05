@@ -1,21 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { useHRData } from '../../context/HRDataContext';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import FilterBar from '../../components/ui/FilterBar';
 import PageHeader from '../../components/ui/PageHeader';
 import ContractFormModal from '../../components/contracts/ContractFormModal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 export default function ContractsPage() {
   const [searchParams] = useSearchParams();
   const filterParam = searchParams.get('filter');
   const searchParam = searchParams.get('search');
 
-  const { contracts, departments } = useHRData();
+  const { contracts, departments, deleteContract } = useHRData();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingContract, setDeletingContract] = useState(null);
   const [searchQuery, setSearchQuery] = useState(searchParam || '');
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
@@ -192,6 +194,24 @@ export default function ContractsPage() {
           </div>
         );
       }
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'right',
+      render: (_, row) => (
+        <button
+          type="button"
+          className="btn-danger"
+          onClick={(event) => {
+            event.stopPropagation();
+            setDeletingContract(row);
+          }}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete
+        </button>
+      ),
     }
   ];
 
@@ -245,6 +265,17 @@ export default function ContractsPage() {
 
       {/* Modal */}
       <ContractFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ConfirmDialog
+        isOpen={!!deletingContract}
+        onClose={() => setDeletingContract(null)}
+        onConfirm={() => {
+          if (deletingContract) deleteContract(deletingContract._id || deletingContract.id);
+        }}
+        title="Delete contract"
+        message={`Permanently delete contract ${deletingContract?.id} for ${deletingContract?.employeeName}? This cannot be undone.`}
+        confirmLabel="Delete contract"
+        isDestructive
+      />
     </div>
   );
 }
