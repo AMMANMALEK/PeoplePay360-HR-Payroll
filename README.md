@@ -399,7 +399,8 @@ The backend exposes a clean, standardized RESTful API:
 Crafted with ❤️ for the Hackathon by the **PeoplePay360 Team**:
 - **Farhan Shaikh** — Lead Full-Stack Architect
 - **Amman Malek** — Frontend & UI/UX Specialist
-- **Sarhan Vohra** — Backend & Payroll Computation Systems
+- **Sarhan Vohra** — Backend & Payroll Computation System's
+- **Akshat khokhar** - backend developer
 
 ---
 
