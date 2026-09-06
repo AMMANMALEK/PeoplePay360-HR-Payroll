@@ -57,21 +57,56 @@ const getTimeOffTypeById = async (req, res, next) => {
 
 const createTimeOffType = async (req, res, next) => {
   try {
-    const requestedName = String(req.body?.name || '').trim().toLowerCase();
-    const requestedCode = String(req.body?.typeCode || '').trim().toUpperCase();
-    if (requestedName !== 'personal leave' && requestedCode !== 'PERSONAL') {
+    const {
+      name,
+      typeCode,
+      unit,
+      color,
+      requiresAllocation,
+      requiresApproval,
+      isPaid,
+      description,
+    } = req.body;
+
+    if (!name || !String(name).trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Only Personal Leave is supported as a Time Off type.',
+        message: 'Time off type name is required',
       });
     }
 
+    const trimmedName = String(name).trim();
+    let code = String(typeCode || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '_')
+      .replace(/_+/g, '_');
+
+    if (!code) {
+      code = trimmedName
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, 16);
+    }
+
+    // Ensure uniqueness by appending suffix if code exists
+    const existing = await TimeOffType.findOne({ typeCode: code });
+    if (existing) {
+      code = `${code.slice(0, 10)}_${Date.now().toString(36).toUpperCase()}`.slice(0, 20);
+    }
+
+    const normalizedUnit = String(unit || 'days').toLowerCase() === 'hours' ? 'hours' : 'days';
+
     const type = await TimeOffType.create({
-      ...req.body,
-      typeCode: 'PERSONAL',
-      name: 'Personal Leave',
-      requiresApproval: false,
-      requiresAllocation: true,
+      name: trimmedName,
+      typeCode: code,
+      unit: normalizedUnit,
+      color: color || '#10b981',
+      requiresAllocation: requiresAllocation !== undefined ? Boolean(requiresAllocation) : true,
+      requiresApproval: requiresApproval !== undefined ? Boolean(requiresApproval) : true,
+      isPaid: isPaid !== undefined ? Boolean(isPaid) : true,
+      description: description ? String(description).trim() : '',
       isActive: true,
     });
 
@@ -111,17 +146,26 @@ const updateTimeOffType = async (req, res, next) => {
       });
     }
 
-    if (type.typeCode === 'PERSONAL') {
-      Object.assign(type, req.body, {
-        typeCode: 'PERSONAL',
-        name: 'Personal Leave',
-        requiresApproval: false,
-        requiresAllocation: true,
-        isActive: true,
-      });
-    } else {
-      type.isActive = false;
-    }
+    const {
+      name,
+      unit,
+      color,
+      requiresAllocation,
+      requiresApproval,
+      isPaid,
+      description,
+      isActive,
+    } = req.body;
+
+    if (name) type.name = String(name).trim();
+    if (unit) type.unit = String(unit).toLowerCase() === 'hours' ? 'hours' : 'days';
+    if (color) type.color = color;
+    if (requiresAllocation !== undefined) type.requiresAllocation = Boolean(requiresAllocation);
+    if (requiresApproval !== undefined) type.requiresApproval = Boolean(requiresApproval);
+    if (isPaid !== undefined) type.isPaid = Boolean(isPaid);
+    if (description !== undefined) type.description = String(description).trim();
+    if (isActive !== undefined) type.isActive = Boolean(isActive);
+
     await type.save();
 
     res.status(200).json({

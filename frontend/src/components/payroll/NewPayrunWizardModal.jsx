@@ -224,6 +224,7 @@ export default function NewPayrunWizardModal({ isOpen, onClose, onCreated }) {
                 <input
                   type="date"
                   required
+                  min={new Date().toISOString().split('T')[0]}
                   className="field-input text-xs"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
@@ -235,6 +236,7 @@ export default function NewPayrunWizardModal({ isOpen, onClose, onCreated }) {
                 <input
                   type="date"
                   required
+                  min={periodStart || new Date().toISOString().split('T')[0]}
                   className="field-input text-xs"
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}

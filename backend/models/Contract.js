@@ -51,6 +51,41 @@ const contractSchema = new mongoose.Schema(
       required: [true, 'Wage amount is required'],
       min: 0,
     },
+    basicSalary: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    hra: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    specialAllowance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    bonus: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pfDeduction: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    professionalTax: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    tdsDeduction: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     salaryStructure: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'SalaryStructure',

@@ -17,38 +17,99 @@ export function computeEmployeePayslip({
   workedDays = 22,
   totalWorkDays = 22,
 }) {
-  const baseWage = Number(contract?.wage || 75000);
   const attendanceRatio = totalWorkDays > 0 ? Math.min(1, workedDays / totalWorkDays) : 1;
 
-  // Evaluate earnings
-  const basicAmount = Math.round(baseWage * 0.5 * attendanceRatio);
-  const hraAmount = Math.round(baseWage * 0.25 * attendanceRatio);
-  const transAmount = Math.round(3000 * attendanceRatio);
-  const specAmount = Math.round(baseWage * 0.15 * attendanceRatio);
+  const rawWage = contract?.wageAmount != null ? contract.wageAmount : (contract?.wage || 75000);
+  const baseWage = typeof rawWage === 'number' ? rawWage : Number(String(rawWage).replace(/[^0-9.]/g, '')) || 75000;
 
-  const earnings = [
-    { code: 'BASIC', name: 'Basic Salary', amount: basicAmount },
-    { code: 'HRA', name: 'House Rent Allowance', amount: hraAmount },
-    { code: 'TRANS', name: 'Transport Allowance', amount: transAmount },
-  ];
+  const hasCustomBreakdown =
+    contract &&
+    (Number(contract.basicSalary) > 0 ||
+      Number(contract.hra) > 0 ||
+      Number(contract.specialAllowance) > 0 ||
+      Number(contract.bonus) > 0 ||
+      Number(contract.pfDeduction) > 0 ||
+      Number(contract.professionalTax) > 0 ||
+      Number(contract.tdsDeduction) > 0);
 
-  if (contract?.salaryStructureId?.includes('ENG') || contract?.salaryStructureId?.includes('SALES')) {
-    earnings.push({ code: 'SPEC', name: 'Special / Tech Allowance', amount: specAmount });
+  let earnings = [];
+  let deductions = [];
+
+  if (hasCustomBreakdown) {
+    const basicAmount = Math.round((Number(contract.basicSalary) || 0) * attendanceRatio);
+    const hraAmount = Math.round((Number(contract.hra) || 0) * attendanceRatio);
+    const specAmount = Math.round((Number(contract.specialAllowance) || 0) * attendanceRatio);
+    const bonusAmount = Math.round((Number(contract.bonus) || 0) * attendanceRatio);
+
+    if (basicAmount > 0) {
+      earnings.push({ code: 'BASIC', name: 'Basic Salary', amount: basicAmount });
+    }
+    if (hraAmount > 0) {
+      earnings.push({ code: 'HRA', name: 'House Rent Allowance', amount: hraAmount });
+    }
+    if (specAmount > 0) {
+      earnings.push({ code: 'SPEC', name: 'Special / Other Allowance', amount: specAmount });
+    }
+    if (bonusAmount > 0) {
+      earnings.push({ code: 'BONUS', name: 'Bonus / Incentive', amount: bonusAmount });
+    }
+
+    if (earnings.length === 0) {
+      earnings.push({ code: 'BASIC', name: 'Basic Salary', amount: Math.round(baseWage * attendanceRatio) });
+    }
+
+    const gross = earnings.reduce((sum, item) => sum + item.amount, 0);
+
+    const pfAmount = contract.pfDeduction != null && Number(contract.pfDeduction) >= 0
+      ? Math.round(Number(contract.pfDeduction))
+      : Math.round(basicAmount * 0.12);
+    const ptaxAmount = contract.professionalTax != null && Number(contract.professionalTax) >= 0
+      ? Math.round(Number(contract.professionalTax))
+      : 200;
+    const tdsAmount = contract.tdsDeduction != null && Number(contract.tdsDeduction) >= 0
+      ? Math.round(Number(contract.tdsDeduction))
+      : Math.round(gross * 0.10);
+
+    if (pfAmount > 0) {
+      deductions.push({ code: 'PF', name: 'Provident Fund (PF)', amount: pfAmount });
+    }
+    if (ptaxAmount > 0) {
+      deductions.push({ code: 'PTAX', name: 'Professional Tax', amount: ptaxAmount });
+    }
+    if (tdsAmount > 0) {
+      deductions.push({ code: 'TDS', name: 'Income Tax (TDS)', amount: tdsAmount });
+    }
+  } else {
+    // Default formula
+    const basicAmount = Math.round(baseWage * 0.5 * attendanceRatio);
+    const hraAmount = Math.round(baseWage * 0.25 * attendanceRatio);
+    const transAmount = Math.round(3000 * attendanceRatio);
+    const specAmount = Math.round(baseWage * 0.15 * attendanceRatio);
+
+    earnings = [
+      { code: 'BASIC', name: 'Basic Salary', amount: basicAmount },
+      { code: 'HRA', name: 'House Rent Allowance', amount: hraAmount },
+      { code: 'TRANS', name: 'Transport Allowance', amount: transAmount },
+    ];
+
+    if (contract?.salaryStructureId?.includes('ENG') || contract?.salaryStructureId?.includes('SALES')) {
+      earnings.push({ code: 'SPEC', name: 'Special / Tech Allowance', amount: specAmount });
+    }
+
+    const gross = earnings.reduce((sum, item) => sum + item.amount, 0);
+
+    const pfAmount = Math.round(basicAmount * 0.12);
+    const ptaxAmount = 200;
+    const tdsAmount = Math.round(gross * 0.10);
+
+    deductions = [
+      { code: 'PF', name: 'Provident Fund (12% of Basic)', amount: pfAmount },
+      { code: 'PTAX', name: 'Professional Tax', amount: ptaxAmount },
+      { code: 'TDS', name: 'Income Tax (TDS)', amount: tdsAmount },
+    ];
   }
 
   const gross = earnings.reduce((sum, item) => sum + item.amount, 0);
-
-  // Evaluate deductions
-  const pfAmount = Math.round(basicAmount * 0.12);
-  const ptaxAmount = 200;
-  const tdsAmount = Math.round(gross * 0.10);
-
-  const deductions = [
-    { code: 'PF', name: 'Provident Fund (12% of Basic)', amount: pfAmount },
-    { code: 'PTAX', name: 'Professional Tax', amount: ptaxAmount },
-    { code: 'TDS', name: 'Income Tax (TDS)', amount: tdsAmount },
-  ];
-
   const totalDeductions = deductions.reduce((sum, item) => sum + item.amount, 0);
   const net = Math.max(0, gross - totalDeductions);
 
@@ -232,17 +293,62 @@ export const payrollService = {
 
   async createPayrun(payload, eligibleEmployees = [], contracts = []) {
     const id = payload.id || `PR-${Date.now().toString().slice(-6)}`;
+    const periodStart = payload.periodStart || payload.startDate || '';
+    const periodEnd = payload.periodEnd || payload.endDate || '';
+    const periodName = payload.periodName || payload.periodMonth || 'Payroll Period';
+    const salaryStructureId = payload.salaryStructureId || 'STRUC-ENG-01';
+    const salaryStructureName = payload.salaryStructureName || 'Standard Structure';
+
+    const targetEmployees = eligibleEmployees.length > 0 ? eligibleEmployees : [];
+    const selectedEmployeeIds = payload.selectedEmployeeIds || targetEmployees.map((e) => e.id || e._id || e.employeeCode);
+
+    // Auto-compute payslips upon creation so payrun is NEVER 0 amount with 0 employees
+    const generatedPayslips = targetEmployees.map((emp) => {
+      const contract = contracts.find((c) =>
+        (c.employeeId === emp.id || c.employeeId === emp.employeeCode || c.employeeId === emp._id) &&
+        c.status === 'Active'
+      ) || contracts.find((c) =>
+        c.employeeId === emp.id || c.employeeId === emp.employeeCode || c.employeeId === emp._id
+      );
+
+      return computeEmployeePayslip({
+        employee: emp,
+        contract,
+        payrun: {
+          id,
+          name: payload.name,
+          periodName,
+          periodStart,
+          periodEnd,
+          salaryStructureId,
+          salaryStructureName,
+          status: 'Draft',
+        },
+      });
+    });
+
+    const totalGross = generatedPayslips.reduce((sum, p) => sum + p.gross, 0);
+    const totalDeductions = generatedPayslips.reduce((sum, p) => sum + p.totalDeductions, 0);
+    const totalNet = generatedPayslips.reduce((sum, p) => sum + p.net, 0);
+
     const newPayrun = {
       ...payload,
       id,
+      name: payload.name,
+      periodName,
+      periodStart,
+      periodEnd,
+      salaryStructureId,
+      salaryStructureName,
+      selectedEmployeeIds,
       status: 'Draft',
-      employeesCount: eligibleEmployees.length,
-      payslipsCount: 0,
-      totalGross: 0,
-      totalDeductions: 0,
-      totalNet: 0,
-      processedDate: null,
-      paymentDate: null,
+      employeesCount: targetEmployees.length,
+      payslipsCount: generatedPayslips.length,
+      totalGross,
+      totalDeductions,
+      totalNet,
+      processedDate: new Date().toISOString().split('T')[0],
+      paymentDate: payload.paymentDate || null,
       notes: payload.notes || 'Payrun draft created via Wizard.',
     };
 
@@ -258,18 +364,38 @@ export const payrollService = {
       // Fallback
     }
 
-    localPayruns = [newPayrun, ...localPayruns];
-    return newPayrun;
+    localPayruns = [newPayrun, ...localPayruns.filter((p) => p.id !== id)];
+    localPayslips = [
+      ...localPayslips.filter((p) => p.payrunId !== id),
+      ...generatedPayslips,
+    ];
+    return { payrun: newPayrun, payslips: generatedPayslips };
   },
 
   async computePayrun(payrunId, employees = [], contracts = []) {
-    const payrun = localPayruns.find((p) => p.id === payrunId);
-    if (!payrun) throw new Error('Payrun not found');
+    let payrun = localPayruns.find((p) => p.id === payrunId);
+    if (!payrun) {
+      payrun = { id: payrunId, name: 'Payrun', status: 'Draft' };
+    }
 
-    // Generate/compute payslips for each employee in the payrun
-    const activeEmployees = employees.length > 0 ? employees : [];
-    const generatedPayslips = activeEmployees.map((emp) => {
-      const contract = contracts.find((c) => c.employeeId === emp.id && c.status === 'Active');
+    let targetEmployees = employees;
+    if (payrun.selectedEmployeeIds && payrun.selectedEmployeeIds.length > 0) {
+      targetEmployees = employees.filter((e) =>
+        payrun.selectedEmployeeIds.includes(e.id || e._id || e.employeeCode)
+      );
+    }
+    if (!targetEmployees || targetEmployees.length === 0) {
+      targetEmployees = employees;
+    }
+
+    const generatedPayslips = targetEmployees.map((emp) => {
+      const contract = contracts.find((c) =>
+        (c.employeeId === emp.id || c.employeeId === emp.employeeCode || c.employeeId === emp._id) &&
+        c.status === 'Active'
+      ) || contracts.find((c) =>
+        c.employeeId === emp.id || c.employeeId === emp.employeeCode || c.employeeId === emp._id
+      );
+
       return computeEmployeePayslip({
         employee: emp,
         contract,
@@ -294,7 +420,9 @@ export const payrollService = {
     };
 
     localPayruns = localPayruns.map((p) => (p.id === payrunId ? updatedPayrun : p));
-    // Replace old payslips for this payrun with new ones
+    if (!localPayruns.some((p) => p.id === payrunId)) {
+      localPayruns.unshift(updatedPayrun);
+    }
     localPayslips = [
       ...localPayslips.filter((p) => p.payrunId !== payrunId),
       ...generatedPayslips,

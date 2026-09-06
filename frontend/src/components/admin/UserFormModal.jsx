@@ -207,16 +207,33 @@ export default function UserFormModal({ isOpen, onClose, initialData = null }) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-[11px] font-semibold text-slate-700">Account Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="Active">Active (Permits platform authentication)</option>
-            <option value="Inactive">Inactive (Suspended / Deactivated)</option>
-          </select>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-700">Account Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="Active">Active (Permits platform authentication)</option>
+              <option value="Inactive">Inactive (Suspended / Deactivated)</option>
+            </select>
+          </div>
+
+          {!initialData && (
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-700">
+                Initial Password <span className="text-slate-400 font-normal">(Defaults: Password123!)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.password || ''}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="e.g., Password123!"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          )}
         </div>
 
         {/* Role Capability Preview Card */}

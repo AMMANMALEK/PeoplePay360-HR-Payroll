@@ -6,7 +6,7 @@ import AppShell from './components/layout/AppShell';
 import RequireAuth from './components/auth/RequireAuth';
 import { ROLES } from './constants/navigation';
 
-import DashboardPage from './pages/Dashboard/DashboardPage';
+import RoleHomeDashboard from './pages/Dashboard/RoleHomeDashboard';
 import EmployeesPage from './pages/Employees/EmployeesPage';
 import EmployeeDetailPage from './pages/Employees/EmployeeDetailPage';
 import AttendancePage from './pages/Attendance/AttendancePage';
@@ -86,7 +86,7 @@ export default function App() {
               </RequireAuth>
             }
           >
-            <Route index element={<DashboardPage />} />
+            <Route index element={<RoleHomeDashboard />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="employees/:id" element={<EmployeeDetailPage />} />
             <Route path="attendance" element={<AttendancePage />} />

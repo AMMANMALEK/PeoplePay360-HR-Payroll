@@ -45,13 +45,25 @@ export function normalizeAttendanceStatus(rawStatus, workedHours = 0) {
 export function toFrontendAttendance(raw) {
   if (!raw) return null;
   const employee = raw.employee && typeof raw.employee === 'object' ? raw.employee : {};
-  const date = raw.attendanceDate
-    ? new Date(raw.attendanceDate).toISOString().split('T')[0]
-    : '';
+  const rawDate = raw.attendanceDate || raw.date;
+  let date = '';
+  if (rawDate) {
+    if (typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+      date = rawDate.slice(0, 10);
+    } else {
+      try {
+        date = new Date(rawDate).toISOString().split('T')[0];
+      } catch {
+        date = '';
+      }
+    }
+  }
 
   return {
     id: raw._id,
     _id: raw._id,
+    date,
+    attendanceDate: date,
     employeeId: employee.employeeCode || '',
     employeeCode: employee.employeeCode || '',
     employeeName:

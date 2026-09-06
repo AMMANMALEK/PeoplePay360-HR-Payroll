@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { canUpdate as checkCanUpdate } from '../../constants/rbac';
 import { formatINR } from '../../utils/formatCurrency';
 import {
   Calculator,
@@ -35,6 +37,12 @@ export default function PayrunProcessingModal({
     getPayrunWarnings,
     payslips,
   } = useHRData();
+
+  const { user } = useAuth();
+  // HR_PAYROLL_USER has canComputePayrun but NOT canValidatePayrun
+  // canValidatePayrun maps to 'delete' level on payruns in rbac (only MANAGER/ADMIN)
+  // We check directly against the role string for clarity
+  const canValidate = user?.role === 'HR_PAYROLL_MANAGER' || user?.role === 'ADMIN';
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -152,34 +160,48 @@ export default function PayrunProcessingModal({
                     <Calculator className="h-3.5 w-3.5" />
                     Re-Compute
                   </button>
-                  <button
-                    type="button"
-                    disabled={isProcessing || !evaluation.isReady}
-                    onClick={handleValidate}
-                    className="btn-primary"
-                    title={
-                      !evaluation.isReady
-                        ? 'Resolve blocking warnings before validation'
-                        : undefined
-                    }
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {isProcessing ? 'Validating...' : 'Validate Payroll'}
-                  </button>
+                  {canValidate ? (
+                    <button
+                      type="button"
+                      disabled={isProcessing || !evaluation.isReady}
+                      onClick={handleValidate}
+                      className="btn-primary"
+                      title={
+                        !evaluation.isReady
+                          ? 'Resolve blocking warnings before validation'
+                          : undefined
+                      }
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {isProcessing ? 'Validating...' : 'Validate Payroll'}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-500">
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      Validation: Manager required
+                    </span>
+                  )}
                 </>
               )}
 
               {isValidated && (
                 <>
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={handleMarkPaid}
-                    className="btn-success"
-                  >
-                    <CreditCard className="h-3.5 w-3.5" />
-                    {isProcessing ? 'Recording...' : 'Mark as Paid'}
-                  </button>
+                  {canValidate ? (
+                    <button
+                      type="button"
+                      disabled={isProcessing}
+                      onClick={handleMarkPaid}
+                      className="btn-success"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                      {isProcessing ? 'Recording...' : 'Mark as Paid'}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-500">
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      Mark Paid: Manager required
+                    </span>
+                  )}
                   <button
                     type="button"
                     disabled={isProcessing}

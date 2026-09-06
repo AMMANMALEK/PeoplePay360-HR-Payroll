@@ -8,7 +8,7 @@
  *   - ADMIN: Complete platform access across HR, Payroll, and System modules.
  *   - HR_PAYROLL_MANAGER: Full HR operations and payroll execution/validation.
  *   - HR_MANAGER: Workforce management, contracts, attendance, and leave approval.
- *   - HR_PAYROLL_USER: Operational payrun computation and payslip drafting.
+ *   - HR_PAYROLL_USER: All HR Manager rights plus create/read/update on payruns and payslips; read-only salary config.
  *   - EMPLOYEE: Self-service profile, shift tracking, clocking in/out, and leave requests.
  */
 

@@ -107,6 +107,9 @@ const updateWorkingSchedule = async (req, res, next) => {
 
     const payload = applyWeeklyHours({ ...req.body });
     Object.assign(schedule, payload);
+    if (payload.weeklyPattern) {
+      schedule.markModified('weeklyPattern');
+    }
     await schedule.save();
 
     res.status(200).json({

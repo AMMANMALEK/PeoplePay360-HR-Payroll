@@ -74,7 +74,7 @@ export default function LoginPage() {
       return <Navigate to="/admin" replace />;
     }
     if (isPayrollManager || isPayrollUser) {
-      return <Navigate to="/payroll" replace />;
+      return <Navigate to="/" replace />;
     }
     if (isHrManager) {
       return <Navigate to="/" replace />;
@@ -112,7 +112,7 @@ export default function LoginPage() {
       if (user.role === ROLES.ADMIN) {
         window.location.assign('/admin');
       } else if (user.role === ROLES.HR_PAYROLL_MANAGER || user.role === ROLES.HR_PAYROLL_USER) {
-        window.location.assign('/payroll');
+        window.location.assign('/');
       } else if (user.role === ROLES.HR_MANAGER) {
         window.location.assign('/');
       } else {

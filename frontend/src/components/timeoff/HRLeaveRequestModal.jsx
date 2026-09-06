@@ -14,6 +14,7 @@ export default function HRLeaveRequestModal({ isOpen, onClose }) {
   const { addHRLeaveRequest, fixedLeaveAllowances, employees } = useHRData();
   const { user } = useAuth();
 
+  const todayStr = new Date().toISOString().split('T')[0];
   const currentYear = new Date().getFullYear();
   const sickMinDate = `${currentYear}-03-01`;
   const sickMaxDate = `${currentYear}-08-31`;
@@ -266,7 +267,7 @@ export default function HRLeaveRequestModal({ isOpen, onClose }) {
             <input
               type="date"
               value={startDate}
-              min={isSickLeave ? sickMinDate : undefined}
+              min={isSickLeave ? (sickMinDate > todayStr ? sickMinDate : todayStr) : todayStr}
               max={isSickLeave ? sickMaxDate : undefined}
               onChange={(e) => setStartDate(e.target.value)}
               className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
@@ -283,7 +284,7 @@ export default function HRLeaveRequestModal({ isOpen, onClose }) {
             <input
               type="date"
               value={endDate}
-              min={startDate || (isSickLeave ? sickMinDate : undefined)}
+              min={startDate || (isSickLeave ? (sickMinDate > todayStr ? sickMinDate : todayStr) : todayStr)}
               max={isSickLeave ? sickMaxDate : undefined}
               onChange={(e) => setEndDate(e.target.value)}
               className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${

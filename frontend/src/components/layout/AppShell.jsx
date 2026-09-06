@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import Toast from '../ui/Toast';
+import ErrorBoundary from '../ui/ErrorBoundary';
 import { useHRData } from '../../context/HRDataContext';
 
 export default function AppShell() {
@@ -26,7 +27,9 @@ export default function AppShell() {
 
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
           <div className="mx-auto max-w-[1280px]">
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
       </div>

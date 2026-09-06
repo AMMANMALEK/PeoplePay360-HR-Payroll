@@ -27,7 +27,7 @@ export default function RequireAuth({ children, roles }) {
       return <Navigate to="/employee" replace />;
     }
     if (user.role === ROLES.HR_PAYROLL_MANAGER || user.role === ROLES.HR_PAYROLL_USER) {
-      return <Navigate to="/payroll" replace />;
+      return <Navigate to="/" replace />;
     }
     return <Navigate to="/" replace />;
   }

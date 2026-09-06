@@ -10,15 +10,21 @@ export default function TodayAttendanceCard() {
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   useEffect(() => {
-    if (!todayRecord?.checkIn || todayRecord?.hasCheckOut) {
+    const checkInVal = todayRecord?.rawCheckIn || todayRecord?.checkIn;
+    if (!checkInVal || todayRecord?.hasCheckOut) {
       setCooldownSeconds(0);
       return;
     }
 
-    const checkInMs = new Date(todayRecord.checkIn).getTime();
+    const checkInMs = new Date(checkInVal).getTime();
+    if (Number.isNaN(checkInMs)) {
+      setCooldownSeconds(0);
+      return;
+    }
+
     const updateCooldown = () => {
       const diffMs = Date.now() - checkInMs;
-      if (diffMs < 60000) {
+      if (diffMs < 60000 && diffMs >= 0) {
         setCooldownSeconds(Math.ceil((60000 - diffMs) / 1000));
       } else {
         setCooldownSeconds(0);
@@ -28,7 +34,7 @@ export default function TodayAttendanceCard() {
     updateCooldown();
     const interval = setInterval(updateCooldown, 1000);
     return () => clearInterval(interval);
-  }, [todayRecord?.checkIn, todayRecord?.hasCheckOut]);
+  }, [todayRecord?.rawCheckIn, todayRecord?.checkIn, todayRecord?.hasCheckOut]);
 
   const handleAction = async (action) => {
     setIsSaving(true);

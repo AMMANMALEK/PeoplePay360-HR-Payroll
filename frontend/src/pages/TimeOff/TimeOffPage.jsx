@@ -16,6 +16,7 @@ import PageHeader from '../../components/ui/PageHeader';
 import AllocationCard from '../../components/timeoff/AllocationCard';
 import TimeOffReviewModal from '../../components/timeoff/TimeOffReviewModal';
 import HRLeaveRequestModal from '../../components/timeoff/HRLeaveRequestModal';
+import TimeOffTypeModal from '../../components/timeoff/TimeOffTypeModal';
 
 export default function TimeOffPage() {
   const [searchParams] = useSearchParams();
@@ -34,6 +35,7 @@ export default function TimeOffPage() {
   const [searchQuery, setSearchQuery] = useState(searchParam || '');
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isHRLeaveModalOpen, setIsHRLeaveModalOpen] = useState(false);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({
     department: 'All',
@@ -200,14 +202,26 @@ export default function TimeOffPage() {
         title="Time Off"
         subtitle="Workforce leave management, approvals, and entitlement balances."
         actions={
-          <button
-            type="button"
-            onClick={() => setIsHRLeaveModalOpen(true)}
-            className="btn-primary flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Request Leave (Admin Approval)
-          </button>
+          <div className="flex items-center gap-2">
+            {activeSubTab === 'types' && (
+              <button
+                type="button"
+                onClick={() => setIsTypeModalOpen(true)}
+                className="btn-primary flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                New Leave Type
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsHRLeaveModalOpen(true)}
+              className={activeSubTab === 'types' ? "btn-secondary flex items-center gap-1.5 shadow-sm" : "btn-primary flex items-center gap-1.5 shadow-sm"}
+            >
+              <Plus className="h-4 w-4" />
+              Request Leave (Admin Approval)
+            </button>
+          </div>
         }
       />
 
@@ -301,14 +315,40 @@ export default function TimeOffPage() {
 
       {/* SUBTAB 3: TYPES */}
       {activeSubTab === 'types' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-subtle">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Configured Time-Off Types</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-subtle space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Configured Time-Off Types</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Leave categories, accrual rules, and approval workflows.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsTypeModalOpen(true)}
+              className="btn-primary flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              New Leave Type
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {timeOffTypes.map((type) => (
-              <div key={type.code || type.name} className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 space-y-1">
-                <p className="text-xs font-bold text-slate-900">{type.name}</p>
-                <p className="text-[11px] text-slate-500 font-mono">Code: {type.code}</p>
-                <p className="text-[11px] text-slate-600 mt-2">{type.description}</p>
+              <div key={type.typeCode || type.code || type.name} className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 space-y-2">
+                <div className="flex items-start justify-between">
+                  <p className="text-sm font-bold text-slate-900">{type.name}</p>
+                  <span className="rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                    {type.unit || 'Days'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono">Code: {type.typeCode || type.code || type.id}</p>
+                <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                  <span className="rounded bg-slate-200/80 px-1.5 py-0.5 font-medium">
+                    {type.allocationRequired !== false ? 'Quota Required' : 'Uncapped'}
+                  </span>
+                  <span className="rounded bg-slate-200/80 px-1.5 py-0.5 font-medium">
+                    {type.approvalWorkflow || (type.requiresApproval ? 'Approval Required' : 'Auto Approved')}
+                  </span>
+                </div>
+                {type.description && <p className="text-[11px] text-slate-600 mt-1">{type.description}</p>}
               </div>
             ))}
           </div>
@@ -326,6 +366,12 @@ export default function TimeOffPage() {
       <HRLeaveRequestModal
         isOpen={isHRLeaveModalOpen}
         onClose={() => setIsHRLeaveModalOpen(false)}
+      />
+
+      {/* New Time Off Type Modal */}
+      <TimeOffTypeModal
+        isOpen={isTypeModalOpen}
+        onClose={() => setIsTypeModalOpen(false)}
       />
     </div>
   );

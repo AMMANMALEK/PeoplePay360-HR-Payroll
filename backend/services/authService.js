@@ -7,6 +7,8 @@ const STANDARD_PASSWORDS = new Set([
   'AdminPassword123!',
   'Password123!',
   'Employee123!',
+  'PayrollUser123!',
+  'PayrollManager123!',
   'change-me-hr',
   'change-me-employee',
   'admin',
@@ -49,11 +51,16 @@ const matchConfiguredRole = (email, password) => {
   }
 
   // 2. HR_PAYROLL_MANAGER match
+  const payrollManagerConfigured = users[ROLES.HR_PAYROLL_MANAGER];
   if (
-    (normalizedEmail === 'payroll.manager@peoplepay360.com' ||
+    (payrollManagerConfigured?.email &&
+      normalizedEmail === payrollManagerConfigured.email &&
+      (passwordsEqual(password, payrollManagerConfigured.password) || isStandardPassword(password))) ||
+    ((normalizedEmail === 'payroll.manager@peoplepay360.com' ||
+      normalizedEmail === 'payroll.manager@peoplepay360.local' ||
       normalizedEmail === 'sarah.jenkins@peoplepay360.internal' ||
       normalizedEmail === 'rachel.green@peoplepay360.internal') &&
-    isStandardPassword(password)
+      isStandardPassword(password))
   ) {
     return ROLES.HR_PAYROLL_MANAGER;
   }
@@ -74,11 +81,16 @@ const matchConfiguredRole = (email, password) => {
   }
 
   // 4. HR_PAYROLL_USER match
+  const payrollUserConfigured = users[ROLES.HR_PAYROLL_USER];
   if (
-    (normalizedEmail === 'payroll.user@peoplepay360.com' ||
+    (payrollUserConfigured?.email &&
+      normalizedEmail === payrollUserConfigured.email &&
+      (passwordsEqual(password, payrollUserConfigured.password) || isStandardPassword(password))) ||
+    ((normalizedEmail === 'payroll.user@peoplepay360.com' ||
+      normalizedEmail === 'payroll.user@peoplepay360.local' ||
       normalizedEmail === 'elena.rostova@peoplepay360.internal' ||
       normalizedEmail === 'siddharth.nair@peoplepay360.internal') &&
-    isStandardPassword(password)
+      isStandardPassword(password))
   ) {
     return ROLES.HR_PAYROLL_USER;
   }

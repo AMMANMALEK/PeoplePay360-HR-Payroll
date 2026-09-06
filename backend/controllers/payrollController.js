@@ -41,6 +41,20 @@ exports.updateSalaryStructure = async (req, res, next) => {
   }
 };
 
+exports.deleteSalaryStructure = async (req, res, next) => {
+  try {
+    const structure = await SalaryStructure.findByIdAndDelete(req.params.id);
+    if (!structure) {
+      const error = new Error('Salary Structure not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json({ success: true, data: { id: req.params.id } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ==========================================
 // SALARY RULES
 // ==========================================
@@ -72,6 +86,20 @@ exports.updateSalaryRule = async (req, res, next) => {
       return next(error);
     }
     res.status(200).json({ success: true, data: rule });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteSalaryRule = async (req, res, next) => {
+  try {
+    const rule = await SalaryRule.findByIdAndDelete(req.params.id);
+    if (!rule) {
+      const error = new Error('Salary Rule not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json({ success: true, data: { id: req.params.id } });
   } catch (error) {
     next(error);
   }
@@ -137,6 +165,39 @@ exports.getPayrunById = async (req, res, next) => {
       return next(error);
     }
     res.status(200).json({ success: true, data: payrun });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updatePayrun = async (req, res, next) => {
+  try {
+    const payrun = await Payrun.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!payrun) {
+      const error = new Error('Payrun not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json({ success: true, data: payrun });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deletePayrun = async (req, res, next) => {
+  try {
+    const payrun = await Payrun.findById(req.params.id);
+    if (!payrun) {
+      const error = new Error('Payrun not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    await Payslip.deleteMany({ payrun: payrun._id });
+    await payrun.deleteOne();
+    res.status(200).json({ success: true, data: { id: req.params.id } });
   } catch (error) {
     next(error);
   }
@@ -313,6 +374,37 @@ exports.getPayslipById = async (req, res, next) => {
       return next(error);
     }
     res.status(200).json({ success: true, data: payslip });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updatePayslip = async (req, res, next) => {
+  try {
+    const payslip = await Payslip.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!payslip) {
+      const error = new Error('Payslip not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json({ success: true, data: payslip });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deletePayslip = async (req, res, next) => {
+  try {
+    const payslip = await Payslip.findByIdAndDelete(req.params.id);
+    if (!payslip) {
+      const error = new Error('Payslip not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    res.status(200).json({ success: true, data: { id: req.params.id } });
   } catch (error) {
     next(error);
   }

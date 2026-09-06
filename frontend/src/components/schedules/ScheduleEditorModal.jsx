@@ -128,8 +128,9 @@ export default function ScheduleEditorModal({ isOpen, onClose, initialData = nul
     };
 
     setIsSubmitting(true);
-    const request = initialData?.id
-      ? updateSchedule(initialData.id, payload)
+    const targetId = initialData?.id || initialData?._id || initialData?.scheduleCode;
+    const request = targetId
+      ? updateSchedule(targetId, payload)
       : addSchedule(payload);
 
     request

@@ -10,15 +10,16 @@ import PayslipDetailDrawer from '../../components/payroll/PayslipDetailDrawer';
 import StatCard from '../../components/ui/StatCard';
 import { formatINR } from '../../utils/formatCurrency';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
 import { PAYROLL_TABS } from '../../constants/navigation';
-import { CreditCard, FileText, Layers, Sliders, AlertTriangle, Plus, ShieldAlert, Zap } from 'lucide-react';
+import { CreditCard, FileText, Layers, Sliders, AlertTriangle, Plus, ShieldAlert } from 'lucide-react';
 
 export default function PayrollPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'payruns';
 
-  const { kpis, payruns, payslips, currentRole, switchRole } = useHRData();
+  const { kpis, payruns, payslips, currentRole } = useHRData();
 
   // Modals & Drawers state
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -50,18 +51,12 @@ export default function PayrollPage() {
         </div>
         <h2 className="text-xl font-bold text-slate-900">Payroll Access Restricted</h2>
         <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-          You are currently viewing with the <strong className="text-slate-900">HR Manager</strong> persona.
-          Full access to Payruns, Payslips, Salary Structures, and Rules is reserved for the <strong className="text-slate-900">HR Payroll Manager</strong>.
+          Your current role does not have access to the Payroll module.
+          Full access to Payruns, Payslips, Salary Structures, and Rules is reserved for
+          <strong className="text-slate-900"> HR Payroll User</strong> and{' '}
+          <strong className="text-slate-900">HR Payroll Manager</strong>.
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => switchRole('HR_PAYROLL_MANAGER')}
-            className="btn-primary"
-          >
-            <Zap className="h-4 w-4" />
-            Switch to HR Payroll Manager
-          </button>
+        <div className="mt-6">
           <button
             type="button"
             onClick={() => navigate('/')}

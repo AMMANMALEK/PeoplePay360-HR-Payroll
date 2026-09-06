@@ -12,32 +12,260 @@ import { payrollService, evaluatePayrollWarnings } from '../services/payrollServ
 
 const HRDataContext = createContext(null);
 
-export const DEFAULT_DEPARTMENTS = [];
+export const DEFAULT_DEPARTMENTS = [
+  {
+    id: 'dept-1',
+    name: 'Human Resources',
+    code: 'HR',
+    manager: 'David Kim',
+    floor: 'Floor 2',
+    description: 'Workforce management, talent acquisition, employee relations, and compliance.',
+  },
+  {
+    id: 'dept-2',
+    name: 'Payroll & Finance',
+    code: 'PAY',
+    manager: 'Sarah Jenkins',
+    floor: 'Floor 2',
+    description: 'Compensation administration, payroll calculation, taxation, and financial auditing.',
+  },
+  {
+    id: 'dept-3',
+    name: 'Engineering',
+    code: 'ENG',
+    manager: 'Marcus Vance',
+    floor: 'Floor 4',
+    description: 'Software development, infrastructure, architecture, and technology innovation.',
+  },
+  {
+    id: 'dept-4',
+    name: 'Sales & Marketing',
+    code: 'MKT',
+    manager: 'Elena Rostova',
+    floor: 'Floor 3',
+    description: 'Revenue growth, customer partnerships, brand outreach, and client onboarding.',
+  },
+  {
+    id: 'dept-5',
+    name: 'Operations & Support',
+    code: 'OPS',
+    manager: 'Amman Malek',
+    floor: 'Floor 1',
+    description: 'Daily operational workflows, IT support, facility management, and customer success.',
+  },
+];
 
-export const DEFAULT_JOB_POSITIONS = [];
+export const DEFAULT_JOB_POSITIONS = [
+  {
+    id: 'pos-1',
+    title: 'HR Manager',
+    department: 'Human Resources',
+    level: 'Senior',
+    status: 'Active',
+    description: 'Oversees HR operations, employee relations, and organizational policy execution.',
+  },
+  {
+    id: 'pos-2',
+    title: 'HR Payroll Manager',
+    department: 'Payroll & Finance',
+    level: 'Senior',
+    status: 'Active',
+    description: 'Directs payroll processing, payrun validations, and salary rule governance.',
+  },
+  {
+    id: 'pos-3',
+    title: 'HR Payroll Specialist',
+    department: 'Payroll & Finance',
+    level: 'Mid',
+    status: 'Active',
+    description: 'Executes daily payroll runs, payslip generation, and deduction computations.',
+  },
+  {
+    id: 'pos-4',
+    title: 'Senior Software Engineer',
+    department: 'Engineering',
+    level: 'Senior',
+    status: 'Active',
+    description: 'Designs and builds backend services, API interfaces, and scalable database schemas.',
+  },
+  {
+    id: 'pos-5',
+    title: 'Full Stack Engineer',
+    department: 'Engineering',
+    level: 'Mid',
+    status: 'Active',
+    description: 'Implements modern responsive user interfaces and robust microservice APIs.',
+  },
+  {
+    id: 'pos-6',
+    title: 'Sales Executive',
+    department: 'Sales & Marketing',
+    level: 'Mid',
+    status: 'Active',
+    description: 'Manages enterprise client pipeline, demos, and contract negotiations.',
+  },
+  {
+    id: 'pos-7',
+    title: 'Operations Specialist',
+    department: 'Operations & Support',
+    level: 'Entry',
+    status: 'Active',
+    description: 'Assists with business support workflows, scheduling, and office management.',
+  },
+];
 
-const LEGACY_MOCK_STORAGE_KEYS = [
-  'peoplepay_payruns',
-  'peoplepay_payslips',
-  'peoplepay_salary_structures',
-  'peoplepay_salary_rules',
-  'peoplepay_departments',
-  'peoplepay_job_positions',
-  'peoplepay_hr_timeoff',
-  'peoplepay_hr_attendance',
-  'peoplepay_contracts',
+export const DEFAULT_SALARY_RULES = [
+  {
+    id: 'RULE-BASIC',
+    name: 'Basic Salary',
+    code: 'BASIC',
+    category: 'Earning',
+    computationType: 'Fixed / Attendance Ratio',
+    percentage: 50,
+    amount: 0,
+    sequence: 1,
+    description: 'Core base salary computed based on monthly working attendance ratio',
+    active: true,
+  },
+  {
+    id: 'RULE-HRA',
+    name: 'House Rent Allowance (HRA)',
+    code: 'HRA',
+    category: 'Earning',
+    computationType: 'Percentage of Basic',
+    percentage: 25,
+    amount: 0,
+    sequence: 2,
+    description: 'Housing allowance calculated as 25% of basic wage',
+    active: true,
+  },
+  {
+    id: 'RULE-SPEC',
+    name: 'Special / Tech Allowance',
+    code: 'SPEC',
+    category: 'Earning',
+    computationType: 'Fixed / Position Tier',
+    percentage: 15,
+    amount: 0,
+    sequence: 3,
+    description: 'Special domain or technology allowance based on job position',
+    active: true,
+  },
+  {
+    id: 'RULE-BONUS',
+    name: 'Performance Bonus',
+    code: 'BONUS',
+    category: 'Earning',
+    computationType: 'Performance Incentive',
+    percentage: 0,
+    amount: 0,
+    sequence: 4,
+    description: 'Discretionary performance incentive or monthly variable component',
+    active: true,
+  },
+  {
+    id: 'RULE-TRANS',
+    name: 'Transport Allowance',
+    code: 'TRANS',
+    category: 'Earning',
+    computationType: 'Fixed Stipend',
+    percentage: 0,
+    amount: 3000,
+    sequence: 5,
+    description: 'Standard conveyance & commuter allowance',
+    active: true,
+  },
+  {
+    id: 'RULE-PF',
+    name: 'Provident Fund (PF 12%)',
+    code: 'PF',
+    category: 'Deduction',
+    computationType: 'Statutory 12% of Basic',
+    percentage: 12,
+    amount: 0,
+    sequence: 6,
+    description: 'Statutory employee provident fund retirement contribution',
+    active: true,
+  },
+  {
+    id: 'RULE-PTAX',
+    name: 'Professional Tax (PTAX)',
+    code: 'PTAX',
+    category: 'Deduction',
+    computationType: 'Fixed Statutory Slab',
+    percentage: 0,
+    amount: 200,
+    sequence: 7,
+    description: 'State statutory professional tax fixed monthly slab (₹200)',
+    active: true,
+  },
+  {
+    id: 'RULE-TDS',
+    name: 'Income Tax Deduction (TDS)',
+    code: 'TDS',
+    category: 'Deduction',
+    computationType: 'Estimated Slab (10%)',
+    percentage: 10,
+    amount: 0,
+    sequence: 8,
+    description: 'Tax deducted at source based on annual estimated taxable gross income',
+    active: true,
+  },
+];
+
+export const DEFAULT_SALARY_STRUCTURES = [
+  {
+    id: 'STRUC-ENG-01',
+    name: 'Engineering & Tech Structure',
+    code: 'ENG-01',
+    description: 'Comprehensive software development and technical workforce salary blueprint with tech allowances & standard statutory deductions.',
+    active: true,
+    ruleIds: ['RULE-BASIC', 'RULE-HRA', 'RULE-SPEC', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rules: ['RULE-BASIC', 'RULE-HRA', 'RULE-SPEC', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rulesCount: 7,
+    lastUpdated: '2026-09-01',
+  },
+  {
+    id: 'STRUC-CORP-01',
+    name: 'Standard Corporate Structure',
+    code: 'CORP-01',
+    description: 'Standard administrative, HR, operations, and business workforce salary blueprint.',
+    active: true,
+    ruleIds: ['RULE-BASIC', 'RULE-HRA', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rules: ['RULE-BASIC', 'RULE-HRA', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rulesCount: 6,
+    lastUpdated: '2026-09-01',
+  },
+  {
+    id: 'STRUC-EXEC-01',
+    name: 'Executive Management Structure',
+    code: 'EXEC-01',
+    description: 'Leadership & executive salary blueprint with performance incentives, special allowances, and statutory withholding.',
+    active: true,
+    ruleIds: ['RULE-BASIC', 'RULE-HRA', 'RULE-SPEC', 'RULE-BONUS', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rules: ['RULE-BASIC', 'RULE-HRA', 'RULE-SPEC', 'RULE-BONUS', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rulesCount: 8,
+    lastUpdated: '2026-09-01',
+  },
+  {
+    id: 'STRUC-SALES-01',
+    name: 'Sales & Incentive Structure',
+    code: 'SALES-01',
+    description: 'Commercial sales compensation blueprint with variable commission bonuses and travel stipends.',
+    active: true,
+    ruleIds: ['RULE-BASIC', 'RULE-HRA', 'RULE-BONUS', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rules: ['RULE-BASIC', 'RULE-HRA', 'RULE-BONUS', 'RULE-TRANS', 'RULE-PF', 'RULE-PTAX', 'RULE-TDS'],
+    rulesCount: 7,
+    lastUpdated: '2026-09-01',
+  },
 ];
 
 const readStoredList = (key, fallback = []) => {
   try {
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('peoplepay_mock_cleared') !== '1') {
-      LEGACY_MOCK_STORAGE_KEYS.forEach((storageKey) => localStorage.removeItem(storageKey));
-      localStorage.setItem('peoplepay_mock_cleared', '1');
-    }
-    const saved = localStorage.getItem(key);
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {}
   return fallback;
@@ -63,11 +291,13 @@ export function HRDataProvider({ children }) {
 
   const [payslips, setPayslips] = useState(() => readStoredList('peoplepay_payslips'));
 
-  const [salaryStructures, setSalaryStructures] = useState(() => readStoredList('peoplepay_salary_structures'));
+  const [salaryStructures, setSalaryStructures] = useState(() =>
+    readStoredList('peoplepay_salary_structures', DEFAULT_SALARY_STRUCTURES)
+  );
 
-  const [salaryRules, setSalaryRules] = useState(() => readStoredList('peoplepay_salary_rules'));
-
-  const [activeRoleOverride, setActiveRoleOverride] = useState(null);
+  const [salaryRules, setSalaryRules] = useState(() =>
+    readStoredList('peoplepay_salary_rules', DEFAULT_SALARY_RULES)
+  );
 
   useEffect(() => {
     try {
@@ -84,12 +314,18 @@ export function HRDataProvider({ children }) {
   useEffect(() => {
     try {
       localStorage.setItem('peoplepay_salary_structures', JSON.stringify(salaryStructures));
+      window.dispatchEvent(
+        new CustomEvent('peoplepay_salary_structures_updated', { detail: salaryStructures })
+      );
     } catch {}
   }, [salaryStructures]);
 
   useEffect(() => {
     try {
       localStorage.setItem('peoplepay_salary_rules', JSON.stringify(salaryRules));
+      window.dispatchEvent(
+        new CustomEvent('peoplepay_salary_rules_updated', { detail: salaryRules })
+      );
     } catch {}
   }, [salaryRules]);
 
@@ -249,7 +485,103 @@ export function HRDataProvider({ children }) {
     setUsers(Array.isArray(userRows) ? userRows : []);
     setAuditLogs(Array.isArray(auditRows) ? auditRows : []);
     setSystemStatus(statusRow);
+
+    if (Array.isArray(employeeRows) && employeeRows.length > 0) {
+      setDepartmentsList((currentDepts) => {
+        const base = currentDepts.length > 0 ? currentDepts : DEFAULT_DEPARTMENTS;
+        const existingNames = new Set(base.map((d) => d.name.toLowerCase()));
+        const newDepts = [];
+        employeeRows.forEach((emp) => {
+          if (emp.department && !existingNames.has(emp.department.toLowerCase())) {
+            existingNames.add(emp.department.toLowerCase());
+            newDepts.push({
+              id: `dept-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              name: emp.department,
+              code: emp.department.substring(0, 3).toUpperCase(),
+              manager: 'Unassigned',
+              floor: 'Floor 1',
+              description: `${emp.department} department operations.`,
+            });
+          }
+        });
+        return newDepts.length > 0 ? [...base, ...newDepts] : base;
+      });
+
+      setJobPositionsList((currentPositions) => {
+        const base = currentPositions.length > 0 ? currentPositions : DEFAULT_JOB_POSITIONS;
+        const existingTitles = new Set(base.map((p) => p.title.toLowerCase()));
+        const newPositions = [];
+        employeeRows.forEach((emp) => {
+          if (emp.jobPosition && !existingTitles.has(emp.jobPosition.toLowerCase())) {
+            existingTitles.add(emp.jobPosition.toLowerCase());
+            newPositions.push({
+              id: `pos-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              title: emp.jobPosition,
+              department: emp.department || 'General',
+              level: 'Mid',
+              status: 'Active',
+              description: `Standard responsibilities for ${emp.jobPosition}.`,
+            });
+          }
+        });
+        return newPositions.length > 0 ? [...base, ...newPositions] : base;
+      });
+    }
+
+    try {
+      const savedStructures = localStorage.getItem('peoplepay_salary_structures');
+      if (savedStructures) {
+        const parsed = JSON.parse(savedStructures);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSalaryStructures(parsed);
+        }
+      }
+      const savedRules = localStorage.getItem('peoplepay_salary_rules');
+      if (savedRules) {
+        const parsed = JSON.parse(savedRules);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSalaryRules(parsed);
+        }
+      }
+    } catch {}
   };
+
+  useEffect(() => {
+    const handleStructuresUpdate = (e) => {
+      if (e?.detail && Array.isArray(e.detail) && e.detail.length > 0) {
+        setSalaryStructures(e.detail);
+      }
+    };
+    const handleRulesUpdate = (e) => {
+      if (e?.detail && Array.isArray(e.detail) && e.detail.length > 0) {
+        setSalaryRules(e.detail);
+      }
+    };
+    const handleStorage = (e) => {
+      if (e.key === 'peoplepay_salary_structures' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) setSalaryStructures(parsed);
+        } catch {}
+      }
+      if (e.key === 'peoplepay_salary_rules' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) setSalaryRules(parsed);
+        } catch {}
+      }
+    };
+
+    window.addEventListener('peoplepay_salary_structures_updated', handleStructuresUpdate);
+    window.addEventListener('peoplepay_salary_rules_updated', handleRulesUpdate);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('peoplepay_salary_structures_updated', handleStructuresUpdate);
+      window.removeEventListener('peoplepay_salary_rules_updated', handleRulesUpdate);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -446,8 +778,15 @@ export function HRDataProvider({ children }) {
       endDate: data.endDate || null,
       wage: Number(data.wage) || 0,
       wageAmount: Number(data.wage) || 0,
-      wageType: data.salaryStructure === 'hourly' ? 'hourly' : 'annually',
-      salaryStructure: data.salaryStructure || 'annually',
+      basicSalary: Number(data.basicSalary) || 0,
+      hra: Number(data.hra) || 0,
+      specialAllowance: Number(data.specialAllowance) || 0,
+      bonus: Number(data.bonus) || 0,
+      pfDeduction: Number(data.pfDeduction) || 0,
+      professionalTax: Number(data.professionalTax) || 0,
+      tdsDeduction: Number(data.tdsDeduction) || 0,
+      wageType: data.salaryStructure === 'hourly' ? 'hourly' : 'monthly',
+      salaryStructure: data.salaryStructure || 'monthly',
       status: 'Active',
       isCurrent: true,
       notes: data.notes || '',
@@ -484,7 +823,14 @@ export function HRDataProvider({ children }) {
       position: employee?.jobPosition || existing?.position || data.position,
       wage: Number(data.wage) || data.wage || existing?.wage,
       wageAmount: Number(data.wage) || data.wageAmount || existing?.wageAmount,
-      salaryStructure: data.salaryStructure || existing?.salaryStructure || 'annually',
+      basicSalary: data.basicSalary !== undefined ? Number(data.basicSalary) : (existing?.basicSalary || 0),
+      hra: data.hra !== undefined ? Number(data.hra) : (existing?.hra || 0),
+      specialAllowance: data.specialAllowance !== undefined ? Number(data.specialAllowance) : (existing?.specialAllowance || 0),
+      bonus: data.bonus !== undefined ? Number(data.bonus) : (existing?.bonus || 0),
+      pfDeduction: data.pfDeduction !== undefined ? Number(data.pfDeduction) : (existing?.pfDeduction || 0),
+      professionalTax: data.professionalTax !== undefined ? Number(data.professionalTax) : (existing?.professionalTax || 0),
+      tdsDeduction: data.tdsDeduction !== undefined ? Number(data.tdsDeduction) : (existing?.tdsDeduction || 0),
+      salaryStructure: data.salaryStructure || existing?.salaryStructure || 'monthly',
       status: data.status || existing?.status || 'Active',
       isCurrent: (data.status || existing?.status) === 'Active',
     };
@@ -1187,11 +1533,9 @@ export function HRDataProvider({ children }) {
   };
 
   // --- Payroll Role & Permissions ---
-  const activeRoleCode = activeRoleOverride || user?.role || ROLES.HR_MANAGER;
-  const isPayrollAuthorized =
-    activeRoleCode === ROLES.HR_PAYROLL_MANAGER ||
-    activeRoleCode === ROLES.HR_PAYROLL_USER ||
-    activeRoleCode === ROLES.ADMIN;
+  const activeRoleCode = user?.role || ROLES.HR_MANAGER;
+  const roleFlags = user?.permissions || {};
+  const isPayrollAuthorized = Boolean(roleFlags.canAccessPayroll);
 
   const currentRole = useMemo(
     () => ({
@@ -1206,44 +1550,59 @@ export function HRDataProvider({ children }) {
       code: activeRoleCode,
       permissions: {
         canAccessPayroll: isPayrollAuthorized,
-        canManageEmployees: activeRoleCode !== ROLES.EMPLOYEE,
-        canManageAttendance: true,
-        canManageContracts: true,
-        canManageSchedules: true,
-        canManageTimeOff: true,
-        canApproveTimeOff:
-          activeRoleCode === ROLES.HR_MANAGER || activeRoleCode === ROLES.ADMIN,
+        canManagePayroll: Boolean(roleFlags.canManagePayroll),
+        canComputePayrun: Boolean(roleFlags.canComputePayrun),
+        canValidatePayrun: Boolean(roleFlags.canValidatePayrun),
+        canManageSalaryConfig: Boolean(roleFlags.canManageSalaryConfig),
+        canDeletePayrun: Boolean(roleFlags.canDeletePayrun),
+        canManageEmployees: Boolean(roleFlags.canManageEmployees),
+        canManageAttendance: Boolean(roleFlags.canManageAttendance),
+        canManageContracts: Boolean(roleFlags.canManageContracts),
+        canManageSchedules: Boolean(roleFlags.canManageSchedules),
+        canManageTimeOff: Boolean(roleFlags.canManageTimeOff),
+        canApproveTimeOff: Boolean(roleFlags.canApproveTimeOff),
       },
     }),
-    [activeRoleCode, isPayrollAuthorized]
+    [activeRoleCode, isPayrollAuthorized, roleFlags]
   );
 
-  const switchRole = (newRole) => {
-    setActiveRoleOverride(newRole);
+  const denyUnless = (allowed, message) => {
+    if (allowed) return true;
+    showToast(message || 'You do not have permission to perform this action', 'error');
+    return false;
   };
 
   // --- Payroll Actions ---
   const createPayrun = async (payload, selectedEmployees = []) => {
-    const id = payload.id || `PR-${Date.now().toString().slice(-6)}`;
-    const newPayrun = {
-      ...payload,
-      id,
-      status: 'Draft',
-      employeesCount: selectedEmployees.length,
-      payslipsCount: 0,
-      totalGross: 0,
-      totalDeductions: 0,
-      totalNet: 0,
-      processedDate: null,
-      paymentDate: null,
-      notes: payload.notes || 'Payrun draft created via Wizard.',
-    };
-    setPayruns((prev) => [newPayrun, ...prev]);
-    showToast('Payrun batch created successfully!');
+    if (!denyUnless(roleFlags.canComputePayrun, 'You cannot create payruns with this role.')) return null;
+    
+    let targetEmployees = selectedEmployees;
+    if ((!targetEmployees || targetEmployees.length === 0) && payload.selectedEmployeeIds) {
+      targetEmployees = employees.filter((e) =>
+        payload.selectedEmployeeIds.includes(e.id || e._id || e.employeeCode)
+      );
+    }
+    if (!targetEmployees || targetEmployees.length === 0) {
+      targetEmployees = employees;
+    }
+
+    const result = await payrollService.createPayrun(payload, targetEmployees, contracts);
+    const newPayrun = result?.payrun || result;
+    const newPayslips = result?.payslips || [];
+
+    setPayruns((prev) => [newPayrun, ...prev.filter((p) => p.id !== newPayrun.id)]);
+    if (newPayslips.length > 0) {
+      setPayslips((prev) => [
+        ...prev.filter((p) => p.payrunId !== newPayrun.id),
+        ...newPayslips,
+      ]);
+    }
+    showToast('Payrun batch created and computed successfully!');
     return newPayrun;
   };
 
   const computePayrun = async (payrunId) => {
+    if (!denyUnless(roleFlags.canComputePayrun, 'You cannot compute payruns with this role.')) return null;
     const payrun = payruns.find((p) => p.id === payrunId);
     if (!payrun) return;
 
@@ -1262,6 +1621,7 @@ export function HRDataProvider({ children }) {
   };
 
   const validatePayrun = async (payrunId) => {
+    if (!denyUnless(roleFlags.canValidatePayrun, 'Only HR Payroll Manager can validate payruns.')) return null;
     const updated = await payrollService.validatePayrun(payrunId);
     setPayruns((prev) => prev.map((p) => (p.id === payrunId ? { ...p, status: 'Validated' } : p)));
     setPayslips((prev) =>
@@ -1272,6 +1632,7 @@ export function HRDataProvider({ children }) {
   };
 
   const markPayrunPaid = async (payrunId) => {
+    if (!denyUnless(roleFlags.canValidatePayrun, 'Only HR Payroll Manager can mark payruns as paid.')) return null;
     const updated = await payrollService.markPayrunPaid(payrunId);
     setPayruns((prev) =>
       prev.map((p) =>
@@ -1297,6 +1658,7 @@ export function HRDataProvider({ children }) {
   };
 
   const deletePayrun = async (payrunId) => {
+    if (!denyUnless(roleFlags.canDeletePayrun, 'You cannot delete payruns with this role.')) return;
     await payrollService.deletePayrun(payrunId);
     setPayruns((prev) => prev.filter((p) => p.id !== payrunId));
     setPayslips((prev) => prev.filter((p) => p.payrunId !== payrunId));
@@ -1308,6 +1670,7 @@ export function HRDataProvider({ children }) {
   };
 
   const addSalaryStructure = (data) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary structures are read-only for this role.')) return null;
     const newStruc = {
       ...data,
       id: `SS-${Date.now().toString().slice(-4)}`,
@@ -1320,6 +1683,7 @@ export function HRDataProvider({ children }) {
   };
 
   const updateSalaryStructure = (id, data) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary structures are read-only for this role.')) return;
     setSalaryStructures((prev) =>
       prev.map((s) =>
         s.id === id ? { ...s, ...data, lastUpdated: new Date().toISOString().split('T')[0] } : s
@@ -1329,11 +1693,13 @@ export function HRDataProvider({ children }) {
   };
 
   const deleteSalaryStructure = (id) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary structures are read-only for this role.')) return;
     setSalaryStructures((prev) => prev.filter((s) => s.id !== id));
     showToast('Salary structure deleted');
   };
 
   const addSalaryRule = (data) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary rules are read-only for this role.')) return null;
     const newRule = {
       ...data,
       id: `RULE-${Date.now().toString().slice(-4)}`,
@@ -1345,11 +1711,13 @@ export function HRDataProvider({ children }) {
   };
 
   const updateSalaryRule = (id, data) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary rules are read-only for this role.')) return;
     setSalaryRules((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
     showToast('Salary rule updated!');
   };
 
   const deleteSalaryRule = (id) => {
+    if (!denyUnless(roleFlags.canManageSalaryConfig, 'Salary rules are read-only for this role.')) return;
     setSalaryRules((prev) => prev.filter((r) => r.id !== id));
     showToast('Salary rule deleted');
   };
@@ -1419,7 +1787,6 @@ export function HRDataProvider({ children }) {
     salaryStructures,
     salaryRules,
     currentRole,
-    switchRole,
     createPayrun,
     computePayrun,
     validatePayrun,

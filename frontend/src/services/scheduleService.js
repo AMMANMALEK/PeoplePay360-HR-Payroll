@@ -66,9 +66,11 @@ export function toFrontendSchedule(raw) {
 }
 
 export function toBackendSchedule(frontend) {
-  const weeklyPattern = frontend.weeklyPattern?.length
+  const weeklyPattern = frontend.days
+    ? daysToWeeklyPattern(frontend.days)
+    : frontend.weeklyPattern?.length
     ? frontend.weeklyPattern
-    : daysToWeeklyPattern(frontend.days || {});
+    : [];
 
   const payload = {
     name: frontend.name,

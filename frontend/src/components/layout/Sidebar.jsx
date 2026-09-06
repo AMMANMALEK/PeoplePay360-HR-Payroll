@@ -19,6 +19,7 @@ import {
 import { NAV_ITEMS, APP_ROLE, ADMIN_NAV_ITEMS, ADMIN_APP_ROLE, ROLES } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
+import { canAccess } from '../../constants/rbac';
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -39,7 +40,14 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
   const { logout, user, isAdmin } = useAuth();
 
   const isAdministrator = isAdmin || user?.role === ROLES.ADMIN;
-  const currentNavItems = isAdministrator ? ADMIN_NAV_ITEMS : NAV_ITEMS;
+  const currentNavItems = isAdministrator
+    ? ADMIN_NAV_ITEMS
+    : NAV_ITEMS.filter((item) => {
+        if (item.path === '/payroll') {
+          return canAccess(user?.role, 'payruns');
+        }
+        return true;
+      });
 
   const getBadgeValue = (key) => {
     if (key === 'pendingTimeOff') return kpis?.pendingTimeOff;
@@ -156,7 +164,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
                 collapsed ? 'sr-only' : ''
               }`}
             >
-              Insights
+              {isAdministrator ? 'HR & Operations' : 'Insights'}
             </p>
             <nav className="space-y-1">
               {renderNav(currentNavItems.filter((item) => item.isSecondary), collapsed, isMobile)}

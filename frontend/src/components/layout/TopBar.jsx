@@ -4,6 +4,7 @@ import { Menu, Search, Bell } from 'lucide-react';
 import { APP_ROLE, ADMIN_APP_ROLE, ROLES } from '../../constants/navigation';
 import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
+import { getGreeting, getHRDisplayName } from '../../utils/greeting';
 import GlobalSearchModal from './GlobalSearchModal';
 import { Link } from 'react-router-dom';
 
@@ -21,16 +22,20 @@ const PAGE_META = {
   '/contracts': { title: 'Contracts', subtitle: 'Active terms, renewals, and contract history.' },
   '/schedules': { title: 'Working Schedules', subtitle: 'Shift patterns and weekly working hours.' },
   '/time-off': { title: 'Time Off', subtitle: 'Leave requests, balances, and approval decisions.' },
+  '/payroll': { title: 'Payroll', subtitle: 'Payruns, payslips, salary structures, and rules.' },
+  '/payroll/dashboard': { title: 'Payroll Dashboard', subtitle: 'Payroll operations, disbursement, and workflow status.' },
 };
 
 export default function TopBar({ onOpenMobileMenu }) {
   const location = useLocation();
-  const { attentionItems } = useHRData();
+  const { attentionItems, employees } = useHRData();
   const { user, isAdmin } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const isAdministrator = isAdmin || user?.role === ROLES.ADMIN;
+  const greeting = getGreeting();
+  const hrDisplayName = getHRDisplayName(user, employees);
 
   React.useEffect(() => {
     const handleKeyDown = (e) => {
@@ -44,7 +49,17 @@ export default function TopBar({ onOpenMobileMenu }) {
   }, []);
 
   const basePath = `/${location.pathname.split('/').filter(Boolean)[0] || ''}`;
-  const meta = PAGE_META[location.pathname] || PAGE_META[basePath] || PAGE_META['/'];
+  const payrollHomeMeta = {
+    title: user?.role === ROLES.HR_PAYROLL_MANAGER ? 'Payroll Manager Dashboard' : 'Payroll User Dashboard',
+    subtitle:
+      user?.role === ROLES.HR_PAYROLL_MANAGER
+        ? 'Full HR and payroll command: payruns, payslips, structures, and rules.'
+        : 'HR plus payrun and payslip create/read/update. Salary structures and rules are read-only.',
+  };
+  const meta =
+    location.pathname === '/' && (user?.role === ROLES.HR_PAYROLL_MANAGER || user?.role === ROLES.HR_PAYROLL_USER)
+      ? payrollHomeMeta
+      : PAGE_META[location.pathname] || PAGE_META[basePath] || PAGE_META['/'];
   const isDetail = location.pathname.startsWith('/employees/') && location.pathname !== '/employees';
 
   return (
@@ -127,14 +142,26 @@ export default function TopBar({ onOpenMobileMenu }) {
 
           <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white py-1 pl-1 pr-3 lg:flex">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-200 text-[11px] font-bold text-slate-800">
-              {isAdministrator ? 'AD' : 'HR'}
+              {isAdministrator
+                ? 'AD'
+                : user?.role === ROLES.HR_PAYROLL_USER
+                ? 'PU'
+                : user?.role === ROLES.HR_PAYROLL_MANAGER
+                ? 'PM'
+                : 'HR'}
             </div>
             <div>
               <p className="text-xs font-semibold leading-tight text-slate-900">
-                {isAdministrator ? (user?.name || user?.email?.split('@')[0] || 'Administrator') : 'HR Manager'}
+                {hrDisplayName}
               </p>
               <p className="text-[10px] text-slate-500">
-                {isAdministrator ? ADMIN_APP_ROLE.name : APP_ROLE.name}
+                {isAdministrator
+                  ? ADMIN_APP_ROLE.name
+                  : user?.role === ROLES.HR_PAYROLL_MANAGER
+                  ? 'Payroll Manager'
+                  : user?.role === ROLES.HR_PAYROLL_USER
+                  ? 'Payroll User'
+                  : APP_ROLE.name}
               </p>
             </div>
           </div>

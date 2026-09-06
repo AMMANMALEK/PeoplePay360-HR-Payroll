@@ -4,8 +4,10 @@ import StatusBadge from '../ui/StatusBadge';
 import EmptyState from '../ui/EmptyState';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/navigation';
 import { formatINR } from '../../utils/formatCurrency';
-import { Plus, Edit, Trash2, Layers, Calculator, HelpCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Layers, Calculator, HelpCircle, Lock } from 'lucide-react';
 
 const CATEGORIES = ['Basic', 'Allowances', 'Gross', 'Deductions', 'Net'];
 const COMPUTATION_TYPES = ['Fixed Amount', 'Percentage', 'Formula'];
@@ -18,6 +20,9 @@ export default function SalaryRulesView() {
     updateSalaryRule,
     deleteSalaryRule,
   } = useHRData();
+
+  const { user } = useAuth();
+  const isReadOnly = user?.role === ROLES.HR_PAYROLL_USER;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
@@ -102,11 +107,23 @@ export default function SalaryRulesView() {
             Ordered computational algorithms that evaluate earnings, statutory deductions, and net wage.
           </p>
         </div>
-        <button type="button" onClick={openCreateModal} className="btn-primary">
-          <Plus className="h-4 w-4" />
-          <span>Add Rule</span>
-        </button>
+        {!isReadOnly && (
+          <button type="button" onClick={openCreateModal} className="btn-primary">
+            <Plus className="h-4 w-4" />
+            <span>Add Rule</span>
+          </button>
+        )}
       </div>
+
+      {/* Read-Only Banner */}
+      {isReadOnly && (
+        <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-2.5">
+          <Lock className="h-4 w-4 text-blue-600 shrink-0" />
+          <p className="text-xs text-blue-800">
+            <strong>Read-only access.</strong> Your role (HR Payroll User) can view salary rules but cannot create, edit, or delete them. Contact an HR Payroll Manager to make changes.
+          </p>
+        </div>
+      )}
 
       {/* Rules Table */}
       <div className="app-card overflow-hidden">
@@ -194,22 +211,31 @@ export default function SalaryRulesView() {
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(rule)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
-                          title="Edit rule"
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(rule)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete rule"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {isReadOnly ? (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                            <Lock className="h-3 w-3" />
+                            View Only
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(rule)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                              title="Edit rule"
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(rule)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                              title="Delete rule"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -321,7 +347,7 @@ export default function SalaryRulesView() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                {computationType === 'Percentage' ? 'Percentage (%)' : 'Fixed Amount (INR ₹)'}
+                {computationType === 'Percentage' ? 'Percentage (%)' : 'Fixed Amount (₹)'}
               </label>
               <input
                 type="number"

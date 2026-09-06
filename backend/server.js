@@ -74,7 +74,9 @@ if (require.main === module) {
   const startServer = async () => {
     await connectDB();
     const { bootstrapPersonalLeavePolicy } = require('./services/personalLeavePolicy');
+    const { ensurePayrollRoleUsers } = require('./services/bootstrapPayrollRoles');
     await bootstrapPersonalLeavePolicy();
+    await ensurePayrollRoleUsers();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });

@@ -5,6 +5,8 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import EmployeeFormModal from '../../components/employees/EmployeeFormModal';
 import TimeOffReviewModal from '../../components/timeoff/TimeOffReviewModal';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { getGreeting, getHRDisplayName } from '../../utils/greeting';
 import { UserPlus, ArrowRight, Check, X } from 'lucide-react';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -17,9 +19,13 @@ function weekdayIndex(dateStr) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { kpis, employees, contracts, timeOffRequests, attendance, approveTimeOff } = useHRData();
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [reviewRequest, setReviewRequest] = useState(null);
+
+  const greeting = getGreeting();
+  const hrName = getHRDisplayName(user, employees);
 
   const recentPending = timeOffRequests.filter((r) => r.status === 'Pending').slice(0, 6);
 
@@ -52,14 +58,24 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-7">
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setIsAddEmployeeOpen(true)} className="btn-primary">
-          <UserPlus className="h-4 w-4" />
-          Add Employee
-        </button>
-        <button type="button" onClick={() => navigate('/time-off?status=Pending')} className="btn-secondary">
-          Review time off
-        </button>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-[28px]">
+            {greeting}, {hrName}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Here's your workforce snapshot and items that need attention today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setIsAddEmployeeOpen(true)} className="btn-primary">
+            <UserPlus className="h-4 w-4" />
+            Add Employee
+          </button>
+          <button type="button" onClick={() => navigate('/time-off?status=Pending')} className="btn-secondary">
+            Review time off
+          </button>
+        </div>
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

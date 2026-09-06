@@ -52,6 +52,24 @@ const requireRole = (...allowedRoles) => (req, res, next) => {
   });
 };
 
+const requirePermission = (permissionKey) => (req, res, next) => {
+  if (!req.auth) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required',
+    });
+  }
+
+  if (req.auth.role === ROLES.ADMIN || req.auth.permissions?.[permissionKey]) {
+    return next();
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: 'You do not have permission to perform this action',
+  });
+};
+
 const getAuthenticatedEmployeeId = (req) => req.auth?.employeeId || null;
 
 module.exports = {
@@ -59,5 +77,6 @@ module.exports = {
   getSessionIdFromRequest,
   requireAuth,
   requireRole,
+  requirePermission,
   getAuthenticatedEmployeeId,
 };

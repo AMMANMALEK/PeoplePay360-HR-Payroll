@@ -77,13 +77,27 @@ export function EmployeeDataProvider({ children }) {
 
   const checkIn = async () => {
     const now = new Date().toISOString();
+    let updatedOrCreated;
     if (todayRecord && !todayRecord.hasCheckIn) {
-      await meService.updateAttendance(todayRecord.id, { checkIn: now });
+      updatedOrCreated = await meService.updateAttendance(todayRecord.id, { checkIn: now });
     } else {
-      await meService.createAttendance({
+      updatedOrCreated = await meService.createAttendance({
         attendanceDate: localToday(),
         status: 'present',
         checkIn: now,
+      });
+    }
+    if (updatedOrCreated) {
+      setAttendance((prev) => {
+        const index = prev.findIndex(
+          (r) => r.id === updatedOrCreated.id || r.date === updatedOrCreated.date
+        );
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = updatedOrCreated;
+          return next;
+        }
+        return [updatedOrCreated, ...prev];
       });
     }
     showToast('Checked in');
@@ -94,10 +108,11 @@ export function EmployeeDataProvider({ children }) {
     if (!todayRecord?.id) {
       throw new Error('Check in before checking out');
     }
-    if (todayRecord.checkIn) {
-      const checkInMs = new Date(todayRecord.checkIn).getTime();
+    const checkInVal = todayRecord.rawCheckIn || todayRecord.checkIn;
+    if (checkInVal) {
+      const checkInMs = new Date(checkInVal).getTime();
       const nowMs = Date.now();
-      if (nowMs - checkInMs < 60000) {
+      if (!Number.isNaN(checkInMs) && nowMs - checkInMs < 60000) {
         const remainingSec = Math.max(1, Math.ceil((60000 - (nowMs - checkInMs)) / 1000));
         const error = new Error(
           `Check-out cannot be at the same time as check-in. Please wait ${remainingSec}s before checking out.`
@@ -106,7 +121,18 @@ export function EmployeeDataProvider({ children }) {
         throw error;
       }
     }
-    await meService.updateAttendance(todayRecord.id, { checkOut: new Date().toISOString() });
+    const updated = await meService.updateAttendance(todayRecord.id, { checkOut: new Date().toISOString() });
+    if (updated) {
+      setAttendance((prev) => {
+        const index = prev.findIndex((r) => r.id === updated.id);
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = updated;
+          return next;
+        }
+        return [updated, ...prev];
+      });
+    }
     showToast('Checked out successfully');
     await refresh();
   };

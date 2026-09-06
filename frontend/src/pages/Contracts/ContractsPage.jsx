@@ -11,9 +11,19 @@ import ContractFormModal from '../../components/contracts/ContractFormModal';
 import ContractViewModal from '../../components/contracts/ContractViewModal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
+// Helper to safely extract string value from primitive or object
+const getText = (val, fallback = '') => {
+  if (val == null) return fallback;
+  if (typeof val === 'string' || typeof val === 'number') return String(val);
+  if (typeof val === 'object') {
+    return val.name || val.title || val.code || val.label || val.contractName || val.id || fallback;
+  }
+  return fallback;
+};
+
 // Normalize status helper to handle case-insensitivity
 const normalizeStatus = (status) => {
-  const s = String(status || '').trim().toLowerCase();
+  const s = getText(status).trim().toLowerCase();
   if (s === 'expired') return 'Expired';
   if (s === 'expiring soon' || s === 'expiring_soon' || s === 'expiring') return 'Expiring Soon';
   return 'Active';
@@ -21,6 +31,7 @@ const normalizeStatus = (status) => {
 
 // Contract status strictly restricted to: Active, Expiring Soon, and Expired
 const getContractStatus = (c) => {
+  if (!c) return 'Active';
   const manual = normalizeStatus(c.status);
 
   // If status was explicitly set via Edit to Expired or Expiring Soon, honor it
@@ -29,21 +40,24 @@ const getContractStatus = (c) => {
 
   // If date indicates Expired or Expiring Soon within 10 days
   if (c.endDate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(c.endDate);
-    end.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(c.endDate);
+      if (!isNaN(end.getTime())) {
+        end.setHours(0, 0, 0, 0);
+        const diffTime = end.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const diffTime = end.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return 'Expired';
-    }
-    // Only when contract will over within 10 days
-    if (diffDays <= 10) {
-      return 'Expiring Soon';
-    }
+        if (diffDays < 0) {
+          return 'Expired';
+        }
+        // Only when contract will over within 10 days
+        if (diffDays <= 10) {
+          return 'Expiring Soon';
+        }
+      }
+    } catch {}
   }
 
   return 'Active';
@@ -54,7 +68,13 @@ export default function ContractsPage() {
   const filterParam = searchParams.get('filter');
   const searchParam = searchParams.get('search');
 
-  const { contracts, departments, deleteContract } = useHRData();
+  const hrData = useHRData() || {};
+  const contracts = Array.isArray(hrData.contracts) ? hrData.contracts : [];
+  const rawDepartments = Array.isArray(hrData.departments) ? hrData.departments : [];
+  const departments = useMemo(() => {
+    return rawDepartments.map((d) => getText(d)).filter(Boolean);
+  }, [rawDepartments]);
+  const deleteContract = hrData.deleteContract || (() => {});
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
@@ -92,19 +112,25 @@ export default function ContractsPage() {
 
   const filteredContracts = useMemo(() => {
     return contracts.filter((c) => {
+      if (!c) return false;
       const computedStatus = getContractStatus(c);
+      const cId = getText(c.id || c.contractCode || c._id);
+      const cEmp = getText(c.employeeName);
+      const cName = getText(c.contractName);
+      const cPos = getText(c.position || c.jobPosition);
+      const cDept = getText(c.department);
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matches =
-          (c.id || '').toLowerCase().includes(q) ||
-          (c.employeeName || '').toLowerCase().includes(q) ||
-          (c.contractName || '').toLowerCase().includes(q) ||
-          (c.position || c.jobPosition || '').toLowerCase().includes(q);
+          cId.toLowerCase().includes(q) ||
+          cEmp.toLowerCase().includes(q) ||
+          cName.toLowerCase().includes(q) ||
+          cPos.toLowerCase().includes(q);
         if (!matches) return false;
       }
 
-      if (activeFilters.department !== 'All' && c.department !== activeFilters.department) {
+      if (activeFilters.department !== 'All' && cDept !== activeFilters.department) {
         return false;
       }
 
@@ -121,12 +147,15 @@ export default function ContractsPage() {
     const activeByEmployee = {};
     const conflicts = [];
     contracts.forEach((c) => {
+      if (!c) return;
       const computedStatus = getContractStatus(c);
       if (computedStatus === 'Active' && c.isCurrent) {
-        if (activeByEmployee[c.employeeId]) {
-          conflicts.push({ emp: c.employeeName, c1: activeByEmployee[c.employeeId], c2: c });
-        } else {
-          activeByEmployee[c.employeeId] = c;
+        const empId = getText(c.employeeId || c.employeeCode);
+        const empName = getText(c.employeeName || empId);
+        if (empId && activeByEmployee[empId]) {
+          conflicts.push({ emp: empName, c1: activeByEmployee[empId], c2: c });
+        } else if (empId) {
+          activeByEmployee[empId] = c;
         }
       }
     });
@@ -142,33 +171,45 @@ export default function ContractsPage() {
       key: 'id',
       label: 'Contract ID',
       sortable: true,
-      render: (id, row) => (
-        <div>
-          <div className="font-mono font-bold text-slate-900">{id || row.contractCode}</div>
-          <div className="text-[11px] text-slate-500 font-medium">{row.contractName}</div>
-        </div>
-      ),
+      render: (id, row) => {
+        const cId = getText(id || row.contractCode || row.id || row._id);
+        const cName = getText(row.contractName, 'Employment Agreement');
+        return (
+          <div>
+            <div className="font-mono font-bold text-slate-900">{cId}</div>
+            <div className="text-[11px] text-slate-500 font-medium">{cName}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'employeeName',
       label: 'Employee',
       sortable: true,
-      render: (name, row) => (
-        <div>
-          <div className="font-semibold text-slate-900">{name}</div>
-          <div className="text-[11px] text-slate-400 font-mono">{row.employeeId}</div>
-        </div>
-      ),
+      render: (name, row) => {
+        const empName = getText(name || row.employeeName, 'Employee');
+        const empId = getText(row.employeeId || row.employeeCode, '—');
+        return (
+          <div>
+            <div className="font-semibold text-slate-900">{empName}</div>
+            <div className="text-[11px] text-slate-400 font-mono">{empId}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'position',
       label: 'Role & Department',
-      render: (pos, row) => (
-        <div>
-          <div className="font-medium text-slate-800">{pos || row.jobPosition}</div>
-          <div className="text-[11px] text-slate-500">{row.department}</div>
-        </div>
-      ),
+      render: (pos, row) => {
+        const position = getText(pos || row.jobPosition || row.position, 'Role not specified');
+        const dept = getText(row.department, 'Department');
+        return (
+          <div>
+            <div className="font-medium text-slate-800">{position}</div>
+            <div className="text-[11px] text-slate-500">{dept}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'startDate',
@@ -176,9 +217,11 @@ export default function ContractsPage() {
       sortable: true,
       render: (start, row) => {
         const computedStatus = getContractStatus(row);
+        const startStr = getText(start || row.startDate, '—');
+        const endStr = getText(row.endDate, 'Open-ended');
         return (
           <div className="text-xs">
-            <span className="font-medium text-slate-800">{start}</span>
+            <span className="font-medium text-slate-800">{startStr}</span>
             <span className="text-slate-400 mx-1">→</span>
             <span
               className={`font-medium ${
@@ -189,7 +232,7 @@ export default function ContractsPage() {
                   : 'text-slate-800'
               }`}
             >
-              {row.endDate || 'Open-ended'}
+              {endStr}
             </span>
           </div>
         );
@@ -199,9 +242,10 @@ export default function ContractsPage() {
       key: 'wage',
       label: 'Agreed Wage / Rate',
       render: (wage, row) => {
-        const num = typeof wage === 'number' ? wage : Number(String(wage || '').replace(/[^0-9.]/g, ''));
-        const displayWage = Number.isFinite(num) && num > 0 ? formatINR(num) : (wage || '—');
-        const structure = row.salaryStructure || 'annually';
+        const rawWage = typeof wage === 'object' && wage !== null ? wage.amount || wage.wage : wage;
+        const num = typeof rawWage === 'number' ? rawWage : Number(String(rawWage || '').replace(/[^0-9.]/g, ''));
+        const displayWage = Number.isFinite(num) && num > 0 ? formatINR(num) : getText(wage, '—');
+        const structure = getText(row.salaryStructure || row.wageType, 'annually');
         return (
           <div>
             <span className="font-bold text-slate-900">{displayWage}</span>

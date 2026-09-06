@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Layers, Sliders, ShieldAlert, ArrowDown } from 'lucide-react';
 import { formatINR } from '../../utils/formatCurrency';
-import { useHRData } from '../../context/HRDataContext';
+import { useHRData, DEFAULT_SALARY_STRUCTURES, DEFAULT_SALARY_RULES } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 export default function SalaryStructureDetailPage() {
@@ -10,7 +10,12 @@ export default function SalaryStructureDetailPage() {
   const navigate = useNavigate();
   const { salaryStructures, salaryRules } = useHRData();
 
-  const struct = salaryStructures.find((s) => s.id === id || s.code === id);
+  const structuresList =
+    salaryStructures && salaryStructures.length > 0 ? salaryStructures : DEFAULT_SALARY_STRUCTURES;
+  const rulesList =
+    salaryRules && salaryRules.length > 0 ? salaryRules : DEFAULT_SALARY_RULES;
+
+  const struct = structuresList.find((s) => s.id === id || s.code === id);
 
   if (!struct) {
     return (
@@ -27,10 +32,10 @@ export default function SalaryStructureDetailPage() {
     );
   }
 
-  const assignedRules = (struct.rules || [])
-    .map((rId) => salaryRules.find((r) => r.id === rId || r.code === rId))
+  const assignedRules = (struct.ruleIds || struct.rules || [])
+    .map((rId) => rulesList.find((r) => r.id === rId || r.code === rId))
     .filter(Boolean)
-    .sort((a, b) => a.sequence - b.sequence);
+    .sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-4xl mx-auto">

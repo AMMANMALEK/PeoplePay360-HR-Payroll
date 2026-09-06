@@ -661,6 +661,7 @@ export default function HRGovernancePage() {
               <input
                 type="date"
                 required
+                min={new Date().toISOString().split('T')[0]}
                 value={leaveForm.startDate}
                 onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
                 className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-subtle focus:border-brand-400 focus:outline-none"
@@ -672,6 +673,7 @@ export default function HRGovernancePage() {
               <input
                 type="date"
                 required
+                min={leaveForm.startDate || new Date().toISOString().split('T')[0]}
                 value={leaveForm.endDate}
                 onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
                 className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-subtle focus:border-brand-400 focus:outline-none"

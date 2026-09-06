@@ -1,61 +1,58 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
-const { ROLES } = require('../constants/roles');
+const { requireAuth, requirePermission } = require('../middleware/auth');
 const payrollController = require('../controllers/payrollController');
 
-// All payroll routes require session authentication
 router.use(requireAuth);
 
-const canAccessPayroll = requireRole(ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN);
-const canManagePayroll = requireRole(ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN);
+const canAccessPayroll = requirePermission('canAccessPayroll');
+const canComputePayrun = requirePermission('canComputePayrun');
+const canValidatePayrun = requirePermission('canValidatePayrun');
+const canManageSalaryConfig = requirePermission('canManageSalaryConfig');
+const canDeletePayrun = requirePermission('canDeletePayrun');
+const canUpdatePayslip = requirePermission('canUpdatePayslip');
+const canDeletePayslip = requirePermission('canDeletePayslip');
 
-// ==========================================
-// SALARY STRUCTURES
-// ==========================================
 router.route('/salary-structures')
   .get(canAccessPayroll, payrollController.getSalaryStructures)
-  .post(canManagePayroll, payrollController.createSalaryStructure);
+  .post(canManageSalaryConfig, payrollController.createSalaryStructure);
 
 router.route('/salary-structures/:id')
-  .put(canManagePayroll, payrollController.updateSalaryStructure);
+  .put(canManageSalaryConfig, payrollController.updateSalaryStructure)
+  .delete(canManageSalaryConfig, payrollController.deleteSalaryStructure);
 
-// ==========================================
-// SALARY RULES
-// ==========================================
 router.route('/salary-rules')
   .get(canAccessPayroll, payrollController.getSalaryRules)
-  .post(canManagePayroll, payrollController.createSalaryRule);
+  .post(canManageSalaryConfig, payrollController.createSalaryRule);
 
 router.route('/salary-rules/:id')
-  .put(canManagePayroll, payrollController.updateSalaryRule);
+  .put(canManageSalaryConfig, payrollController.updateSalaryRule)
+  .delete(canManageSalaryConfig, payrollController.deleteSalaryRule);
 
-// ==========================================
-// PAYRUNS
-// ==========================================
-router.post('/payruns/init', canAccessPayroll, payrollController.initPayrun);
-router.post('/payruns/eligible-employees', canAccessPayroll, payrollController.getEligibleEmployees);
+router.post('/payruns/init', canComputePayrun, payrollController.initPayrun);
+router.post('/payruns/eligible-employees', canComputePayrun, payrollController.getEligibleEmployees);
 
 router.route('/payruns')
   .get(canAccessPayroll, payrollController.getPayruns)
-  .post(canAccessPayroll, payrollController.createPayrun);
+  .post(canComputePayrun, payrollController.createPayrun);
 
 router.route('/payruns/:id')
-  .get(canAccessPayroll, payrollController.getPayrunById);
+  .get(canAccessPayroll, payrollController.getPayrunById)
+  .put(canComputePayrun, payrollController.updatePayrun)
+  .delete(canDeletePayrun, payrollController.deletePayrun);
 
-router.put('/payruns/:id/compute', canAccessPayroll, payrollController.computePayrun);
-router.put('/payruns/:id/validate', canManagePayroll, payrollController.validatePayrun);
-router.put('/payruns/:id/mark-paid', canManagePayroll, payrollController.markPayrunPaid);
-router.put('/payruns/:id/send-payslips', canManagePayroll, payrollController.sendPayslips);
+router.put('/payruns/:id/compute', canComputePayrun, payrollController.computePayrun);
+router.put('/payruns/:id/validate', canValidatePayrun, payrollController.validatePayrun);
+router.put('/payruns/:id/mark-paid', canValidatePayrun, payrollController.markPayrunPaid);
+router.put('/payruns/:id/send-payslips', canUpdatePayslip, payrollController.sendPayslips);
 
-// ==========================================
-// PAYSLIPS
-// ==========================================
 router.route('/payslips')
   .get(canAccessPayroll, payrollController.getPayslips);
 
 router.route('/payslips/:id')
-  .get(canAccessPayroll, payrollController.getPayslipById);
+  .get(canAccessPayroll, payrollController.getPayslipById)
+  .put(canUpdatePayslip, payrollController.updatePayslip)
+  .delete(canDeletePayslip, payrollController.deletePayslip);
 
 router.get('/payslips/:id/pdf', canAccessPayroll, payrollController.generatePayslipPdf);
 

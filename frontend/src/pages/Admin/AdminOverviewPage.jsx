@@ -5,6 +5,7 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Modal from '../../components/ui/Modal';
 import { useHRData } from '../../context/HRDataContext';
 import { useAuth } from '../../context/AuthContext';
+import { getGreeting, getHRDisplayName } from '../../utils/greeting';
 import {
   Users,
   KeyRound,
@@ -19,29 +20,37 @@ export default function AdminOverviewPage() {
   const { user } = useAuth();
   const {
     users,
+    employees,
     auditLogs,
     fixedLeaveAllowances,
     updateFixedLeaveAllowances
   } = useHRData();
 
-  const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.status === 'Active').length;
+  const greeting = getGreeting();
+  const adminName = getHRDisplayName(user, employees);
+
+  const totalUsers = users?.length || 0;
+  const activeUsers = users?.filter((u) => u.status === 'ACTIVE' || u.status === 'Active' || !u.status).length || 0;
 
   // Recent 6 admin actions
-  const recentActivity = auditLogs.slice(0, 6);
+  const recentActivity = (auditLogs || []).slice(0, 6);
 
   // Edit Fixed Leaves Modal State
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({});
 
   const handleOpenEditLeaves = () => {
-    setLeaveForm({ ...fixedLeaveAllowances });
+    setLeaveForm({
+      'Personal Leave': fixedLeaveAllowances?.['Personal Leave'] ?? 15,
+      'Sick Leave': fixedLeaveAllowances?.['Sick Leave'] ?? 10,
+      'Festival Leave': fixedLeaveAllowances?.['Festival Leave'] ?? 5,
+    });
     setIsLeaveModalOpen(true);
   };
 
-  const handleSaveLeaves = (e) => {
+  const handleSaveLeaves = async (e) => {
     e.preventDefault();
-    updateFixedLeaveAllowances(leaveForm);
+    await updateFixedLeaveAllowances(leaveForm);
     setIsLeaveModalOpen(false);
   };
 
@@ -51,7 +60,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Good morning, {user?.name || user?.fullName || 'Admin'}
+            {greeting}, {adminName}
           </h1>
           <p className="text-xs text-slate-500">
             Platform administration overview and access governance command.

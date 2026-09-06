@@ -4,6 +4,9 @@ import FilterBar from '../ui/FilterBar';
 import EmptyState from '../ui/EmptyState';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useHRData } from '../../context/HRDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/navigation';
+import { canDelete as checkCanDelete } from '../../constants/rbac';
 import { formatINR } from '../../utils/formatCurrency';
 import {
   Plus,
@@ -22,6 +25,8 @@ import {
 
 export default function PayrunListView({ onOpenWizard, onOpenProcess }) {
   const { payruns, deletePayrun } = useHRData();
+  const { user } = useAuth();
+  const canDeletePayrun = checkCanDelete(user?.role, 'payruns');
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -190,7 +195,7 @@ export default function PayrunListView({ onOpenWizard, onOpenProcess }) {
                           <span>Process</span>
                           <ChevronRight className="h-3.5 w-3.5" />
                         </button>
-                        {payrun.status === 'Draft' && (
+                        {payrun.status === 'Draft' && canDeletePayrun && (
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(payrun)}

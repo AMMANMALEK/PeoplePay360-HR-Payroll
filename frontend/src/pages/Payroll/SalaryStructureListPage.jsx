@@ -1,12 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
-import { useHRData } from '../../context/HRDataContext';
+import { useHRData, DEFAULT_SALARY_STRUCTURES, DEFAULT_SALARY_RULES } from '../../context/HRDataContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 export default function SalaryStructureListPage() {
   const navigate = useNavigate();
   const { salaryStructures, salaryRules } = useHRData();
+
+  const structuresList =
+    salaryStructures && salaryStructures.length > 0 ? salaryStructures : DEFAULT_SALARY_STRUCTURES;
+  const rulesList =
+    salaryRules && salaryRules.length > 0 ? salaryRules : DEFAULT_SALARY_RULES;
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -33,9 +38,9 @@ export default function SalaryStructureListPage() {
 
       {/* Grid of Salary Structures */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {salaryStructures.map((struct) => {
-          const ruleObjects = (struct.rules || [])
-            .map((rId) => salaryRules.find((r) => r.id === rId || r.code === rId))
+        {structuresList.map((struct) => {
+          const ruleObjects = (struct.ruleIds || struct.rules || [])
+            .map((rId) => rulesList.find((r) => r.id === rId || r.code === rId))
             .filter(Boolean);
 
           return (

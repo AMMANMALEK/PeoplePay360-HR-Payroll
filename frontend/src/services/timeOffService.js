@@ -16,10 +16,12 @@ export function toFrontendTimeOffType(raw) {
     id: raw.typeCode || raw._id,
     _id: raw._id,
     typeCode: raw.typeCode,
+    code: raw.typeCode,
     name: raw.name || '',
     unit: raw.unit === 'hours' ? 'Hours' : 'Days',
     allocationRequired: Boolean(raw.requiresAllocation),
     approvalWorkflow: raw.requiresApproval ? 'Manager + HR Approval' : 'Automatically approved',
+    description: raw.description || '',
     isActive: raw.isActive !== false,
   };
 }
